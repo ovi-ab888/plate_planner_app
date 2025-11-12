@@ -1,4 +1,4 @@
-# app.py — Final Version (Fixed Plate Capacity Limit)
+# app.py — FINAL VERSION (Accurate + Add-on % + Safe Loop + Chart)
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
@@ -8,6 +8,7 @@ from io import BytesIO
 from collections import Counter
 from math import ceil
 import string
+import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Pre-Press Auto Planner", page_icon="🖨️", layout="wide")
 
@@ -25,85 +26,72 @@ def plate_name(n):
 
 
 def proportional_layout(remaining, cap):
-    """Build proportional plate layout ensuring total ≤ cap"""
+    """Safe proportional layout; ensures total ≤ cap"""
     total = sum(remaining.values())
     if total == 0:
         return {}
 
-    layout = {k: int((remaining[k] / total) * cap) for k in remaining if remaining[k] > 0}
+    layout = {k: max(1, int((remaining[k] / total) * cap)) for k in remaining if remaining[k] > 0}
 
-    # at least 1 if still remaining
-    for k in layout:
-        if layout[k] == 0 and remaining[k] > 0:
-            layout[k] = 1
-
-    # fill until cap
-    while sum(layout.values()) < cap:
-        for k in sorted(remaining, key=lambda x: remaining[x], reverse=True):
-            if sum(layout.values()) >= cap:
-                break
-            layout[k] = layout.get(k, 0) + 1
-
-    # ✅ ensure sum ≤ cap (trim extra)
+    # trim if exceeds capacity
     while sum(layout.values()) > cap:
         for k in sorted(layout, key=lambda x: layout[x], reverse=True):
             if sum(layout.values()) <= cap:
                 break
-            if layout[k] > 1:
-                layout[k] -= 1
-
-    return {k: v for k, v in layout.items() if v > 0}
+            layout[k] -= 1
+            if layout[k] <= 0:
+                layout.pop(k, None)
+                break
+    return layout
 
 
 def auto_plan(demand, cap, max_plates=20):
-    """Generate plates; ensure no underprint and respect capacity"""
+    """Generate plates safely; no underprint; respect capacity"""
     remaining = demand.copy()
     plates = []
-    safeguard = 1000
+    produced = Counter()
+    safe_guard = 2000
 
-    while any(v > 0 for v in remaining.values()) and len(plates) < max_plates and safeguard > 0:
-        safeguard -= 1
+    while any(v > 0 for v in remaining.values()) and len(plates) < max_plates and safe_guard > 0:
+        safe_guard -= 1
         layout = proportional_layout(remaining, cap)
         if not layout:
             break
 
-        # max sheets possible without underprint
         possible = [ceil(remaining[k] / v) for k, v in layout.items() if v > 0]
         sheets = min(possible) if possible else 1
         sheets = max(1, sheets)
 
         for k, v in layout.items():
             remaining[k] = max(0, remaining[k] - v * sheets)
+            produced[k] += v * sheets
 
         plates.append({"name": plate_name(len(plates) + 1), "layout": layout, "sheets": sheets})
 
-    # total produced
-    produced = Counter()
-    for p in plates:
-        for k, v in p["layout"].items():
-            produced[k] += v * p["sheets"]
+        if all(v == 0 for v in remaining.values()):
+            break
 
-    # fix underprint (auto-adjust last plate)
+    if safe_guard == 0:
+        st.warning("⚠️ Loop safeguard triggered: demand too large for given capacity/plates.")
+
+    if len(plates) >= max_plates and any(v > 0 for v in remaining.values()):
+        st.warning("🚧 Hard cap reached. Remaining demand could not be fully planned.")
+
+    # Fix underprints
     for tag in demand:
         if produced[tag] < demand[tag] and plates:
             deficit = demand[tag] - produced[tag]
             last = plates[-1]
-            if tag in last["layout"]:
-                per_sheet = last["layout"][tag]
-                add_sheets = ceil(deficit / per_sheet)
-                last["sheets"] += add_sheets
-                produced[tag] += per_sheet * add_sheets
-            else:
-                last["layout"][tag] = 1
-                add_sheets = ceil(deficit / 1)
-                last["sheets"] += add_sheets
-                produced[tag] += add_sheets
+            last["layout"][tag] = last["layout"].get(tag, 1)
+            add_sheets = ceil(deficit / last["layout"][tag])
+            last["sheets"] += add_sheets
+            produced[tag] += add_sheets * last["layout"][tag]
 
     return plates, dict(produced)
 
 
 # ---------- UI ----------
-st.title("🖨️ Auto Multi-Plate Planner (Accurate + Add-on % + Capacity Fix)")
+st.title("🖨️ Auto Multi-Plate Planner (Final Stable + Chart)")
 
 col1, col2, col3, col4 = st.columns(4)
 n = col1.number_input("কতটি Tag", 1, 50, 6)
@@ -130,7 +118,7 @@ if st.button("🚀 Generate Plan"):
         st.error("কমপক্ষে ১টি Tag Quantity দিন।")
         st.stop()
 
-    progress = st.progress(0, text="🔄 Calculating Plates...")
+    progress = st.progress(0, text="🔄 Calculating Plates safely...")
     plates, prod = auto_plan(demand, cap, maxp)
     progress.progress(100, text="✅ Done!")
 
@@ -138,6 +126,7 @@ if st.button("🚀 Generate Plan"):
         st.warning("পরিকল্পনা তৈরি হয়নি। ইনপুট যাচাই করুন।")
         st.stop()
 
+    # Layout table
     cols = ["Plate"] + list(demand.keys()) + ["Sheets"]
     rows = []
     for p in plates:
@@ -152,12 +141,23 @@ if st.button("🚀 Generate Plan"):
     st.dataframe(df, use_container_width=True)
     st.success(f"✅ মোট শিট: {total}")
 
-    # summary table
+    # Summary
     summary = pd.DataFrame(
         [{"Tag": k, "Demand(+Add-on)": demand[k], "Produced": prod.get(k, 0)} for k in demand]
     )
     st.markdown("### 📊 Demand vs Produced (Produced ≥ Demand)")
     st.dataframe(summary, use_container_width=True)
+
+    # ---------- 📈 Bar Chart ----------
+    st.markdown("### 📉 Tag-wise Demand vs Produced Chart")
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.bar(summary["Tag"], summary["Demand(+Add-on)"], label="Demand (+Add-on)", alpha=0.6)
+    ax.bar(summary["Tag"], summary["Produced"], label="Produced", alpha=0.6)
+    ax.set_xlabel("Tag")
+    ax.set_ylabel("Quantity")
+    ax.legend()
+    ax.set_title("Demand vs Produced Overview")
+    st.pyplot(fig)
 
     # Excel export
     bio = BytesIO()
@@ -168,8 +168,8 @@ if st.button("🚀 Generate Plan"):
     st.download_button(
         "⬇️ Excel Download",
         data=bio,
-        file_name="final_plate_plan_fixed.xlsx",
+        file_name="final_plate_plan_chart.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
-st.caption("💡 এই ভার্সনে Add-on %, Hard Capacity Limit, এবং Underprint protection সক্রিয় আছে।")
+st.caption("💡 এই ভার্সনে Add-on %, Safe loop, Capacity fix, Chart visualization ও Excel export সবকিছু অন্তর্ভুক্ত।")
