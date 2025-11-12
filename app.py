@@ -1,21 +1,37 @@
-# app.py — Simplified Output: Per-Plate Size-ups + Impressions
+# app.py — Auto Multi-Plate Pre-Press Planner
 import streamlit as st
 import pandas as pd
 from collections import Counter
 from io import BytesIO
+import string
+from math import ceil
 
-st.set_page_config(page_title="Pre-Press Plate Planner", page_icon="🖨️", layout="wide")
+st.set_page_config(page_title="Pre-Press Plate Planner (Auto)", page_icon="🖨️", layout="wide")
 
-# =============== Helpers ===============
-def normalize_layout(layout: dict, cap: int):
-    """Keep only positive ints and ensure sum <= cap by trimming the smallest first."""
-    clean = {k: int(v) for k, v in layout.items() if pd.notna(v) and int(v) > 0}
+# =========================
+# Helpers
+# =========================
+def plate_name(n: int) -> str:
+    """Return A, B, ... Z, AA, AB ... style names (1-indexed)."""
+    n -= 1
+    chars = string.ascii_uppercase
+    out = ""
+    while True:
+        out = chars[n % 26] + out
+        n = n // 26 - 1
+        if n < 0:
+            break
+    return out
+
+def normalize_layout(layout: dict, cap: int) -> dict:
+    """Ensure integers, positive, and sum exactly <= cap (trim smallest if needed).
+       If sum < cap, keep as-is (we allow partial fill)."""
+    clean = {k: int(v) for k, v in layout.items() if int(v) > 0}
     total = sum(clean.values())
     if total <= cap:
-        return clean, False  # False = not trimmed
+        return clean
     overflow = total - cap
-    # trim smallest first
-    for k, v in sorted(clean.items(), key=lambda kv: kv[1]):
+    for k, v in sorted(clean.items(), key=lambda kv: kv[1]):  # trim smallest first
         if overflow <= 0:
             break
         take = min(v, overflow)
@@ -23,134 +39,161 @@ def normalize_layout(layout: dict, cap: int):
         overflow -= take
         if clean[k] <= 0:
             clean.pop(k, None)
-    return {k: v for k, v in clean.items() if v > 0}, True  # True = trimmed
+    return {k: v for k, v in clean.items() if v > 0}
 
-def greedy_multi_plan(demand: dict, layouts: list):
-    """Greedy planning with safe loop. Returns per-plate sheet counts + produced."""
-    remaining = dict(demand)
-    counts = [0] * len(layouts)
+def proportional_layout(remaining: dict, cap: int) -> dict:
+    """Build a plate layout proportional to remaining demand (tries to use all cap slots)."""
+    total = sum(remaining.values())
+    if total == 0:
+        return {}
+    raw = {k: (remaining[k] * cap) / total for k in remaining if remaining[k] > 0}
+    floored = {k: int(raw[k]) for k in raw}
+    used = sum(floored.values())
+    # Guarantee at least 1 for any size that had 0 after floor but still remaining (if room)
+    zeros = [k for k in raw if floored[k] == 0]
+    for k in zeros:
+        if used < cap:
+            floored[k] = 1
+            used += 1
+    # Distribute leftover slots by largest fractions
+    remain_slots = max(0, cap - used)
+    fracs = sorted(((k, raw[k] - floored[k]) for k in raw), key=lambda x: x[1], reverse=True)
+    for i in range(remain_slots):
+        if i < len(fracs):
+            floored[fracs[i][0]] += 1
+    layout = {k: v for k, v in floored.items() if v > 0}
+    return normalize_layout(layout, cap)
+
+def auto_multi_plate_plan(demand: dict, cap: int):
+    """
+    Build a sequence of plates automatically until demand becomes zero.
+    Each plate gets a proportional per-sheet layout from remaining demand.
+    For each plate, pick the max number of sheets we can print without
+    overshooting any size in that plate (at least 1 sheet to make progress).
+    """
+    remaining = {k: int(v) for k, v in demand.items() if int(v) > 0}
+    plates = []  # list of dicts: {"name": "A", "layout": {...}, "sheets": N}
     safe_guard = 10000
 
-    def coverage(layout, remaining):
-        return sum(min(remaining.get(sz, 0), up) for sz, up in layout.items())
-
     while any(v > 0 for v in remaining.values()) and safe_guard > 0:
-        coverages = [coverage(lay, remaining) for lay in layouts]
-        best = max(range(len(layouts)), key=lambda i: coverages[i])
-        if coverages[best] == 0:
-            break  # nothing else covered
-        counts[best] += 1
-        for sz, up in layouts[best].items():
-            if remaining.get(sz, 0) > 0:
-                remaining[sz] = max(0, remaining[sz] - up)
+        layout = proportional_layout(remaining, cap)
+        if not layout:
+            break
+
+        # max sheets we can print before any included tag would go negative
+        possible = []
+        for sz, ups in layout.items():
+            if ups <= 0:
+                continue
+            # how many full sheets can we print for this size
+            possible.append(remaining[sz] // ups)
+        sheets = max(1, min(possible) if possible else 1)
+
+        # If min floor is 0 (i.e., at least one size has remaining < ups), still print 1 sheet to progress
+        # but cap the case where that would overshoot too much: we allow small overage only at the end.
+        # Subtract and continue:
+        for sz, ups in layout.items():
+            remaining[sz] = max(0, remaining[sz] - ups * sheets)
+
+        plates.append({"layout": layout, "sheets": sheets})
         safe_guard -= 1
 
+        # If we are making very slow progress (e.g., all floors were 0 repeatedly),
+        # force a final plate with sheets = ceil(max(remaining)/ups) to finish.
+        if not any(v > 0 for v in remaining.values()):
+            break
+
+        if safe_guard == 9990:  # extremely unlikely; just a second safety fuse
+            # Finish in one last plate using the same layout:
+            # choose sheets so that at least one size finishes
+            need_ratios = []
+            for sz, ups in layout.items():
+                if ups > 0 and remaining[sz] > 0:
+                    need_ratios.append(ceil(remaining[sz] / ups))
+            if need_ratios:
+                extra_sheets = max(1, min(need_ratios))
+                for sz, ups in layout.items():
+                    remaining[sz] = max(0, remaining[sz] - ups * extra_sheets)
+                plates.append({"layout": layout, "sheets": extra_sheets})
+            break
+
+    # Assign plate names A, B, C...
+    for i, p in enumerate(plates, start=1):
+        p["name"] = plate_name(i)
+
+    # Produced summary (not strictly needed for output, but handy)
     produced = Counter()
-    for i, lay in enumerate(layouts):
-        for sz, up in lay.items():
-            produced[sz] += up * counts[i]
+    for p in plates:
+        for sz, ups in p["layout"].items():
+            produced[sz] += ups * p["sheets"]
 
-    return counts, dict(produced)
+    return plates, dict(produced)
 
-# =============== UI — Step 1: Basic inputs ===============
-st.title("🖨️ Pre-Press Plate Planner (Multi-Plate)")
-st.caption("শুরুতে Tag সংখ্যা, Plate capacity, তারপর Tag নাম + QTY দিন। ফলাফল: প্রতি প্লেটের সাইজ-আপ ও ইমপ্রেশন।")
+# =========================
+# UI — Inputs
+# =========================
+st.title("🖨️ Pre-Press Plate Planner — Auto Multi-Plate")
+st.caption("Tag count, Plate capacity, Tag name + QTY দিন। অ্যাপ নিজে Plate A/B/C… বানাবে এবং প্রতি Plate-এর per-sheet layout ও impressions দেখাবে।")
 
-col1, col2 = st.columns(2)
-num_tags = col1.number_input("কতটি Tag QTY ইনপুট দিতে চান?", 1, 50, 6, step=1)
-capacity = col2.number_input("Plate capacity (tags per plate)", 1, 64, 12, step=1)
+c1, c2 = st.columns(2)
+num_tags = c1.number_input("কতটি Tag QTY ইনপুট দিতে চান?", min_value=1, max_value=50, value=6, step=1)
+capacity = c2.number_input("Plate capacity (tags per plate)", min_value=1, max_value=64, value=12, step=1)
 
 st.markdown("---")
 st.subheader("📦 Tag QTY ইনপুট দিন 👇")
+
 left, right = st.columns(2)
 tags, qtys = [], []
 for i in range(num_tags):
-    tname = left.text_input(f"Tag {i+1} Name", f"Tag {i+1}", key=f"tag{i}")
-    tqty  = right.number_input(f"{tname} Quantity", min_value=0, step=10, key=f"qty{i}")
+    tname = left.text_input(f"Tag {i+1} Name", f"Tag {i+1}", key=f"t{i}")
+    tqty  = right.number_input(f"{tname} Quantity", min_value=0, step=10, key=f"q{i}")
     tags.append(tname)
     qtys.append(tqty)
 
-# Demand dict (exclude zeros)
 demand = {t: int(q) for t, q in zip(tags, qtys) if int(q) > 0}
 
 st.markdown("---")
 
-# =============== UI — Step 2: Plate layouts table ===============
-st.subheader("🎨 প্রতি Plate-এ সাইজ-আপ (প্রতি শিট) লিখুন")
-st.caption(f"প্রতি প্লেটের সাইজ-আপের যোগফল ≤ {capacity} রাখুন। (শিট/ইমপ্রেশন পরে ক্যালকুলেট হবে)")
-
-# Build editable grid: start with two plates A, B; columns are the active tags
-plate_df_init = pd.DataFrame({"Plate": ["A", "B"]})
-for t in demand.keys():
-    plate_df_init[t] = 0
-
-plate_df = st.data_editor(
-    plate_df_init,
-    num_rows="dynamic",
-    use_container_width=True,
-    key="plate_editor",
-)
-
-st.markdown("---")
-
-# =============== Generate Plan ===============
 if st.button("🚀 Generate Plan"):
     if not demand:
         st.error("কমপক্ষে ১টি Tag Quantity দিন।")
         st.stop()
 
-    # Build normalized layouts (respect capacity)
-    layouts, names, trimmed_any = [], [], False
-    for _, row in plate_df.iterrows():
-        pname = str(row["Plate"]).strip() if pd.notna(row["Plate"]) and str(row["Plate"]).strip() else f"P{_+1}"
-        raw = {t: int(row.get(t, 0)) for t in demand.keys() if pd.notna(row.get(t, 0)) and int(row.get(t, 0)) > 0}
-        if not raw:
-            continue
-        norm, trimmed = normalize_layout(raw, capacity)
-        trimmed_any = trimmed_any or trimmed
-        layouts.append(norm)
-        names.append(pname)
+    plates, produced = auto_multi_plate_plan(demand, capacity)
 
-    if not layouts:
-        st.warning("কোনো বৈধ Plate Layout পাওয়া যায়নি। টেবিলে মান দিন।")
+    if not plates:
+        st.warning("পরিকল্পনা তৈরি করা যায়নি। ইনপুটগুলো যাচাই করুন।")
         st.stop()
 
-    if trimmed_any:
-        st.info("ℹ️ কিছু প্লেটে capacity ছাড়ালে ছোট মান কেটে capacity-এর মধ্যে নামিয়ে আনা হয়েছে।")
-
-    # Plan
-    sheet_counts, produced = greedy_multi_plan(demand, layouts)
-
-    # =============== OUTPUT (Only what you asked) ===============
-    # 1) Per-plate size-ups (per sheet) in a single table, plus a ShEETS column
-    # Build table with columns: Plate, each Tag..., Sheets
-    out_cols = ["Plate"] + list(demand.keys()) + ["Sheets (impressions)"]
-    table_rows = []
-    for i, lay in enumerate(layouts):
-        row = {"Plate": f"{names[i]}"}
+    # Build per-plate table: columns = Plate, all tags..., Sheets
+    cols = ["Plate"] + list(demand.keys()) + ["Sheets (impressions)"]
+    rows = []
+    for p in plates:
+        row = {"Plate": p["name"], "Sheets (impressions)": p["sheets"]}
         for t in demand.keys():
-            row[t] = lay.get(t, 0)
-        row["Sheets (impressions)"] = sheet_counts[i]
-        table_rows.append(row)
-    plate_table = pd.DataFrame(table_rows, columns=out_cols)
+            row[t] = p["layout"].get(t, 0)
+        rows.append(row)
+    df_plate = pd.DataFrame(rows, columns=cols)
+
+    total_sheets = int(sum(p["sheets"] for p in plates))
 
     st.markdown("### 🧾 প্রতি Plate-এ সাইজ-আপ (প্রতি শিট) + ইমপ্রেশন")
-    st.dataframe(plate_table, use_container_width=True)
-
-    # Optional: total sheets headline
-    total_sheets = int(sum(sheet_counts))
+    st.dataframe(df_plate, use_container_width=True)
     st.success(f"✅ মোট শিট (সব প্লেট মিলিয়ে): {total_sheets}")
 
-    # =============== Excel export (same info) ===============
+    # Excel export
     xout = BytesIO()
     with pd.ExcelWriter(xout, engine="openpyxl") as writer:
-        plate_table.to_excel(writer, sheet_name="Per-Plate Layout & Sheets", index=False)
+        df_plate.to_excel(writer, sheet_name="Per-Plate Layout & Sheets", index=False)
+        # Optional: add demand/produced for your records
+        pd.DataFrame([{"Tag": k, "Demand": demand[k], "Produced": produced.get(k, 0)} for k in demand])\
+            .to_excel(writer, sheet_name="Demand vs Produced", index=False)
     xout.seek(0)
     st.download_button(
-        "⬇️ Download Excel (Per-Plate result)",
+        "⬇️ Download Excel",
         data=xout,
-        file_name="per_plate_result.xlsx",
+        file_name="auto_multi_plate_plan.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
-st.caption("💡 উপরের টেবিলেই দেখা যাবে: A/B/C... Plate-এ প্রতি শিটে কোন ট্যাগ কতটা এবং প্রত্যেক Plate-এর শিট (impressions) সংখ্যা।")
+st.caption("💡 সম্পূর্ণ অটো: Plate A/B/C... নিজে তৈরি হয়। প্রতিটি Plate-এর per-sheet layout ও sheet (impressions) সংখ্যা দেখানো হয়।")
