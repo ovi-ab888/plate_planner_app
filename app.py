@@ -1,4 +1,4 @@
-# app.py — FINAL VERSION (Accurate + Add-on % + Safe Loop + Chart)
+# app.py — Final Version (Added Extra Overprint Column)
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
@@ -8,7 +8,6 @@ from io import BytesIO
 from collections import Counter
 from math import ceil
 import string
-import matplotlib.pyplot as plt
 
 st.set_page_config(page_title="Pre-Press Auto Planner", page_icon="🖨️", layout="wide")
 
@@ -91,7 +90,7 @@ def auto_plan(demand, cap, max_plates=20):
 
 
 # ---------- UI ----------
-st.title("🖨️ Auto Multi-Plate Planner (Final Stable + Chart)")
+st.title("🖨️ Auto Multi-Plate Planner (Final + Extra Column)")
 
 col1, col2, col3, col4 = st.columns(4)
 n = col1.number_input("কতটি Tag", 1, 50, 6)
@@ -141,23 +140,21 @@ if st.button("🚀 Generate Plan"):
     st.dataframe(df, use_container_width=True)
     st.success(f"✅ মোট শিট: {total}")
 
-    # Summary
+    # Summary table with Extra column
     summary = pd.DataFrame(
-        [{"Tag": k, "Demand(+Add-on)": demand[k], "Produced": prod.get(k, 0)} for k in demand]
+        [
+            {
+                "Tag": k,
+                "Demand(+Add-on)": demand[k],
+                "Produced": prod.get(k, 0),
+                "Extra(Overprint)": prod.get(k, 0) - demand[k],
+            }
+            for k in demand
+        ]
     )
+
     st.markdown("### 📊 Demand vs Produced (Produced ≥ Demand)")
     st.dataframe(summary, use_container_width=True)
-
-    # ---------- 📈 Bar Chart ----------
-    st.markdown("### 📉 Tag-wise Demand vs Produced Chart")
-    fig, ax = plt.subplots(figsize=(8, 4))
-    ax.bar(summary["Tag"], summary["Demand(+Add-on)"], label="Demand (+Add-on)", alpha=0.6)
-    ax.bar(summary["Tag"], summary["Produced"], label="Produced", alpha=0.6)
-    ax.set_xlabel("Tag")
-    ax.set_ylabel("Quantity")
-    ax.legend()
-    ax.set_title("Demand vs Produced Overview")
-    st.pyplot(fig)
 
     # Excel export
     bio = BytesIO()
@@ -168,8 +165,8 @@ if st.button("🚀 Generate Plan"):
     st.download_button(
         "⬇️ Excel Download",
         data=bio,
-        file_name="final_plate_plan_chart.xlsx",
+        file_name="final_plate_plan_with_extra.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
-st.caption("💡 এই ভার্সনে Add-on %, Safe loop, Capacity fix, Chart visualization ও Excel export সবকিছু অন্তর্ভুক্ত।")
+st.caption("💡 এই ভার্সনে Extra(Overprint) কলাম যোগ করা হয়েছে যাতে Produced - Demand দেখা যায়।")
