@@ -1,4 +1,4 @@
-# app.py — FINAL VERSION (Flexible Capacity + Auto Overprint + Add-on %)
+# app.py — FINAL VERSION (Safe Loop + User Plate Limit + Auto Overprint)
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
@@ -10,6 +10,7 @@ from math import ceil
 import string
 
 st.set_page_config(page_title="Pre-Press Auto Planner", page_icon="🖨️", layout="wide")
+
 
 # ---------- Helper Functions ----------
 def plate_name(n):
@@ -26,27 +27,25 @@ def plate_name(n):
 
 
 def proportional_layout(remaining, cap):
-    """Generate layout respecting plate capacity (sum == cap)."""
+    """Generate layout ensuring total == cap."""
     total = sum(remaining.values())
     if total == 0:
         return {}
 
-    # proportional base
     layout = {k: int((remaining[k] / total) * cap) for k in remaining if remaining[k] > 0}
 
-    # ensure every active tag has at least 1
+    # ensure every tag gets at least 1 if possible
     for k in layout:
-        if layout[k] == 0:
+        if layout[k] == 0 and remaining[k] > 0:
             layout[k] = 1
 
-    # fill if below capacity
+    # fill or trim to match exact capacity
     while sum(layout.values()) < cap:
         for k in sorted(remaining, key=lambda x: remaining[x], reverse=True):
             if sum(layout.values()) >= cap:
                 break
             layout[k] += 1
 
-    # trim if above capacity
     while sum(layout.values()) > cap:
         for k in sorted(layout, key=lambda x: layout[x], reverse=True):
             if sum(layout.values()) <= cap:
@@ -57,14 +56,14 @@ def proportional_layout(remaining, cap):
     return layout
 
 
-def auto_plan(demand, cap, max_plates=5):
-    """Generate plate plan — obey user plate limit but auto overprint if demand > capacity*plates"""
+def auto_plan(demand, cap, max_plates=3):
+    """User-limited plates but ensures full demand coverage with auto overprint."""
     remaining = demand.copy()
     plates = []
     produced = Counter()
-    safe_guard = 5000
 
     for i in range(max_plates):
+        # stop if no demand left
         if not any(v > 0 for v in remaining.values()):
             break
 
@@ -72,17 +71,19 @@ def auto_plan(demand, cap, max_plates=5):
         if not layout:
             break
 
+        # Calculate how many sheets can be used for this layout
         possible = [ceil(remaining[k] / v) for k, v in layout.items() if v > 0]
         sheets = min(possible) if possible else 1
         sheets = max(1, sheets)
 
+        # Reduce remaining demand
         for k, v in layout.items():
             remaining[k] = max(0, remaining[k] - v * sheets)
             produced[k] += v * sheets
 
         plates.append({"name": plate_name(len(plates) + 1), "layout": layout, "sheets": sheets})
 
-    # 🧩 যদি এখনো demand বাকি থাকে → শেষ plate এ auto overprint করো
+    # 🧩 যদি এখনো demand বাকি থাকে — শেষ plate এ auto overprint যোগ করো
     if any(v > 0 for v in remaining.values()) and plates:
         last = plates[-1]
         for tag in remaining:
@@ -96,14 +97,14 @@ def auto_plan(demand, cap, max_plates=5):
     return plates, dict(produced)
 
 
-
 # ---------- UI ----------
-st.title("🖨️ Auto Multi-Plate Planner (Flexible Capacity + Auto Overprint)")
+st.title("🖨️ Auto Multi-Plate Planner (Safe Loop + Auto Overprint)")
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 n = col1.number_input("কতটি Tag", 1, 50, 6)
 cap = col2.number_input("Plate capacity (tags per plate)", 1, 64, 12)
-addon = col3.number_input("Add-on % (Extra print)", 0.0, 50.0, 3.0, step=0.5)
+maxp = col3.number_input("কতটি Plate বানাতে চান", 1, 50, 3)
+addon = col4.number_input("Add-on % (Extra print)", 0.0, 50.0, 3.0, step=0.5)
 
 st.markdown("---")
 st.subheader("📦 Tag QTY দিন")
@@ -116,7 +117,7 @@ for i in range(n):
     tags.append(name)
     qty.append(q)
 
-# Adjust demand with add-on %
+# Apply Add-on %
 demand = {t: ceil(int(q) * (1 + addon / 100)) for t, q in zip(tags, qty) if q > 0}
 
 if st.button("🚀 Generate Plan"):
@@ -125,14 +126,14 @@ if st.button("🚀 Generate Plan"):
         st.stop()
 
     progress = st.progress(0, text="🔄 Calculating Plates...")
-    plates, prod = auto_plan(demand, cap)
+    plates, prod = auto_plan(demand, cap, maxp)
     progress.progress(100, text="✅ Done!")
 
     if not plates:
         st.warning("পরিকল্পনা তৈরি হয়নি। ইনপুট যাচাই করুন।")
         st.stop()
 
-    # ---------- Plate Layout Table ----------
+    # ---------- Plate Layout ----------
     cols = ["Plate"] + list(demand.keys()) + ["Sheets"]
     rows = []
     for p in plates:
@@ -147,7 +148,7 @@ if st.button("🚀 Generate Plan"):
     st.dataframe(df, use_container_width=True)
     st.success(f"✅ মোট শিট: {total}")
 
-    # ---------- Summary Table ----------
+    # ---------- Summary ----------
     summary = pd.DataFrame(
         [
             {
@@ -174,8 +175,8 @@ if st.button("🚀 Generate Plan"):
     st.download_button(
         "⬇️ Excel Download",
         data=bio,
-        file_name="final_plate_plan_flexible.xlsx",
+        file_name="safe_plate_plan.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
-st.caption("💡 এই ভার্সনে Plate capacity user-এর ইচ্ছামতো দেওয়া যায়, Produced ≥ Demand থাকে, এবং প্রয়োজনে Extra(Overprint) auto adjust হয়।")
+st.caption("💡 Plate সংখ্যা user নির্ধারণ করে, capacity fix থাকে, এবং প্রয়োজনে শেষ Plate-এ Extra(Overprint) অটো যুক্ত হয়। Infinite loading সম্পূর্ণ রোধ করা হয়েছে।")
