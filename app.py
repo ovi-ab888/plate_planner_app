@@ -1,4 +1,4 @@
-# app.py — Final Pre-Press Planner (Safe loop + Multi-plate + Excel Export)
+# app.py — Simplified Output: Per-Plate Size-ups + Impressions
 import streamlit as st
 import pandas as pd
 from collections import Counter
@@ -6,180 +6,151 @@ from io import BytesIO
 
 st.set_page_config(page_title="Pre-Press Plate Planner", page_icon="🖨️", layout="wide")
 
-# =========================
-# Helper Functions
-# =========================
+# =============== Helpers ===============
 def normalize_layout(layout: dict, cap: int):
-    """Ensure layout sums <= cap."""
-    layout = {k: int(v) for k, v in layout.items() if int(v) > 0}
-    total = sum(layout.values())
+    """Keep only positive ints and ensure sum <= cap by trimming the smallest first."""
+    clean = {k: int(v) for k, v in layout.items() if pd.notna(v) and int(v) > 0}
+    total = sum(clean.values())
     if total <= cap:
-        return layout
-    # Trim smallest values
+        return clean, False  # False = not trimmed
     overflow = total - cap
-    for k, v in sorted(layout.items(), key=lambda x: x[1]):
+    # trim smallest first
+    for k, v in sorted(clean.items(), key=lambda kv: kv[1]):
         if overflow <= 0:
             break
         take = min(v, overflow)
-        layout[k] -= take
+        clean[k] -= take
         overflow -= take
-    return {k: v for k, v in layout.items() if v > 0}
+        if clean[k] <= 0:
+            clean.pop(k, None)
+    return {k: v for k, v in clean.items() if v > 0}, True  # True = trimmed
 
-
-def ratio_single_plate_layout(demand: dict, cap: int):
-    """Auto proportional layout for one plate."""
-    total = sum(demand.values())
-    if total == 0:
-        return {}
-    raw = {k: (demand[k] * cap) / total for k in demand}
-    floored = {k: int(raw[k]) for k in raw}
-    used = sum(floored.values())
-    remain = cap - used
-    fracs = sorted(((k, raw[k] - floored[k]) for k in raw), key=lambda x: x[1], reverse=True)
-    for i in range(remain):
-        if i < len(fracs):
-            floored[fracs[i][0]] += 1
-    return normalize_layout(floored, cap)
-
-
-def greedy_multi_plan(demand: dict, layouts: list, names: list):
-    """Greedy planning for multiple plates with safe loop."""
+def greedy_multi_plan(demand: dict, layouts: list):
+    """Greedy planning with safe loop. Returns per-plate sheet counts + produced."""
     remaining = dict(demand)
-    sheet_counts = [0] * len(layouts)
+    counts = [0] * len(layouts)
     safe_guard = 10000
 
     def coverage(layout, remaining):
-        return sum(min(remaining.get(sz, 0), cnt) for sz, cnt in layout.items())
+        return sum(min(remaining.get(sz, 0), up) for sz, up in layout.items())
 
     while any(v > 0 for v in remaining.values()) and safe_guard > 0:
-        coverages = [coverage(layouts[i], remaining) for i in range(len(layouts))]
-        best_i = max(range(len(layouts)), key=lambda i: coverages[i])
-        if coverages[best_i] == 0:
-            break
-        sheet_counts[best_i] += 1
-        for sz, cnt in layouts[best_i].items():
+        coverages = [coverage(lay, remaining) for lay in layouts]
+        best = max(range(len(layouts)), key=lambda i: coverages[i])
+        if coverages[best] == 0:
+            break  # nothing else covered
+        counts[best] += 1
+        for sz, up in layouts[best].items():
             if remaining.get(sz, 0) > 0:
-                remaining[sz] = max(0, remaining[sz] - cnt)
+                remaining[sz] = max(0, remaining[sz] - up)
         safe_guard -= 1
 
     produced = Counter()
-    for i, layout in enumerate(layouts):
-        for sz, cnt in layout.items():
-            produced[sz] += cnt * sheet_counts[i]
+    for i, lay in enumerate(layouts):
+        for sz, up in lay.items():
+            produced[sz] += up * counts[i]
 
-    overage = {sz: produced.get(sz, 0) - demand.get(sz, 0) for sz in demand}
-    return sheet_counts, dict(produced), overage
+    return counts, dict(produced)
 
-
-# =========================
-# UI STEP 1 — Tag inputs
-# =========================
-st.title("🖨️ Pre-Press Plate Planner (Multi-Plate Version)")
-st.caption("সহজভাবে Tag Quantity, Plate Capacity ও Plate Layout দিয়ে প্রিন্ট প্ল্যান হিসাব করুন।")
+# =============== UI — Step 1: Basic inputs ===============
+st.title("🖨️ Pre-Press Plate Planner (Multi-Plate)")
+st.caption("শুরুতে Tag সংখ্যা, Plate capacity, তারপর Tag নাম + QTY দিন। ফলাফল: প্রতি প্লেটের সাইজ-আপ ও ইমপ্রেশন।")
 
 col1, col2 = st.columns(2)
-num_tags = col1.number_input("কতটি Tag QTY ইনপুট দিতে চান?", 1, 50, 6)
-capacity = col2.number_input("Plate capacity (tags per plate)", 1, 64, 12)
+num_tags = col1.number_input("কতটি Tag QTY ইনপুট দিতে চান?", 1, 50, 6, step=1)
+capacity = col2.number_input("Plate capacity (tags per plate)", 1, 64, 12, step=1)
 
 st.markdown("---")
 st.subheader("📦 Tag QTY ইনপুট দিন 👇")
-
+left, right = st.columns(2)
 tags, qtys = [], []
-cols = st.columns(2)
 for i in range(num_tags):
-    tag_name = cols[0].text_input(f"Tag {i+1} Name", f"Tag {i+1}", key=f"tag{i}")
-    tag_qty = cols[1].number_input(f"{tag_name} Quantity", min_value=0, step=10, key=f"qty{i}")
-    tags.append(tag_name)
-    qtys.append(tag_qty)
+    tname = left.text_input(f"Tag {i+1} Name", f"Tag {i+1}", key=f"tag{i}")
+    tqty  = right.number_input(f"{tname} Quantity", min_value=0, step=10, key=f"qty{i}")
+    tags.append(tname)
+    qtys.append(tqty)
 
-demand = {t: q for t, q in zip(tags, qtys) if q > 0}
+# Demand dict (exclude zeros)
+demand = {t: int(q) for t, q in zip(tags, qtys) if int(q) > 0}
 
 st.markdown("---")
 
-# =========================
-# UI STEP 2 — Plate Layouts
-# =========================
-st.subheader("🎨 Plate Layout নির্ধারণ করুন (A/B/C...)")
-st.caption(f"প্রতি Plate-এ সাইজ-আপ (প্রতি শিট) লিখুন। প্রত্যেক Plate এর sum ≤ {capacity} রাখবেন।")
+# =============== UI — Step 2: Plate layouts table ===============
+st.subheader("🎨 প্রতি Plate-এ সাইজ-আপ (প্রতি শিট) লিখুন")
+st.caption(f"প্রতি প্লেটের সাইজ-আপের যোগফল ≤ {capacity} রাখুন। (শিট/ইমপ্রেশন পরে ক্যালকুলেট হবে)")
 
-# Editable table
-plate_init = pd.DataFrame({"Plate": ["A", "B"], **{t: [0, 0] for t in demand.keys()}})
-edited = st.data_editor(plate_init, num_rows="dynamic", use_container_width=True, key="layout_table")
+# Build editable grid: start with two plates A, B; columns are the active tags
+plate_df_init = pd.DataFrame({"Plate": ["A", "B"]})
+for t in demand.keys():
+    plate_df_init[t] = 0
 
-# =========================
-# GENERATE PLAN
-# =========================
+plate_df = st.data_editor(
+    plate_df_init,
+    num_rows="dynamic",
+    use_container_width=True,
+    key="plate_editor",
+)
+
+st.markdown("---")
+
+# =============== Generate Plan ===============
 if st.button("🚀 Generate Plan"):
     if not demand:
         st.error("কমপক্ষে ১টি Tag Quantity দিন।")
         st.stop()
 
-    # Build layouts
-    layouts, names = [], []
-    for _, row in edited.iterrows():
-        pname = str(row["Plate"]).strip() if pd.notna(row["Plate"]) else f"Plate{_+1}"
-        lay = {t: int(row.get(t, 0)) for t in demand.keys() if int(row.get(t, 0)) > 0}
-        if lay:
-            layouts.append(normalize_layout(lay, capacity))
-            names.append(pname)
+    # Build normalized layouts (respect capacity)
+    layouts, names, trimmed_any = [], [], False
+    for _, row in plate_df.iterrows():
+        pname = str(row["Plate"]).strip() if pd.notna(row["Plate"]) and str(row["Plate"]).strip() else f"P{_+1}"
+        raw = {t: int(row.get(t, 0)) for t in demand.keys() if pd.notna(row.get(t, 0)) and int(row.get(t, 0)) > 0}
+        if not raw:
+            continue
+        norm, trimmed = normalize_layout(raw, capacity)
+        trimmed_any = trimmed_any or trimmed
+        layouts.append(norm)
+        names.append(pname)
 
     if not layouts:
-        st.warning("কোনো বৈধ Plate Layout পাওয়া যায়নি।")
+        st.warning("কোনো বৈধ Plate Layout পাওয়া যায়নি। টেবিলে মান দিন।")
         st.stop()
 
-    # Calculate
-    sheets, produced, over = greedy_multi_plan(demand, layouts, names)
-    total_sheets = sum(sheets)
+    if trimmed_any:
+        st.info("ℹ️ কিছু প্লেটে capacity ছাড়ালে ছোট মান কেটে capacity-এর মধ্যে নামিয়ে আনা হয়েছে।")
 
-    st.success(f"✅ মোট প্রয়োজনীয় শিট: {total_sheets}")
+    # Plan
+    sheet_counts, produced = greedy_multi_plan(demand, layouts)
 
-    # =========================
-    # OUTPUT TABLES
-    # =========================
-    plate_rows = []
-    for i, layout in enumerate(layouts):
-        plate_rows.append({
-            "Plate": f"Plate {names[i]}",
-            "Layout (tag:ups)": ", ".join(f"{k}:{v}" for k, v in layout.items()),
-            "Sheets (impressions)": sheets[i]
-        })
-    df_plate = pd.DataFrame(plate_rows)
+    # =============== OUTPUT (Only what you asked) ===============
+    # 1) Per-plate size-ups (per sheet) in a single table, plus a ShEETS column
+    # Build table with columns: Plate, each Tag..., Sheets
+    out_cols = ["Plate"] + list(demand.keys()) + ["Sheets (impressions)"]
+    table_rows = []
+    for i, lay in enumerate(layouts):
+        row = {"Plate": f"{names[i]}"}
+        for t in demand.keys():
+            row[t] = lay.get(t, 0)
+        row["Sheets (impressions)"] = sheet_counts[i]
+        table_rows.append(row)
+    plate_table = pd.DataFrame(table_rows, columns=out_cols)
 
-    df_balance = pd.DataFrame([
-        {"Tag": t, "Demand": demand[t], "Produced": produced.get(t, 0), "Over/Short": over[t]}
-        for t in demand
-    ])
+    st.markdown("### 🧾 প্রতি Plate-এ সাইজ-আপ (প্রতি শিট) + ইমপ্রেশন")
+    st.dataframe(plate_table, use_container_width=True)
 
-    df_summary = pd.DataFrame([{
-        "Distinct Plates": len(layouts),
-        "Total Sheets": total_sheets
-    }])
+    # Optional: total sheets headline
+    total_sheets = int(sum(sheet_counts))
+    st.success(f"✅ মোট শিট (সব প্লেট মিলিয়ে): {total_sheets}")
 
-    st.markdown("### 🧾 Plate Details")
-    st.dataframe(df_plate, use_container_width=True)
-
-    st.markdown("### 📊 Size Balance")
-    st.dataframe(df_balance, use_container_width=True)
-
-    st.markdown("### ✅ Summary")
-    st.dataframe(df_summary, use_container_width=True)
-
-    # =========================
-    # EXCEL EXPORT
-    # =========================
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine="openpyxl") as writer:
-        df_summary.to_excel(writer, sheet_name="Summary", index=False)
-        df_plate.to_excel(writer, sheet_name="Plate Details", index=False)
-        df_balance.to_excel(writer, sheet_name="Size Balance", index=False)
-    output.seek(0)
-
+    # =============== Excel export (same info) ===============
+    xout = BytesIO()
+    with pd.ExcelWriter(xout, engine="openpyxl") as writer:
+        plate_table.to_excel(writer, sheet_name="Per-Plate Layout & Sheets", index=False)
+    xout.seek(0)
     st.download_button(
-        "⬇️ Download Excel Report",
-        data=output,
-        file_name="plate_plan_multi.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        "⬇️ Download Excel (Per-Plate result)",
+        data=xout,
+        file_name="per_plate_result.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
-st.markdown("---")
-st.caption("💡 এই অ্যাপ আপনার দেওয়া Tag QTY ও Plate layout অনুযায়ী মোট impression সংখ্যা ও sheet requirement হিসাব করে।")
+st.caption("💡 উপরের টেবিলেই দেখা যাবে: A/B/C... Plate-এ প্রতি শিটে কোন ট্যাগ কতটা এবং প্রত্যেক Plate-এর শিট (impressions) সংখ্যা।")
