@@ -33,11 +33,14 @@ def greedy_sheet_plan(demand: dict, layout: dict):
     """Compute how many sheets needed for a single plate layout."""
     remaining = dict(demand)
     sheets = 0
-    while any(v > 0 for v in remaining.values()):
+    safe_guard = 10000  # stop infinite loop
+    
+    while any(v > 0 for v in remaining.values()) and safe_guard > 0:
         sheets += 1
         for sz, cnt in layout.items():
             if remaining.get(sz, 0) > 0:
                 remaining[sz] = max(0, remaining[sz] - cnt)
+        safe_guard -= 1
 
     produced = Counter()
     for sz, cnt in layout.items():
@@ -45,6 +48,7 @@ def greedy_sheet_plan(demand: dict, layout: dict):
 
     overage = {sz: produced[sz] - demand[sz] for sz in demand}
     return sheets, dict(produced), overage
+
 
 
 # =========================
