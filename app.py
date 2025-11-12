@@ -1,4 +1,4 @@
-# app.py — FINAL HARD CAP FREE VERSION (Accurate + Fixed Capacity + Auto Overprint + Add-on %)
+# app.py — FINAL VERSION (Flexible Capacity + Auto Overprint + Add-on %)
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
@@ -10,7 +10,6 @@ from math import ceil
 import string
 
 st.set_page_config(page_title="Pre-Press Auto Planner", page_icon="🖨️", layout="wide")
-
 
 # ---------- Helper Functions ----------
 def plate_name(n):
@@ -27,26 +26,27 @@ def plate_name(n):
 
 
 def proportional_layout(remaining, cap):
-    """Build proportional plate layout ensuring total == cap (fixed capacity)."""
+    """Generate layout respecting plate capacity (sum == cap)."""
     total = sum(remaining.values())
     if total == 0:
         return {}
 
+    # proportional base
     layout = {k: int((remaining[k] / total) * cap) for k in remaining if remaining[k] > 0}
 
-    # ensure at least 1 for active tags
+    # ensure every active tag has at least 1
     for k in layout:
-        if layout[k] == 0 and remaining[k] > 0:
+        if layout[k] == 0:
             layout[k] = 1
 
-    # fill if less than cap
+    # fill if below capacity
     while sum(layout.values()) < cap:
         for k in sorted(remaining, key=lambda x: remaining[x], reverse=True):
             if sum(layout.values()) >= cap:
                 break
-            layout[k] = layout.get(k, 0) + 1
+            layout[k] += 1
 
-    # trim if greater than cap
+    # trim if above capacity
     while sum(layout.values()) > cap:
         for k in sorted(layout, key=lambda x: layout[x], reverse=True):
             if sum(layout.values()) <= cap:
@@ -54,31 +54,15 @@ def proportional_layout(remaining, cap):
             if layout[k] > 1:
                 layout[k] -= 1
 
-    # final correction to match capacity exactly
-    diff = cap - sum(layout.values())
-    if diff > 0:
-        for k in sorted(remaining, key=lambda x: remaining[x], reverse=True):
-            if diff <= 0:
-                break
-            layout[k] = layout.get(k, 0) + 1
-            diff -= 1
-    elif diff < 0:
-        for k in sorted(layout, key=lambda x: layout[x], reverse=True):
-            if diff >= 0:
-                break
-            if layout[k] > 1:
-                layout[k] -= 1
-                diff += 1
-
-    return {k: v for k, v in layout.items() if v > 0}
+    return layout
 
 
-def auto_plan(demand, cap, max_plates=9999):
-    """Generate full plate plan (no hard cap, fixed capacity, no underprint)."""
+def auto_plan(demand, cap):
+    """Main planning logic — always fulfill demand, add overprint if needed."""
     remaining = demand.copy()
     plates = []
     produced = Counter()
-    safe_guard = 5000  # safety stop (prevent infinite loop)
+    safe_guard = 8000  # prevent infinite loop
 
     while any(v > 0 for v in remaining.values()) and safe_guard > 0:
         safe_guard -= 1
@@ -86,22 +70,25 @@ def auto_plan(demand, cap, max_plates=9999):
         if not layout:
             break
 
-        possible = [ceil(remaining[k] / v) for k, v in layout.items() if v > 0]
-        sheets = min(possible) if possible else 1
+        # calculate sheets for this plate
+        possible = [ceil(remaining[k] / v) for k, v in layout.items()]
+        sheets = min(possible)
         sheets = max(1, sheets)
 
+        # reduce remaining demand
         for k, v in layout.items():
             remaining[k] = max(0, remaining[k] - v * sheets)
             produced[k] += v * sheets
 
         plates.append({"name": plate_name(len(plates) + 1), "layout": layout, "sheets": sheets})
 
+        # if all done, exit
         if all(v == 0 for v in remaining.values()):
             break
 
-    # Fix any underprints (Produced ≥ Demand)
+    # If any underprint remains, fix by adding to last plate
     for tag in demand:
-        if produced[tag] < demand[tag] and plates:
+        if produced[tag] < demand[tag]:
             deficit = demand[tag] - produced[tag]
             last = plates[-1]
             last["layout"][tag] = last["layout"].get(tag, 1)
@@ -114,13 +101,12 @@ def auto_plan(demand, cap, max_plates=9999):
 
 
 # ---------- UI ----------
-st.title("🖨️ Auto Multi-Plate Planner (Hard Cap Free Final Version)")
+st.title("🖨️ Auto Multi-Plate Planner (Flexible Capacity + Auto Overprint)")
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3 = st.columns(3)
 n = col1.number_input("কতটি Tag", 1, 50, 6)
 cap = col2.number_input("Plate capacity (tags per plate)", 1, 64, 12)
 addon = col3.number_input("Add-on % (Extra print)", 0.0, 50.0, 3.0, step=0.5)
-maxp = col4.number_input("Safety Limit (Max Plates)", 50, 9999, 500)
 
 st.markdown("---")
 st.subheader("📦 Tag QTY দিন")
@@ -142,14 +128,14 @@ if st.button("🚀 Generate Plan"):
         st.stop()
 
     progress = st.progress(0, text="🔄 Calculating Plates...")
-    plates, prod = auto_plan(demand, cap, maxp)
+    plates, prod = auto_plan(demand, cap)
     progress.progress(100, text="✅ Done!")
 
     if not plates:
         st.warning("পরিকল্পনা তৈরি হয়নি। ইনপুট যাচাই করুন।")
         st.stop()
 
-    # Plate layout table
+    # ---------- Plate Layout Table ----------
     cols = ["Plate"] + list(demand.keys()) + ["Sheets"]
     rows = []
     for p in plates:
@@ -164,7 +150,7 @@ if st.button("🚀 Generate Plan"):
     st.dataframe(df, use_container_width=True)
     st.success(f"✅ মোট শিট: {total}")
 
-    # Summary table
+    # ---------- Summary Table ----------
     summary = pd.DataFrame(
         [
             {
@@ -176,14 +162,12 @@ if st.button("🚀 Generate Plan"):
             for k in demand
         ]
     )
-
-    # Total extra overprint count
     total_extra = sum(summary["Extra(Overprint)"])
     st.markdown("### 📊 Demand vs Produced (Produced ≥ Demand)")
     st.dataframe(summary, use_container_width=True)
     st.info(f"🧾 মোট Extra(Overprint): {total_extra} pcs")
 
-    # Excel export
+    # ---------- Excel Export ----------
     bio = BytesIO()
     with pd.ExcelWriter(bio, engine="openpyxl") as w:
         df.to_excel(w, sheet_name="Plates", index=False)
@@ -193,8 +177,8 @@ if st.button("🚀 Generate Plan"):
     st.download_button(
         "⬇️ Excel Download",
         data=bio,
-        file_name="final_plate_plan_hardcap_free.xlsx",
+        file_name="final_plate_plan_flexible.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
-st.caption("💡 এই ভার্সনে Plate capacity সবসময় fixed থাকে, Produced ≥ Demand থাকে, Hard cap warning নেই, এবং প্রয়োজন অনুযায়ী Extra(Overprint) auto adjust হয়।")
+st.caption("💡 এই ভার্সনে Plate capacity user-এর ইচ্ছামতো দেওয়া যায়, Produced ≥ Demand থাকে, এবং প্রয়োজনে Extra(Overprint) auto adjust হয়।")
