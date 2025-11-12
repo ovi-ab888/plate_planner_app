@@ -100,11 +100,9 @@ def auto_multi_plate_plan(demand: dict, cap: int, max_plates: int = 20):
     total_over = sum(over.values())
     if total_over > 0 and plates:
         last = plates[-1]
-        # reduce last plate’s sheets to minimize overage
         adjust_ratio = max(0.5, 1 - (total_over / sum(demand.values())))
         last["sheets"] = max(1, int(last["sheets"] * adjust_ratio))
 
-        # recompute final production
         produced = Counter()
         for p in plates:
             for sz, ups in p["layout"].items():
@@ -141,13 +139,16 @@ if st.button("🚀 Generate Plan"):
         st.error("কমপক্ষে ১টি Tag Quantity দিন।")
         st.stop()
 
+    # Progress bar for UX
+    progress = st.progress(0, text="🔄 Calculating Plates...")
     plates, produced = auto_multi_plate_plan(demand, capacity, max_plates)
+    progress.progress(100, text="✅ Done!")
 
     if not plates:
         st.warning("পরিকল্পনা তৈরি করা যায়নি। ইনপুট যাচাই করুন।")
         st.stop()
 
-    # Build output table
+    # Output table
     cols = ["Plate"] + list(demand.keys()) + ["Sheets (impressions)"]
     rows = []
     for p in plates:
@@ -172,4 +173,4 @@ if st.button("🚀 Generate Plan"):
     st.download_button("⬇️ Download Excel", data=xout, file_name="auto_multi_plate_plan.xlsx",
                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
-st.caption("💡 এখন Hard Cap অনুযায়ী Plate সীমাবদ্ধ থাকবে, এবং অতিরিক্ত প্রিন্ট হলে শেষ Plate-কে স্বয়ংক্রিয়ভাবে কমিয়ে দেবে।")
+st.caption("💡 Hard Cap অনুযায়ী Plate সীমাবদ্ধ থাকে, অতিরিক্ত প্রিন্ট হলে শেষ Plate স্বয়ংক্রিয়ভাবে কমিয়ে দেয়।")
