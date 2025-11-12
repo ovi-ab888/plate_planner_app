@@ -26,18 +26,37 @@ def plate_name(n):
 
 
 def proportional_layout(remaining, cap):
-    """Build proportional plate layout"""
+    """Build proportional plate layout ensuring total <= cap"""
     total = sum(remaining.values())
     if total == 0:
         return {}
+
+    # proportional base
     layout = {k: int((remaining[k] / total) * cap) for k in remaining if remaining[k] > 0}
-    # Fill leftover capacity if < cap
+
+    # make sure at least 1 if any remaining
+    for k in layout:
+        if layout[k] == 0 and remaining[k] > 0:
+            layout[k] = 1
+
+    # adjust if sum < cap
     while sum(layout.values()) < cap:
         for k in sorted(remaining, key=lambda x: remaining[x], reverse=True):
             if sum(layout.values()) >= cap:
                 break
             layout[k] = layout.get(k, 0) + 1
+
+    # ✅ hard limit: trim if total > cap
+    while sum(layout.values()) > cap:
+        # sort descending by tag value to trim largest first
+        for k in sorted(layout, key=lambda x: layout[x], reverse=True):
+            if sum(layout.values()) <= cap:
+                break
+            if layout[k] > 1:
+                layout[k] -= 1
+
     return {k: v for k, v in layout.items() if v > 0}
+
 
 
 def auto_plan(demand, cap, max_plates=20):
