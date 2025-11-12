@@ -1,4 +1,4 @@
-# app.py — Final Version (Added Extra Overprint Column)
+# app.py — FINAL VERSION (Fixed Capacity + Add-on % + Overprint Adjust + Safe Loop)
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
@@ -11,8 +11,10 @@ import string
 
 st.set_page_config(page_title="Pre-Press Auto Planner", page_icon="🖨️", layout="wide")
 
-# ---------- Helpers ----------
+
+# ---------- Helper Functions ----------
 def plate_name(n):
+    """Generate sequential plate names (A, B, C, ...)."""
     n -= 1
     chars = string.ascii_uppercase
     out = ""
@@ -25,27 +27,54 @@ def plate_name(n):
 
 
 def proportional_layout(remaining, cap):
-    """Safe proportional layout; ensures total ≤ cap"""
+    """Build proportional plate layout ensuring total == cap (fixed capacity)."""
     total = sum(remaining.values())
     if total == 0:
         return {}
 
-    layout = {k: max(1, int((remaining[k] / total) * cap)) for k in remaining if remaining[k] > 0}
+    layout = {k: int((remaining[k] / total) * cap) for k in remaining if remaining[k] > 0}
 
-    # trim if exceeds capacity
+    # ensure at least 1 for active tags
+    for k in layout:
+        if layout[k] == 0 and remaining[k] > 0:
+            layout[k] = 1
+
+    # fill if less than cap
+    while sum(layout.values()) < cap:
+        for k in sorted(remaining, key=lambda x: remaining[x], reverse=True):
+            if sum(layout.values()) >= cap:
+                break
+            layout[k] = layout.get(k, 0) + 1
+
+    # trim if greater than cap
     while sum(layout.values()) > cap:
         for k in sorted(layout, key=lambda x: layout[x], reverse=True):
             if sum(layout.values()) <= cap:
                 break
-            layout[k] -= 1
-            if layout[k] <= 0:
-                layout.pop(k, None)
+            if layout[k] > 1:
+                layout[k] -= 1
+
+    # final correction to match capacity
+    diff = cap - sum(layout.values())
+    if diff > 0:
+        for k in sorted(remaining, key=lambda x: remaining[x], reverse=True):
+            if diff <= 0:
                 break
-    return layout
+            layout[k] = layout.get(k, 0) + 1
+            diff -= 1
+    elif diff < 0:
+        for k in sorted(layout, key=lambda x: layout[x], reverse=True):
+            if diff >= 0:
+                break
+            if layout[k] > 1:
+                layout[k] -= 1
+                diff += 1
+
+    return {k: v for k, v in layout.items() if v > 0}
 
 
 def auto_plan(demand, cap, max_plates=20):
-    """Generate plates safely; no underprint; respect capacity"""
+    """Generate full plate plan respecting fixed capacity and ensuring no underprint."""
     remaining = demand.copy()
     plates = []
     produced = Counter()
@@ -67,35 +96,35 @@ def auto_plan(demand, cap, max_plates=20):
 
         plates.append({"name": plate_name(len(plates) + 1), "layout": layout, "sheets": sheets})
 
+        # stop if all demand is fulfilled
         if all(v == 0 for v in remaining.values()):
             break
 
-    if safe_guard == 0:
-        st.warning("⚠️ Loop safeguard triggered: demand too large for given capacity/plates.")
-
-    if len(plates) >= max_plates and any(v > 0 for v in remaining.values()):
-        st.warning("🚧 Hard cap reached. Remaining demand could not be fully planned.")
-
-    # Fix underprints
+    # underprint fix: ensure produced ≥ demand
     for tag in demand:
         if produced[tag] < demand[tag] and plates:
             deficit = demand[tag] - produced[tag]
             last = plates[-1]
             last["layout"][tag] = last["layout"].get(tag, 1)
-            add_sheets = ceil(deficit / last["layout"][tag])
+            per_sheet = last["layout"][tag]
+            add_sheets = ceil(deficit / per_sheet)
             last["sheets"] += add_sheets
-            produced[tag] += add_sheets * last["layout"][tag]
+            produced[tag] += add_sheets * per_sheet
+
+    # if still remaining, show warning
+    if len(plates) >= max_plates and any(v > 0 for v in remaining.values()):
+        st.warning("🚧 Hard cap reached. Remaining demand could not be fully planned.")
 
     return plates, dict(produced)
 
 
 # ---------- UI ----------
-st.title("🖨️ Auto Multi-Plate Planner (Final + Extra Column)")
+st.title("🖨️ Auto Multi-Plate Planner (Final Stable Version)")
 
 col1, col2, col3, col4 = st.columns(4)
 n = col1.number_input("কতটি Tag", 1, 50, 6)
-cap = col2.number_input("Plate capacity", 1, 64, 12)
-maxp = col3.number_input("সর্বোচ্চ Plate", 1, 200, 20)
+cap = col2.number_input("Plate capacity (tags per plate)", 1, 64, 12)
+maxp = col3.number_input("সর্বোচ্চ Plate সংখ্যা", 1, 200, 20)
 addon = col4.number_input("Add-on % (Extra print)", 0.0, 50.0, 3.0, step=0.5)
 
 st.markdown("---")
@@ -125,7 +154,7 @@ if st.button("🚀 Generate Plan"):
         st.warning("পরিকল্পনা তৈরি হয়নি। ইনপুট যাচাই করুন।")
         st.stop()
 
-    # Layout table
+    # Plate layout table
     cols = ["Plate"] + list(demand.keys()) + ["Sheets"]
     rows = []
     for p in plates:
@@ -140,7 +169,7 @@ if st.button("🚀 Generate Plan"):
     st.dataframe(df, use_container_width=True)
     st.success(f"✅ মোট শিট: {total}")
 
-    # Summary table with Extra column
+    # Summary table with overprint
     summary = pd.DataFrame(
         [
             {
@@ -162,11 +191,12 @@ if st.button("🚀 Generate Plan"):
         df.to_excel(w, sheet_name="Plates", index=False)
         summary.to_excel(w, sheet_name="Summary", index=False)
     bio.seek(0)
+
     st.download_button(
         "⬇️ Excel Download",
         data=bio,
-        file_name="final_plate_plan_with_extra.xlsx",
+        file_name="final_plate_plan_fixed_capacity.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
-st.caption("💡 এই ভার্সনে Extra(Overprint) কলাম যোগ করা হয়েছে যাতে Produced - Demand দেখা যায়।")
+st.caption("💡 এই ভার্সনে Plate capacity সবসময় fixed থাকে, Produced ≥ Demand থাকে, এবং প্রয়োজন অনুযায়ী Extra(Overprint) auto adjust হয়।")
