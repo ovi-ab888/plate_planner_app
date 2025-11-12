@@ -57,47 +57,44 @@ def proportional_layout(remaining, cap):
     return layout
 
 
-def auto_plan(demand, cap):
-    """Main planning logic — always fulfill demand, add overprint if needed."""
+def auto_plan(demand, cap, max_plates=5):
+    """Generate plate plan — obey user plate limit but auto overprint if demand > capacity*plates"""
     remaining = demand.copy()
     plates = []
     produced = Counter()
-    safe_guard = 8000  # prevent infinite loop
+    safe_guard = 5000
 
-    while any(v > 0 for v in remaining.values()) and safe_guard > 0:
-        safe_guard -= 1
+    for i in range(max_plates):
+        if not any(v > 0 for v in remaining.values()):
+            break
+
         layout = proportional_layout(remaining, cap)
         if not layout:
             break
 
-        # calculate sheets for this plate
-        possible = [ceil(remaining[k] / v) for k, v in layout.items()]
-        sheets = min(possible)
+        possible = [ceil(remaining[k] / v) for k, v in layout.items() if v > 0]
+        sheets = min(possible) if possible else 1
         sheets = max(1, sheets)
 
-        # reduce remaining demand
         for k, v in layout.items():
             remaining[k] = max(0, remaining[k] - v * sheets)
             produced[k] += v * sheets
 
         plates.append({"name": plate_name(len(plates) + 1), "layout": layout, "sheets": sheets})
 
-        # if all done, exit
-        if all(v == 0 for v in remaining.values()):
-            break
-
-    # If any underprint remains, fix by adding to last plate
-    for tag in demand:
-        if produced[tag] < demand[tag]:
-            deficit = demand[tag] - produced[tag]
-            last = plates[-1]
-            last["layout"][tag] = last["layout"].get(tag, 1)
-            per_sheet = last["layout"][tag]
-            add_sheets = ceil(deficit / per_sheet)
-            last["sheets"] += add_sheets
-            produced[tag] += add_sheets * per_sheet
+    # 🧩 যদি এখনো demand বাকি থাকে → শেষ plate এ auto overprint করো
+    if any(v > 0 for v in remaining.values()) and plates:
+        last = plates[-1]
+        for tag in remaining:
+            if remaining[tag] > 0:
+                per_sheet = last["layout"].get(tag, 1)
+                add_sheets = ceil(remaining[tag] / per_sheet)
+                last["sheets"] += add_sheets
+                produced[tag] += add_sheets * per_sheet
+                remaining[tag] = 0
 
     return plates, dict(produced)
+
 
 
 # ---------- UI ----------
