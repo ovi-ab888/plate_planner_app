@@ -1,3 +1,6 @@
+import os
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+
 # app.py — Auto Multi-Plate Pre-Press Planner (Hard cap + Overproduction adjust)
 import streamlit as st
 import pandas as pd
