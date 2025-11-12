@@ -1,4 +1,4 @@
-# app.py — FINAL VERSION (Fixed Capacity + Add-on % + Overprint Adjust + Safe Loop)
+# app.py — FINAL HARD CAP FREE VERSION (Accurate + Fixed Capacity + Auto Overprint + Add-on %)
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
@@ -54,7 +54,7 @@ def proportional_layout(remaining, cap):
             if layout[k] > 1:
                 layout[k] -= 1
 
-    # final correction to match capacity
+    # final correction to match capacity exactly
     diff = cap - sum(layout.values())
     if diff > 0:
         for k in sorted(remaining, key=lambda x: remaining[x], reverse=True):
@@ -73,14 +73,14 @@ def proportional_layout(remaining, cap):
     return {k: v for k, v in layout.items() if v > 0}
 
 
-def auto_plan(demand, cap, max_plates=20):
-    """Generate full plate plan respecting fixed capacity and ensuring no underprint."""
+def auto_plan(demand, cap, max_plates=9999):
+    """Generate full plate plan (no hard cap, fixed capacity, no underprint)."""
     remaining = demand.copy()
     plates = []
     produced = Counter()
-    safe_guard = 2000
+    safe_guard = 5000  # safety stop (prevent infinite loop)
 
-    while any(v > 0 for v in remaining.values()) and len(plates) < max_plates and safe_guard > 0:
+    while any(v > 0 for v in remaining.values()) and safe_guard > 0:
         safe_guard -= 1
         layout = proportional_layout(remaining, cap)
         if not layout:
@@ -96,11 +96,10 @@ def auto_plan(demand, cap, max_plates=20):
 
         plates.append({"name": plate_name(len(plates) + 1), "layout": layout, "sheets": sheets})
 
-        # stop if all demand is fulfilled
         if all(v == 0 for v in remaining.values()):
             break
 
-    # underprint fix: ensure produced ≥ demand
+    # Fix any underprints (Produced ≥ Demand)
     for tag in demand:
         if produced[tag] < demand[tag] and plates:
             deficit = demand[tag] - produced[tag]
@@ -111,21 +110,17 @@ def auto_plan(demand, cap, max_plates=20):
             last["sheets"] += add_sheets
             produced[tag] += add_sheets * per_sheet
 
-    # if still remaining, show warning
-    if len(plates) >= max_plates and any(v > 0 for v in remaining.values()):
-        st.warning("🚧 Hard cap reached. Remaining demand could not be fully planned.")
-
     return plates, dict(produced)
 
 
 # ---------- UI ----------
-st.title("🖨️ Auto Multi-Plate Planner (Final Stable Version)")
+st.title("🖨️ Auto Multi-Plate Planner (Hard Cap Free Final Version)")
 
 col1, col2, col3, col4 = st.columns(4)
 n = col1.number_input("কতটি Tag", 1, 50, 6)
 cap = col2.number_input("Plate capacity (tags per plate)", 1, 64, 12)
-maxp = col3.number_input("সর্বোচ্চ Plate সংখ্যা", 1, 200, 20)
-addon = col4.number_input("Add-on % (Extra print)", 0.0, 50.0, 3.0, step=0.5)
+addon = col3.number_input("Add-on % (Extra print)", 0.0, 50.0, 3.0, step=0.5)
+maxp = col4.number_input("Safety Limit (Max Plates)", 50, 9999, 500)
 
 st.markdown("---")
 st.subheader("📦 Tag QTY দিন")
@@ -146,7 +141,7 @@ if st.button("🚀 Generate Plan"):
         st.error("কমপক্ষে ১টি Tag Quantity দিন।")
         st.stop()
 
-    progress = st.progress(0, text="🔄 Calculating Plates safely...")
+    progress = st.progress(0, text="🔄 Calculating Plates...")
     plates, prod = auto_plan(demand, cap, maxp)
     progress.progress(100, text="✅ Done!")
 
@@ -169,7 +164,7 @@ if st.button("🚀 Generate Plan"):
     st.dataframe(df, use_container_width=True)
     st.success(f"✅ মোট শিট: {total}")
 
-    # Summary table with overprint
+    # Summary table
     summary = pd.DataFrame(
         [
             {
@@ -182,8 +177,11 @@ if st.button("🚀 Generate Plan"):
         ]
     )
 
+    # Total extra overprint count
+    total_extra = sum(summary["Extra(Overprint)"])
     st.markdown("### 📊 Demand vs Produced (Produced ≥ Demand)")
     st.dataframe(summary, use_container_width=True)
+    st.info(f"🧾 মোট Extra(Overprint): {total_extra} pcs")
 
     # Excel export
     bio = BytesIO()
@@ -195,8 +193,8 @@ if st.button("🚀 Generate Plan"):
     st.download_button(
         "⬇️ Excel Download",
         data=bio,
-        file_name="final_plate_plan_fixed_capacity.xlsx",
+        file_name="final_plate_plan_hardcap_free.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
-st.caption("💡 এই ভার্সনে Plate capacity সবসময় fixed থাকে, Produced ≥ Demand থাকে, এবং প্রয়োজন অনুযায়ী Extra(Overprint) auto adjust হয়।")
+st.caption("💡 এই ভার্সনে Plate capacity সবসময় fixed থাকে, Produced ≥ Demand থাকে, Hard cap warning নেই, এবং প্রয়োজন অনুযায়ী Extra(Overprint) auto adjust হয়।")
