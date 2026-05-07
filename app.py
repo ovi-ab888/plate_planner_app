@@ -7,12 +7,26 @@ st.set_page_config(page_title="Pre-Press Optimizer Pro", layout="wide")
 # CSS দিয়ে টেবিল এবং UI আরও সুন্দর করা
 st.markdown("""
     <style>
-    .main {
-        background-color: #f8f9fa;
+    /* মেইন ব্যাকগ্রাউন্ড কালো করা */
+    .stApp {
+        background-color: #000000;
     }
+    
+    /* টেবিলের ব্যাকগ্রাউন্ড কালো এবং বর্ডার সুন্দর করা */
     .stTable {
-        background-color: white;
+        background-color: #1e1e1e !important;
         border-radius: 10px;
+        color: white !important;
+    }
+
+    /* টেবিলের ভেতরকার টেক্সট সাদা করা */
+    table {
+        color: white !important;
+    }
+    
+    /* ইনপুট বক্সের লেবেলগুলো সাদা করা */
+    label, p {
+        color: white !important;
     }
     </style>
     """, unsafe_allow_html=True)
