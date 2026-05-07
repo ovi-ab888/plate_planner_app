@@ -16,8 +16,7 @@ st.sidebar.subheader("প্লেট সেটিংস")
 auto_plate_mode = st.sidebar.checkbox("🤖 Auto Plate Ratio Finder", value=True)
 
 if auto_plate_mode:
-    max_plates_to_try = st.sidebar.slider("সর্বোচ্চ কতটি প্লেট ট্রাই করবেন?", min_value=1, max_value=20, value=5)
-    st.sidebar.info("Auto মোড অন - সিস্টেম নিজেই সেরা প্লেট সংখ্যা বের করবে")
+    max_plates_to_try = st.sidebar.slider("সর্বোচ্চ কতটি প্লেট ট্রাই করবেন?", min_value=1, max_value=10, value=4)
 else:
     num_plates_manual = st.sidebar.number_input("কয়টি প্লেট করতে চান?", min_value=1, value=2, step=1)
 
@@ -35,86 +34,151 @@ for i in range(int(num_labels)):
         labels_input.append({"Name": name, "Original QTY": qty, "Target QTY": target})
 
 # ============================================
-# NEW & IMPROVED CALCULATION
+# AS YOUR MANUAL STRATEGY - Proper Optimization
 # ============================================
-def calculate_balanced_plates(num_plates, labels_input, grid_size):
+
+def optimize_plates(labels_input, grid_size, num_plates):
     """
-    Balanced algorithm - সব প্লেটে সমান UPS বিতরণ করে
+    আপনার ম্যানুয়াল কৌশল অনুসারে অপটিমাইজেশন
+    - প্রতিটি প্লেটের UPS ভিন্ন হতে পারে
+    - প্রতিটি প্লেটের শিট সংখ্যা ভিন্ন হতে পারে
     """
     num_items = len(labels_input)
     targets = [l["Target QTY"] for l in labels_input]
     
-    # Step 1: প্রতি প্লেটের জন্য UPS বের করা (সব প্লেটে সমান pattern)
-    # UPS হবে proportional to target
+    # Best সমাধান খোঁজার জন্য ট্রায়াল
+    best_solution = None
+    best_excess = float('inf')
+    
+    # বিভিন্ন UPS কম্বিনেশন ট্রাই করা (অপটিমাইজড)
+    # আমরা প্রতি প্লেটের জন্য UPS ভাগ করে দেব
+    
+    # Step 1: মোট টার্গেটের অনুপাতে বেস UPS
     total_target = sum(targets)
-    
-    if total_target == 0:
-        return None, None, None
-    
-    # বেস UPS হিসাব (একটি প্লেটের জন্য total UPS = grid_size)
-    base_ups_per_plate = []
+    base_ups = []
     for i in range(num_items):
-        # proportional UPS
-        ups = round((targets[i] / total_target) * grid_size)
-        base_ups_per_plate.append(max(1, ups))  # কমপক্ষে 1
+        ups = max(1, round((targets[i] / total_target) * grid_size))
+        base_ups.append(ups)
     
-    # Grid size adjust
-    diff = grid_size - sum(base_ups_per_plate)
-    if diff != 0:
-        # যাদের target বেশি তাদের বাড়াই
-        indices = list(range(num_items))
-        indices.sort(key=lambda i: targets[i], reverse=True)
-        for j in range(abs(diff)):
-            idx = indices[j % num_items]
-            if diff > 0:
-                base_ups_per_plate[idx] += 1
+    # Adjust to grid size
+    diff = grid_size - sum(base_ups)
+    if diff > 0:
+        for i in range(diff):
+            max_idx = max(range(num_items), key=lambda i: targets[i])
+            base_ups[max_idx] += 1
+    elif diff < 0:
+        for i in range(-diff):
+            min_idx = min(range(num_items), key=lambda i: base_ups[i] if base_ups[i] > 1 else 999999)
+            if base_ups[min_idx] > 1:
+                base_ups[min_idx] -= 1
+    
+    # Step 2: বিভিন্ন প্লেটের জন্য UPS ভ্যারিয়েশন ট্রাই
+    # আপনার ম্যানুয়াল সলিউশনের মতো - কিছু প্লেটে বেশি, কিছুতে কম
+    
+    best_ups_per_plate = []
+    best_sheets_per_plate = []
+    
+    # মোট UPS per plate হবে grid_size, কিন্তু বিতরণ ভিন্ন হতে পারে
+    # আমরা try করব বিভিন্ন distribution
+    
+    for attempt in range(50):  # 50 বার ট্রাই
+        ups_per_plate = []
+        for p in range(num_plates):
+            if p == 0:
+                # প্রথম প্লেটে base_ups
+                current_ups = base_ups.copy()
             else:
-                if base_ups_per_plate[idx] > 1:
-                    base_ups_per_plate[idx] -= 1
+                # পরবর্তী প্লেটে সামান্য পরিবর্তন
+                current_ups = base_ups.copy()
+                # র‍্যান্ডম অ্যাডজাস্টমেন্ট (অপটিমাইজেশনের জন্য)
+                import random
+                for _ in range(random.randint(-3, 3)):
+                    idx = random.randint(0, num_items-1)
+                    if current_ups[idx] > 1:
+                        current_ups[idx] -= 1
+                        current_ups[random.randint(0, num_items-1)] += 1
+            
+            # Grid size adjust
+            diff2 = grid_size - sum(current_ups)
+            if diff2 > 0:
+                for _ in range(diff2):
+                    max_idx = max(range(num_items), key=lambda i: targets[i])
+                    current_ups[max_idx] += 1
+            ups_per_plate.append(current_ups)
+        
+        # এখন শিট সংখ্যা বের করি
+        # আমরা চাই সব প্লেট মিলিয়ে টার্গেট পূরণ হোক
+        # এবং শিট সংখ্যা যতটা সম্ভব কম হোক
+        
+        remaining = targets.copy()
+        sheets_per_plate = []
+        total_sheets = 0
+        
+        for p in range(num_plates):
+            if sum(remaining) <= 0:
+                sheets_per_plate.append(0)
+                continue
+            
+            # এই প্লেটের জন্য কত শিট লাগবে?
+            max_sheets_needed = 0
+            for i in range(num_items):
+                if ups_per_plate[p][i] > 0 and remaining[i] > 0:
+                    sheets = math.ceil(remaining[i] / ups_per_plate[p][i])
+                    max_sheets_needed = max(max_sheets_needed, sheets)
+            
+            sheets_per_plate.append(max_sheets_needed)
+            total_sheets += max_sheets_needed
+            
+            # Remaining আপডেট
+            for i in range(num_items):
+                produced = ups_per_plate[p][i] * max_sheets_needed
+                remaining[i] = max(0, remaining[i] - produced)
+        
+        # Excess বের করি
+        remaining_final = remaining
+        excess = sum(remaining_final)  # যতটুকু কম পড়েছে
+        overproduced = 0
+        for i in range(num_items):
+            produced = 0
+            for p in range(num_plates):
+                produced += ups_per_plate[p][i] * sheets_per_plate[p]
+            if produced > targets[i]:
+                overproduced += (produced - targets[i])
+        
+        total_excess = excess + overproduced
+        
+        if total_excess < best_excess:
+            best_excess = total_excess
+            best_ups_per_plate = ups_per_plate
+            best_sheets_per_plate = sheets_per_plate
     
-    # Step 2: সব প্লেটের জন্য একই UPS pattern থাকবে
-    # কিন্তু শিট সংখ্যা ভিন্ন হতে পারে (প্রতি প্লেটে আলাদা শিট)
+    # Final calculation with best solution
+    final_remaining = targets.copy()
+    final_produced = [0] * num_items
     
-    # Step 3: প্রতি প্লেটের জন্য কত শিট লাগবে?
-    # আমরা চাই সব প্লেট মিলিয়ে টার্গেট পূরণ হোক
-    # এবং সব প্লেটের শিট সংখ্যা যতটা সম্ভব সমান থাকুক
+    for p in range(num_plates):
+        sheets = best_sheets_per_plate[p]
+        for i in range(num_items):
+            produced = best_ups_per_plate[p][i] * sheets
+            final_produced[i] += produced
+            final_remaining[i] = max(0, final_remaining[i] - produced)
     
-    # মোট প্রয়োজনীয় শিট (প্রতি লেবেলের জন্য)
-    sheets_per_label = []
-    for i in range(num_items):
-        if base_ups_per_plate[i] > 0:
-            sheets_needed = math.ceil(targets[i] / (base_ups_per_plate[i] * num_plates))
-            sheets_per_label.append(sheets_needed)
-        else:
-            sheets_per_label.append(0)
+    excess_list = [final_produced[i] - targets[i] for i in range(num_items)]
     
-    # সব লেবেলের জন্য সমান শিট সংখ্যা নিতে হবে (এক প্লেটে একবার রান)
-    # তাই সবচেয়ে বেশি যেটা লাগে সেটাই হবে শিট সংখ্যা
-    sheets_per_plate = max(sheets_per_label) if sheets_per_label else 0
-    
-    # Step 4: হিসাব করে দেখা প্রতিটি লেবেল কত উৎপাদন হবে
+    # Prepare return data
     plate_ups_data = {}
     for p in range(num_plates):
-        plate_ups_data[f"Plate {p+1}"] = base_ups_per_plate.copy()
+        plate_ups_data[f"Plate {p+1}"] = best_ups_per_plate[p]
     
-    plate_sheets_info = [sheets_per_plate] * num_plates
-    
-    # উৎপাদিত পরিমাণ ও excess বের করা
-    total_produced = [0] * num_items
-    for i in range(num_items):
-        total_produced[i] = base_ups_per_plate[i] * sheets_per_plate * num_plates
-    
-    excess_list = [total_produced[i] - targets[i] for i in range(num_items)]
-    
-    return plate_ups_data, plate_sheets_info, {
-        "total_produced": total_produced,
+    return plate_ups_data, best_sheets_per_plate, {
+        "total_produced": final_produced,
         "excess": excess_list,
-        "sheets_per_plate": sheets_per_plate
+        "total_excess_sum": sum(max(0, e) for e in excess_list)
     }
 
 
-def find_best_plate_count_balanced(labels_input, grid_size, max_plates):
-    """Balanced algorithm দিয়ে সেরা প্লেট সংখ্যা বের করা"""
+def find_best_plate_count(labels_input, grid_size, max_plates):
+    """বিভিন্ন প্লেট সংখ্যা ট্রাই করে সেরাটা বের করা"""
     targets = [l["Target QTY"] for l in labels_input]
     total_target = sum(targets)
     best_result = None
@@ -122,19 +186,13 @@ def find_best_plate_count_balanced(labels_input, grid_size, max_plates):
     all_results = []
     
     for p in range(1, max_plates + 1):
-        plate_ups_data, plate_sheets_info, calc_data = calculate_balanced_plates(p, labels_input, grid_size)
-        
-        if calc_data is None:
-            continue
+        plate_ups_data, sheets_info, calc_data = optimize_plates(labels_input, grid_size, p)
         
         total_produced_sum = sum(calc_data["total_produced"])
-        total_excess = sum(max(0, e) for e in calc_data["excess"])
-        
-        # Excess % বের করা
+        total_excess = calc_data["total_excess_sum"]
         excess_percent = (total_excess / total_target * 100) if total_target > 0 else 0
         
-        # Score: কম excess ভালো, কম প্লেট ভালো
-        score = total_excess + (p * 10)  # প্লেট প্রতি 10 পয়েন্ট যোগ
+        score = total_excess + (p * 10)
         
         all_results.append({
             "num_plates": p,
@@ -143,7 +201,7 @@ def find_best_plate_count_balanced(labels_input, grid_size, max_plates):
             "total_target": total_target,
             "excess_percent": round(excess_percent, 2),
             "plate_ups_data": plate_ups_data,
-            "plate_sheets_info": plate_sheets_info,
+            "plate_sheets_info": sheets_info,
             "calc_data": calc_data
         })
         
@@ -159,11 +217,7 @@ if st.button("ক্যালকুলেট করুন"):
     
     if auto_plate_mode:
         with st.spinner("🤖 সেরা প্লেট সংখ্যা বের করা হচ্ছে..."):
-            best_result, all_results = find_best_plate_count_balanced(labels_input, grid_size, max_plates_to_try)
-        
-        if best_result is None:
-            st.error("ক্যালকুলেশন করতে সমস্যা হয়েছে!")
-            st.stop()
+            best_result, all_results = find_best_plate_count(labels_input, grid_size, max_plates_to_try)
         
         num_plates_used = best_result["num_plates"]
         plate_sheets_info = best_result["plate_sheets_info"]
@@ -192,15 +246,13 @@ if st.button("ক্যালকুলেট করুন"):
             st.balloons()
         else:
             st.success(f"✅ **সেরা প্লেট সংখ্যা: {num_plates_used} টি** (Excess: {best_result['total_excess']} পিস, {best_result['excess_percent']}%)")
+        
+        st.info(f"📊 **মোট উৎপাদন:** {best_result['total_produced']} পিস | **টার্গেট:** {best_result['total_target']} পিস")
     
     else:
         # Manual mode
         num_plates_used = num_plates_manual
-        plate_ups_data, plate_sheets_info, calc_data = calculate_balanced_plates(num_plates_used, labels_input, grid_size)
-        
-        if plate_ups_data is None:
-            st.error("ক্যালকুলেশন করতে সমস্যা হয়েছে!")
-            st.stop()
+        plate_ups_data, plate_sheets_info, calc_data = optimize_plates(labels_input, grid_size, num_plates_used)
     
     # --- ফাইনাল রিপোর্ট টেবিল ---
     st.divider()
@@ -235,17 +287,21 @@ if st.button("ক্যালকুলেট করুন"):
     total_row["Over Print (%)"] = round(df_final["Over Print (%)"].mean(), 2)
     
     df_with_total = pd.concat([df_final, pd.DataFrame([total_row])], ignore_index=True)
-    st.dataframe(df_with_total, use_container_width=True)  # table থেকে dataframe ভালো দেখায়
+    st.dataframe(df_with_total, use_container_width=True)
     
     # শিট ইনস্ট্রাকশন
     st.write("### 📝 প্রিন্টিং ইনস্ট্রাকশন:")
     cols_info = st.columns(num_plates_used)
     for p in range(num_plates_used):
         with cols_info[p]:
-            st.info(f"**Plate {p+1}:** {plate_sheets_info[p]} শিট প্রিন্ট করতে হবে। (প্রতি শিটে {grid_size}টি লেবেল)")
+            if plate_sheets_info[p] > 0:
+                st.info(f"**Plate {p+1}:** {plate_sheets_info[p]} শিট প্রিন্ট করতে হবে। (প্রতি শিটে {grid_size}টি লেবেল)")
+            else:
+                st.info(f"**Plate {p+1}:** ব্যবহারের প্রয়োজন নেই।")
     
-    # চেক
-    if any(calc_data["excess"][i] < 0 for i in range(len(labels_input))):
-        st.error("⚠️ কিছু লেবেল টার্গেটের চেয়ে কম উৎপাদন হচ্ছে! প্লেট সংখ্যা বাড়ানোর চেষ্টা করুন।")
+    # Final verdict
+    total_excess = sum(max(0, e) for e in calc_data["excess"])
+    if total_excess == 0:
+        st.success("✅ পারফেক্ট! সব লেবেল ঠিক টার্গেট অনুযায়ী উৎপাদন হয়েছে।")
     else:
-        st.success("✅ সব লেবেল টার্গেট পূরণ হয়েছে!")
+        st.warning(f"📈 মোট {total_excess} পিস অতিরিক্ত প্রিন্ট হয়েছে (Over Print)। এটি ইন্ডাস্ট্রি স্ট্যান্ডার্ডের মধ্যে থাকলে গ্রহণযোগ্য।")
