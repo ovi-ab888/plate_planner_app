@@ -5,6 +5,7 @@ import pandas as pd
 st.set_page_config(page_title="Pre-Press Optimizer Pro", layout="wide")
 
 st.title("🎨 Pre-Press Grid & Plate Optimizer")
+st.write("---")
 
 # --- Sidebar ---
 st.sidebar.header("কনফিগারেশন")
@@ -33,7 +34,7 @@ if st.button("ক্যালকুলেট করুন"):
     plate_ups_data = {f"Plate {p+1}": [] for p in range(int(num_plates))}
     plate_sheets_info = []
 
-    # --- Multi-Plate Calculation ---
+    # --- Multi-Plate Fill-The-Gap Logic ---
     for p in range(int(num_plates)):
         total_rem = sum(l["Remaining"] for l in temp_labels)
         if total_rem <= 0:
@@ -41,20 +42,16 @@ if st.button("ক্যালকুলেট করুন"):
             plate_sheets_info.append(0)
             continue
 
-        # Proportional Ups
-        ups_list = [round((l["Remaining"] / total_rem) * grid_size) for l in temp_labels]
+        # Proportional Ups (Floor use korchi jate extra na hoy)
+        ups_list = [math.floor((l["Remaining"] / total_rem) * grid_size) for l in temp_labels]
         
-        # Adjusting to grid size
-        diff = grid_size - sum(ups_list)
-        if diff != 0:
-            max_idx = 0
-            max_val = -1
-            for i, l in enumerate(temp_labels):
-                if l["Remaining"] > max_val:
-                    max_val = l["Remaining"]; max_idx = i
-            ups_list[max_idx] += diff
+        # 'Fill the Gap' Logic: Jora kore grid_size milabo na.
+        # Jodi 0 hoye jay kono label, kintu shetar demand thake, tobe at least 1 up dibo.
+        for i, u in enumerate(ups_list):
+            if u == 0 and temp_labels[i]["Remaining"] > 0 and sum(ups_list) < grid_size:
+                ups_list[i] = 1
 
-        # Calculate Sheets for this plate
+        # Calculate Sheets based on current Ups
         needed_sheets = []
         for i, u in enumerate(ups_list):
             if u > 0:
@@ -63,13 +60,13 @@ if st.button("ক্যালকুলেট করুন"):
         current_plate_sheets = max(needed_sheets) if needed_sheets else 0
         plate_sheets_info.append(current_plate_sheets)
 
-        # Record Ups and Update Remaining
+        # Record and Update
         for i, u in enumerate(ups_list):
             plate_ups_data[f"Plate {p+1}"].append(u)
             produced = u * current_plate_sheets
             temp_labels[i]["Remaining"] = max(0, temp_labels[i]["Remaining"] - produced)
 
-    # --- Build Master Table (As per your Image) ---
+    # --- Build Master Table ---
     st.divider()
     st.subheader("📊 ফাইনাল রিপোর্ট (Grand Total)")
     
@@ -81,7 +78,6 @@ if st.button("ক্যালকুলেট করুন"):
             "Target QTY": labels_input[i]["Target QTY"]
         }
         
-        # Add Plate Ups Columns
         total_produced = 0
         for p in range(int(num_plates)):
             ups = plate_ups_data[f"Plate {p+1}"][i]
@@ -96,7 +92,7 @@ if st.button("ক্যালকুলেট করুন"):
 
     df_final = pd.DataFrame(final_data)
 
-    # Calculate Total Row
+    # Total Row
     total_row = {"Name": "TOTAL", "Original QTY": df_final["Original QTY"].sum(), "Target QTY": df_final["Target QTY"].sum()}
     for p in range(int(num_plates)):
         total_row[f"Plate {p+1} (Ups)"] = df_final[f"Plate {p+1} (Ups)"].sum()
@@ -105,19 +101,22 @@ if st.button("ক্যালকুলেট করুন"):
     total_row["Over Print (%)"] = round(df_final["Over Print (%)"].mean(), 2)
     
     df_with_total = pd.concat([df_final, pd.DataFrame([total_row])], ignore_index=True)
-    
-    # Display Table
     st.table(df_with_total)
 
-    # Display Sheet Requirements under the table
+    # Blank Slots Info
+    for p in range(int(num_plates)):
+        used_ups = df_final[f"Plate {p+1} (Ups)"].sum()
+        blank = grid_size - used_ups
+        if blank > 0:
+            st.warning(f"⚠️ Plate {p+1}-এ {blank}টি ঘর খালি (Blank) থাকবে অপচয় কমানোর জন্য।")
+
     st.write("### 📝 প্রিন্টিং ইনস্ট্রাকশন:")
     cols_info = st.columns(int(num_plates))
     for p in range(int(num_plates)):
         with cols_info[p]:
             st.info(f"**Plate {p+1}:** {plate_sheets_info[p]} শিট প্রিন্ট করতে হবে।")
 
-    # Final Check
     if any(df_final["Excess"] < 0):
-        st.error("⚠️ সতর্কবার্তা: কিছু লেবেল টার্গেটের চেয়ে কম উৎপাদন হচ্ছে!")
+        st.error("⚠️ সতর্কবার্তা: কিছু লেবেল টার্গেটের চেয়ে কম উৎপাদন হচ্ছে! অনুগ্রহ করে প্লেট সংখ্যা বা শিট সংখ্যা পুনরায় চেক করুন।")
     else:
-        st.success("✅ অভিনন্দন! টার্গেট কোয়ান্টিটি সম্পূর্ণ পূরণ হয়েছে।")
+        st.success("✅ অভিনন্দন! 'Fill the Gap' লজিকে অপচয় কমিয়ে টার্গেট পূরণ করা হয়েছে।")
