@@ -17,7 +17,7 @@ num_plates = st.sidebar.number_input("কয়টি প্লেট করতে 
 
 # --- Data Input ---
 st.subheader("📦 লেবেল কোয়ান্টিটি ইনপুট")
-labels = []
+labels_input = []
 cols = st.columns(2)
 for i in range(int(num_labels)):
     col_idx = i % 2
@@ -26,104 +26,98 @@ for i in range(int(num_labels)):
         name = c1.text_input(f"নাম {i+1}", value=f"Label {i+1}", key=f"n_{i}")
         qty = c2.number_input(f"QTY", min_value=1, value=100, key=f"q_{i}")
         target = math.ceil(qty * (1 + extra_percent / 100))
-        # এখানে 'Remaining' রাখবে টার্গেট অনুযায়ী
-        labels.append({"Name": name, "Original QTY": qty, "Target QTY": target, "Remaining": target})
+        labels_input.append({"Name": name, "Original QTY": qty, "Target QTY": target, "Remaining": target})
 
 if st.button("ক্যালকুলেট করুন"):
-    all_plates_results = []
-    
-    # কপি তৈরি করা ক্যালকুলেশনের জন্য
-    temp_labels = [label.copy() for label in labels]
-    
+    temp_labels = [l.copy() for l in labels_input]
+    plate_ups_data = {f"Plate {p+1}": [] for p in range(int(num_plates))}
+    plate_sheets_info = []
+
+    # --- Multi-Plate Calculation ---
     for p in range(int(num_plates)):
-        st.write(f"### 📑 প্লেট নম্বর: {p+1}")
-        
         total_rem = sum(l["Remaining"] for l in temp_labels)
         if total_rem <= 0:
-            st.warning(f"প্লেট {p+1} এর জন্য আর কোনো কোয়ান্টিটি অবশিষ্ট নেই।")
+            for i in range(len(temp_labels)): plate_ups_data[f"Plate {p+1}"].append(0)
+            plate_sheets_info.append(0)
             continue
 
-        # Ups calculation using math.ceil for better coverage
-        ups_list = []
-        for l in temp_labels:
-            u = round((l["Remaining"] / total_rem) * grid_size)
-            ups_list.append(u)
+        # Proportional Ups
+        ups_list = [round((l["Remaining"] / total_rem) * grid_size) for l in temp_labels]
         
-        # Adjusting Ups to match grid_size exactly
+        # Adjusting to grid size
         diff = grid_size - sum(ups_list)
         if diff != 0:
-            # বড় কোয়ান্টিটিতে গ্যাপ অ্যাড করা
             max_idx = 0
             max_val = -1
             for i, l in enumerate(temp_labels):
                 if l["Remaining"] > max_val:
-                    max_val = l["Remaining"]
-                    max_idx = i
+                    max_val = l["Remaining"]; max_idx = i
             ups_list[max_idx] += diff
 
-        # প্লেটের জন্য শিট ক্যালকুলেশন - এটিই সবচেয়ে গুরুত্বপূর্ণ
-        # আমরা নিশ্চিত করছি যেন অন্তত টার্গেট কাভার হয়
-        needed_sheets_list = []
+        # Calculate Sheets for this plate
+        needed_sheets = []
         for i, u in enumerate(ups_list):
             if u > 0:
-                needed_sheets_list.append(math.ceil(temp_labels[i]["Remaining"] / u))
+                needed_sheets.append(math.ceil(temp_labels[i]["Remaining"] / u))
         
-        # প্লেটের শিট হবে সেই সংখ্যা যা দিয়ে সর্বোচ্চ ডিমান্ড মেটানো যায়
-        plate_sheets = max(needed_sheets_list) if needed_sheets_list else 0
+        current_plate_sheets = max(needed_sheets) if needed_sheets else 0
+        plate_sheets_info.append(current_plate_sheets)
 
-        # রেজাল্ট আপডেট
-        plate_data = []
+        # Record Ups and Update Remaining
         for i, u in enumerate(ups_list):
-            produced = u * plate_sheets
-            if u > 0:
-                plate_data.append({"Name": temp_labels[i]["Name"], "Ups": u, "Produced": produced})
+            plate_ups_data[f"Plate {p+1}"].append(u)
+            produced = u * current_plate_sheets
             temp_labels[i]["Remaining"] = max(0, temp_labels[i]["Remaining"] - produced)
-        
-        st.table(pd.DataFrame(plate_data))
-        st.info(f"এই প্লেটটি **{plate_sheets}** শিট প্রিন্ট করতে হবে।")
-        all_plates_results.append(plate_data)
 
-    # --- GRAND TOTAL REPORT ---
+    # --- Build Master Table (As per your Image) ---
     st.divider()
     st.subheader("📊 ফাইনাল রিপোর্ট (Grand Total)")
     
-    final_report = []
-    for i, original_label in enumerate(labels):
+    final_data = []
+    for i in range(len(labels_input)):
+        row = {
+            "Name": labels_input[i]["Name"],
+            "Original QTY": labels_input[i]["Original QTY"],
+            "Target QTY": labels_input[i]["Target QTY"]
+        }
+        
+        # Add Plate Ups Columns
         total_produced = 0
-        for plate in all_plates_results:
-            for item in plate:
-                if item["Name"] == original_label["Name"]:
-                    total_produced += item["Produced"]
+        for p in range(int(num_plates)):
+            ups = plate_ups_data[f"Plate {p+1}"][i]
+            row[f"Plate {p+1} (Ups)"] = ups
+            total_produced += (ups * plate_sheets_info[p])
+            
+        row["Total Produced"] = total_produced
+        row["Excess"] = total_produced - labels_input[i]["Target QTY"]
+        row["Over Print (%)"] = round((row["Excess"] / labels_input[i]["Original QTY"] * 100), 2) if labels_input[i]["Original QTY"] > 0 else 0
         
-        over_print_qty = total_produced - original_label["Target QTY"]
-        over_print_per = (over_print_qty / original_label["Original QTY"] * 100) if original_label["Original QTY"] > 0 else 0
-        
-        final_report.append({
-            "Name": original_label["Name"],
-            "Original QTY": original_label["Original QTY"],
-            "Target QTY": original_label["Target QTY"],
-            "Total Produced": total_produced,
-            "Short/Excess": over_print_qty,
-            "Over Print (%)": round(over_print_per, 2)
-        })
+        final_data.append(row)
 
-    final_df = pd.DataFrame(final_report)
-    
-    # Total Row calculation
-    total_row = pd.DataFrame([{
-        "Name": "TOTAL",
-        "Original QTY": final_df["Original QTY"].sum(),
-        "Target QTY": final_df["Target QTY"].sum(),
-        "Total Produced": final_df["Total Produced"].sum(),
-        "Short/Excess": final_df["Short/Excess"].sum(),
-        "Over Print (%)": round(final_df["Over Print (%)"].mean(), 2)
-    }])
-    
-    final_df_with_total = pd.concat([final_df, total_row], ignore_index=True)
-    st.table(final_df_with_total)
+    df_final = pd.DataFrame(final_data)
 
-    # সতর্কতা চেক
-    if any(final_df["Short/Excess"] < 0):
-        st.error("⚠️ সতর্কবার্তা: কিছু লেবেল টার্গেটের চেয়ে কম উৎপাদন হচ্ছে! অনুগ্রহ করে প্লেট সংখ্যা বাড়ান।")
+    # Calculate Total Row
+    total_row = {"Name": "TOTAL", "Original QTY": df_final["Original QTY"].sum(), "Target QTY": df_final["Target QTY"].sum()}
+    for p in range(int(num_plates)):
+        total_row[f"Plate {p+1} (Ups)"] = df_final[f"Plate {p+1} (Ups)"].sum()
+    total_row["Total Produced"] = df_final["Total Produced"].sum()
+    total_row["Excess"] = df_final["Excess"].sum()
+    total_row["Over Print (%)"] = round(df_final["Over Print (%)"].mean(), 2)
+    
+    df_with_total = pd.concat([df_final, pd.DataFrame([total_row])], ignore_index=True)
+    
+    # Display Table
+    st.table(df_with_total)
+
+    # Display Sheet Requirements under the table
+    st.write("### 📝 প্রিন্টিং ইনস্ট্রাকশন:")
+    cols_info = st.columns(int(num_plates))
+    for p in range(int(num_plates)):
+        with cols_info[p]:
+            st.info(f"**Plate {p+1}:** {plate_sheets_info[p]} শিট প্রিন্ট করতে হবে।")
+
+    # Final Check
+    if any(df_final["Excess"] < 0):
+        st.error("⚠️ সতর্কবার্তা: কিছু লেবেল টার্গেটের চেয়ে কম উৎপাদন হচ্ছে!")
     else:
-        st.success("✅ অভিনন্দন! সব লেবেল টার্গেট অনুযায়ী অথবা তার বেশি উৎপাদিত হচ্ছে।")
+        st.success("✅ অভিনন্দন! টার্গেট কোয়ান্টিটি সম্পূর্ণ পূরণ হয়েছে।")
