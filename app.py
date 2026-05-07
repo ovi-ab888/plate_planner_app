@@ -36,7 +36,7 @@ for i in range(int(num_labels)):
     with cols[col_idx]:
         c1, c2 = st.columns([2, 1])
         name = c1.text_input(f"নাম {i+1}", value=f"Label {i+1}", key=f"n_{i}")
-        qty = c2.number_input(f"QTY", min_value=1, value=0, key=f"q_{i}")
+        qty = c2.number_input(f"QTY", min_value=1, value=100, key=f"q_{i}")
         target = math.ceil(qty * (1 + extra_percent / 100))
         labels_input.append({"Name": name, "Original QTY": qty, "Target QTY": target})
 
