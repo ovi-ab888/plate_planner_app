@@ -2,33 +2,30 @@ import streamlit as st
 import math
 import pandas as pd
 
-st.set_page_config(page_title="AI Pre-Press Optimizer Pro", layout="wide")
+st.set_page_config(page_title="Pre-Press Optimizer Pro", layout="wide")
 
-# ডার্ক মোড এবং সুন্দর UI ডিজাইন
-st.markdown("""
-    <style>
-    .stApp { background-color: #000000; }
-    .stTable { background-color: #1e1e1e !important; border-radius: 10px; color: white !important; }
-    table { color: white !important; }
-    label, p, h3 { color: white !important; }
-    .stInfo { background-color: #0e2f44; color: #ffffff; border: 1px solid #17a2b8; }
-    .stSuccess { background-color: #0b2e13; color: #ffffff; }
-    .stWarning { background-color: #332b00; color: #ffffff; border: 1px solid #ffc107; }
-    </style>
-    """, unsafe_allow_html=True)
+st.title("🎨 Pre-Press Grid & Plate Optimizer")
 
-st.title("🧠 AI Pre-Press Optimizer (V3 - Best Fit)")
-st.write("এই ভার্সনটি Force Distribution লজিক ব্যবহার করে প্লেট ১ এবং প্লেট ২-এর মধ্যে ঘর (Ups) বণ্টন নিশ্চিত করবে।")
+# --- Sidebar ---
+st.sidebar.header("কনফিগারেশন")
+grid_size = st.sidebar.number_input("একটি প্লেটে মোট কয়টি লেবেল (Grid Size)?", min_value=1, value=30)
+extra_percent = st.sidebar.number_input("অ্যাড-অন (Extra %) কত হবে?", min_value=0.0, value=0.0)
+num_labels = st.sidebar.number_input("মোট কত পদের লেবেল?", min_value=1, value=1, step=1)
 
-# --- Sidebar Configuration ---
-st.sidebar.header("⚙️ মাস্টার কনফিগারেশন")
-grid_size = st.sidebar.number_input("গ্রিড সাইজ (Grid Size)", min_value=1, value=30)
-extra_percent = st.sidebar.number_input("অ্যাড-অন (Extra %)", min_value=0.0, value=0.0)
-num_labels = st.sidebar.number_input("মোট লেবেল পদ", min_value=1, value=8, step=1)
-num_plates = st.sidebar.number_input("প্লেট সংখ্যা", min_value=1, value=2, step=1)
+st.sidebar.subheader("প্লেট সেটিংস")
+
+# NEW: Auto Plate Ratio Finder অপশন
+auto_plate_mode = st.sidebar.checkbox("🤖 Auto Plate Ratio Finder (অটোমেটিক প্লেট সংখ্যা নির্বাচন)", value=True)
+
+if auto_plate_mode:
+    max_plates_to_try = st.sidebar.slider("সর্বোচ্চ কতটি প্লেট ট্রাই করবেন?", min_value=1, max_value=20, value=5)
+    st.sidebar.info("Auto মোড অন থাকায় সিস্টেম নিজেই সেরা প্লেট সংখ্যা বের করবে। নিচের প্লেট সংখ্যা ইনপুট ইগনোর হবে।")
+    num_plates = 1  # ডামি ভ্যালু, পরে অটো ওভাররাইড করবে
+else:
+    num_plates = st.sidebar.number_input("কয়টি প্লেট করতে চান?", min_value=1, value=1, step=1)
 
 # --- Data Input ---
-st.subheader("📦 লেবেল কোয়ান্টিটি ইনপুট")
+st.subheader("📦 লেবেল কোয়ান্টিটি ইনপুট")
 labels_input = []
 cols = st.columns(2)
 for i in range(int(num_labels)):
@@ -38,112 +35,187 @@ for i in range(int(num_labels)):
         name = c1.text_input(f"নাম {i+1}", value=f"Label {i+1}", key=f"n_{i}")
         qty = c2.number_input(f"QTY", min_value=1, value=100, key=f"q_{i}")
         target = math.ceil(qty * (1 + extra_percent / 100))
-        labels_input.append({"Name": name, "Original QTY": qty, "Target QTY": target})
+        labels_input.append({"Name": name, "Original QTY": qty, "Target QTY": target, "Remaining": target})
 
-if st.button("🚀 স্মার্ট অপ্টিমাইজেশন রান করুন"):
-    best_overall_excess = float('inf')
-    best_config = None
+# NEW: ফাংশন যা একটি নির্দিষ্ট প্লেট সংখ্যার জন্য ক্যালকুলেশন করে
+def calculate_for_plates(num_plates, labels_input, grid_size):
+    temp_labels = [l.copy() for l in labels_input]
+    plate_ups_data = {f"Plate {p+1}": [] for p in range(num_plates)}
+    plate_sheets_info = []
     
-    # AI লজিক: গড় শিট সংখ্যা থেকে একটি স্মার্ট রেঞ্জ স্ক্যান করা
-    total_target_all = sum(l["Target QTY"] for l in labels_input)
-    avg_s = total_target_all / (grid_size * num_plates)
-    s_range = range(max(10, int(avg_s * 0.4)), int(avg_s * 1.6) + 150, 2)
+    for p in range(num_plates):
+        total_rem = sum(l["Remaining"] for l in temp_labels)
+        if total_rem <= 0:
+            for i in range(len(temp_labels)):
+                plate_ups_data[f"Plate {p+1}"].append(0)
+            plate_sheets_info.append(0)
+            continue
+        
+        # Proportional Ups
+        ups_list = [round((l["Remaining"] / total_rem) * grid_size) for l in temp_labels]
+        
+        # Adjusting to grid size
+        diff = grid_size - sum(ups_list)
+        if diff != 0:
+            max_idx = 0
+            max_val = -1
+            for i, l in enumerate(temp_labels):
+                if l["Remaining"] > max_val:
+                    max_val = l["Remaining"]
+                    max_idx = i
+            ups_list[max_idx] += diff
+        
+        # Calculate Sheets
+        needed_sheets = []
+        for i, u in enumerate(ups_list):
+            if u > 0:
+                needed_sheets.append(math.ceil(temp_labels[i]["Remaining"] / u))
+        
+        current_plate_sheets = max(needed_sheets) if needed_sheets else 0
+        plate_sheets_info.append(current_plate_sheets)
+        
+        # Update Remaining
+        for i, u in enumerate(ups_list):
+            plate_ups_data[f"Plate {p+1}"].append(u)
+            produced = u * current_plate_sheets
+            temp_labels[i]["Remaining"] = max(0, temp_labels[i]["Remaining"] - produced)
+    
+    # মোট Excess বের করা (Optimization এর জন্য)
+    total_excess = 0
+    total_target = sum(l["Target QTY"] for l in labels_input)
+    total_produced_overall = 0
+    for i in range(len(labels_input)):
+        produced = 0
+        for p in range(num_plates):
+            produced += plate_ups_data[f"Plate {p+1}"][i] * plate_sheets_info[p]
+        total_produced_overall += produced
+        excess = produced - labels_input[i]["Target QTY"]
+        if excess > 0:
+            total_excess += excess
+    
+    return {
+        "num_plates": num_plates,
+        "total_excess": total_excess,
+        "total_produced": total_produced_overall,
+        "total_target": total_target,
+        "plate_sheets": plate_sheets_info,
+        "plate_ups_data": plate_ups_data,
+        "temp_labels": temp_labels
+    }
 
-    for s1 in s_range:
-        # প্লেট ২-এর শিট সংখ্যা প্লেট ১-এর সমান বা তার কম হওয়ার সম্ভাবনা চেক করা (ম্যানুয়াল রিপোর্টের মতো)
-        potential_s2 = [s1, s1 // 2, s1 // 4, 38, 50] # সাধারণ কিছু প্রিন্টিং শিট প্যাটার্ন
-        for s2 in potential_s2:
-            if num_plates == 1: s2 = 0
-            p_sheets = [s1, s2] if num_plates >= 2 else [s1]
+# NEW: Auto Plate নির্বাচন ফাংশন
+def find_best_plate_count(labels_input, grid_size, max_plates):
+    best_result = None
+    best_score = float('inf')
+    
+    results = []
+    for p in range(1, max_plates + 1):
+        result = calculate_for_plates(p, labels_input, grid_size)
+        # স্কোর: Excess কম ভালো। যদি Excess সমান হয়, তাহলে কম প্লেট ভালো।
+        score = result["total_excess"] + (p * 0.01)  # .01 যোগ করলাম যাতে কম প্লেটে priority যায়
+        results.append((score, result))
+        
+        if score < best_score:
+            best_score = score
+            best_result = result
+    
+    return best_result, results
 
-            current_plate_ups = {"Plate 1": [], "Plate 2": []}
-            total_excess_this_run = 0
-            possible_run = True
-            
-            for l in labels_input:
-                best_l_excess = float('inf')
-                best_u_pair = (0, 0)
-                
-                # ঘর বণ্টন লজিক: (u1*s1) + (u2*s2) যেন টার্গেটের সবচেয়ে কাছে থাকে
-                # এখানে Force করা হচ্ছে যেন u1 এবং u2 মিলিয়ে অন্তত ঘর থাকে
-                for u1 in range(grid_size + 1):
-                    limit_u2 = (grid_size - u1) if num_plates >= 2 else 0
-                    for u2 in range(limit_u2 + 1):
-                        prod = (u1 * s1) + (u2 * s2)
-                        if prod >= l["Target QTY"]:
-                            excess = prod - l["Target QTY"]
-                            if excess < best_l_excess:
-                                best_l_excess = excess
-                                best_u_pair = (u1, u2)
-                            break # টার্গেট পূরণ হলে এই জোড়া চেক করা বন্ধ
-                
-                if best_l_excess == float('inf'):
-                    possible_run = False; break
-                else:
-                    total_excess_this_run += best_l_excess
-                    current_plate_ups["Plate 1"].append(best_u_pair[0])
-                    if num_plates >= 2: current_plate_ups["Plate 2"].append(best_u_pair[1])
-
-            # গ্রিড সাইজ চেক এবং বেস্ট সলিউশন সেভ করা
-            if possible_run:
-                valid_grid = True
-                for p in range(num_plates):
-                    if sum(current_plate_ups[f"Plate {p+1}"]) > grid_size:
-                        valid_grid = False; break
-                
-                # অপচয় যদি আগের চেয়ে কম হয়, তবে এটিই নতুন সেরা কনফিগারেশন
-                if valid_grid and total_excess_this_run < best_overall_excess:
-                    best_overall_excess = total_excess_this_run
-                    best_config = {
-                        "sheets": p_sheets,
-                        "ups": current_plate_ups,
-                        "excess": total_excess_this_run
-                    }
-                    if best_overall_excess < 20: break # খুব ভালো রেজাল্ট
-
-    # --- ফলাফল প্রদর্শন ---
-    if best_config:
+# --- Main Calculation Button ---
+if st.button("ক্যালকুলেট করুন"):
+    
+    if auto_plate_mode:
+        # NEW: Auto Mode - সেরা প্লেট সংখ্যা বের করো
+        with st.spinner("🤖 সেরা প্লেট সংখ্যা বের করা হচ্ছে..."):
+            best_result, all_results = find_best_plate_count(labels_input, grid_size, max_plates_to_try)
+        
+        num_plates_used = best_result["num_plates"]
+        plate_sheets_info = best_result["plate_sheets"]
+        plate_ups_data = best_result["plate_ups_data"]
+        
+        # NEW: Auto রিপোর্ট দেখানো
         st.divider()
-        st.subheader("📊 AI অপ্টিমাইজড ফাইনাল রিপোর্ট (Cross-Plate)")
+        st.subheader("🤖 অটো প্লেট রেশিও ফাইন্ডার রিপোর্ট")
         
-        final_rows = []
-        for i, l in enumerate(labels_input):
-            row = {"Name": l["Name"], "Original QTY": l["Original QTY"], "Target QTY": l["Target QTY"]}
-            total_produced = 0
-            for p in range(int(num_plates)):
-                u = best_config["ups"][f"Plate {p+1}"][i]
-                row[f"Plate {p+1} (Ups)"] = u
-                total_produced += (u * best_config["sheets"][p])
-            
-            row["Total Produced"] = total_produced
-            row["Excess"] = total_produced - l["Target QTY"]
-            row["Over Print (%)"] = round((row["Excess"] / l["Original QTY"] * 100), 4) if l["Original QTY"] > 0 else 0
-            final_rows.append(row)
-
-        df_final = pd.DataFrame(final_rows)
+        # সবার জন্য তুলনামূলক টেবিল
+        comparison_data = []
+        for score, res in all_results:
+            comparison_data.append({
+                "প্লেট সংখ্যা": res["num_plates"],
+                "মোট প্রোডিউস": res["total_produced"],
+                "মোট টার্গেট": res["total_target"],
+                "মোট এক্সেস": res["total_excess"],
+                "এক্সেস (%)": round((res["total_excess"] / res["total_target"]) * 100, 2) if res["total_target"] > 0 else 0
+            })
         
-        # TOTAL Row
-        total_row = {"Name": "TOTAL", "Original QTY": df_final["Original QTY"].sum(), "Target QTY": df_final["Target QTY"].sum()}
-        for p in range(int(num_plates)):
-            total_row[f"Plate {p+1} (Ups)"] = df_final[f"Plate {p+1} (Ups)"].sum()
-        total_row["Total Produced"] = df_final["Total Produced"].sum()
-        total_row["Excess"] = df_final["Excess"].sum()
-        total_row["Over Print (%)"] = round((total_row["Excess"] / total_row["Original QTY"] * 100), 4)
+        df_compare = pd.DataFrame(comparison_data)
+        st.dataframe(df_compare, use_container_width=True)
         
-        df_with_total = pd.concat([df_final, pd.DataFrame([total_row])], ignore_index=True)
-        st.table(df_with_total)
-
-        # প্রিন্টিং ইনস্ট্রাকশন
-        st.write("### 📝 প্রিন্টিং ইনস্ট্রাকশন:")
-        inst_cols = st.columns(int(num_plates))
-        for p in range(int(num_plates)):
-            with inst_cols[p]:
-                st.info(f"**Plate {p+1}:** {best_config['sheets'][p]} শিট প্রিন্ট করতে হবে।")
+        st.success(f"✅ **সেরা প্লেট সংখ্যা: {num_plates_used} টি** (সবচেয়ে কম এক্সেস ও অপটিমাইজড প্রোডাকশন)")
         
-        st.success(f"✅ AI সলিউশন পাওয়া গেছে! মোট অপচয় মাত্র {int(best_config['excess'])} পিস।")
+        # BEST প্লেটের জন্য ইনসাইট
+        if best_result["total_excess"] == 0:
+            st.balloons()
+            st.info("🎯 পারফেক্ট! কোনো এক্সেস প্রিন্ট ছাড়াই টার্গেট পূরণ হয়েছে।")
+        else:
+            st.warning(f"⚠️ সর্বনিম্ন এক্সেস: {best_result['total_excess']} পিস (টার্গেটের {round((best_result['total_excess']/best_result['total_target'])*100,2)}%)")
+    
     else:
-        st.error("❌ কোনো সমাধান পাওয়া যায়নি। অনুগ্রহ করে গ্রিড সাইজ বা প্লেট সংখ্যা বাড়িয়ে দেখুন।")
+        # Manual Mode (আগের মতো)
+        num_plates_used = int(num_plates)
+        result = calculate_for_plates(num_plates_used, labels_input, grid_size)
+        plate_sheets_info = result["plate_sheets"]
+        plate_ups_data = result["plate_ups_data"]
+    
+    # --- Build Master Table (ইউজারকে দেখানোর জন্য) ---
+    st.divider()
+    st.subheader("📊 ফাইনাল রিপোর্ট (Grand Total)")
+    
+    final_data = []
+    for i in range(len(labels_input)):
+        row = {
+            "Name": labels_input[i]["Name"],
+            "Original QTY": labels_input[i]["Original QTY"],
+            "Target QTY": labels_input[i]["Target QTY"]
+        }
+        
+        # Add Plate Ups Columns
+        total_produced = 0
+        for p in range(num_plates_used):
+            ups = plate_ups_data[f"Plate {p+1}"][i]
+            row[f"Plate {p+1} (Ups)"] = ups
+            total_produced += (ups * plate_sheets_info[p])
+            
+        row["Total Produced"] = total_produced
+        row["Excess"] = total_produced - labels_input[i]["Target QTY"]
+        row["Over Print (%)"] = round((row["Excess"] / labels_input[i]["Original QTY"] * 100), 2) if labels_input[i]["Original QTY"] > 0 else 0
+        
+        final_data.append(row)
 
-# Footer
-st.markdown("---")
-st.caption("Developed for Towhidul Islam Tushar | Advanced Pre-Press AI 2026")
+    df_final = pd.DataFrame(final_data)
+
+    # Calculate Total Row
+    total_row = {"Name": "TOTAL", "Original QTY": df_final["Original QTY"].sum(), "Target QTY": df_final["Target QTY"].sum()}
+    for p in range(num_plates_used):
+        total_row[f"Plate {p+1} (Ups)"] = df_final[f"Plate {p+1} (Ups)"].sum()
+    total_row["Total Produced"] = df_final["Total Produced"].sum()
+    total_row["Excess"] = df_final["Excess"].sum()
+    total_row["Over Print (%)"] = round(df_final["Over Print (%)"].mean(), 2)
+    
+    df_with_total = pd.concat([df_final, pd.DataFrame([total_row])], ignore_index=True)
+    
+    # Display Table
+    st.table(df_with_total)
+
+    # Display Sheet Requirements under the table
+    st.write("### 📝 প্রিন্টিং ইনস্ট্রাকশন:")
+    cols_info = st.columns(num_plates_used)
+    for p in range(num_plates_used):
+        with cols_info[p]:
+            st.info(f"**Plate {p+1}:** {plate_sheets_info[p]} শিট প্রিন্ট করতে হবে।")
+
+    # Final Check
+    if any(df_final["Excess"] < 0):
+        st.error("⚠️ সতর্কবার্তা: কিছু লেবেল টার্গেটের চেয়ে কম উৎপাদন হচ্ছে!")
+    else:
+        st.success("✅ অভিনন্দন! টার্গেট কোয়ান্টিটি সম্পূর্ণ পূরণ হয়েছে।")
