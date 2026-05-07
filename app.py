@@ -1,156 +1,92 @@
 import streamlit as st
-import math
 import pandas as pd
 
-# অ্যাপ কনফিগারেশন
-st.set_page_config(page_title="Zero-Waste AI Pre-Press", layout="wide")
+st.set_page_config(page_title="Manual Pre-Press Controller", layout="wide")
 
-# ডার্ক থিম কাস্টমাইজেশন
+# ডার্ক থিম স্টাইল
 st.markdown("""
     <style>
-    .stApp { background-color: #0d1117; }
-    .stTable { background-color: #161b22 !important; border-radius: 10px; color: white !important; }
-    table { color: white !important; border: 1px solid #30363d; }
-    thead tr th { background-color: #21262d !important; color: #58a6ff !important; }
-    label, p, h3 { color: #c9d1d9 !important; }
-    .stInfo { background-color: #091e42; color: #e6edf3; border: 1px solid #1f6feb; }
-    .stSuccess { background-color: #0f2d1e; color: #aff5b4; }
+    .stApp { background-color: #0d1117; color: white; }
+    .stNumberInput input { background-color: #161b22 !important; color: white !important; }
+    .stTable { background-color: #161b22 !important; }
+    table { color: white !important; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🎨 AI Pre-Press Optimizer (Final Zero-Waste)")
-st.write("এটি আপনার ম্যানুয়াল রিপোর্টের লজিক ব্যবহার করে অপচয় ১-২% এর নিচে নামিয়ে আনবে।")
+st.title("🛠️ Manual Pre-Press Controller")
+st.write("এখানে আপনি নিজের ইচ্ছামতো ঘর (Ups) এবং শিট বসিয়ে অপচয় চেক করতে পারবেন।")
 
-# --- Sidebar: Configuration ---
-st.sidebar.header("⚙️ মাস্টার সেটিংস")
-grid_size = st.sidebar.number_input("গ্রিড সাইজ (Grid Size)", min_value=1, value=30)
-extra_percent = st.sidebar.number_input("অ্যাড-অন (Extra %)", min_value=0.0, value=0.0)
-num_labels = st.sidebar.number_input("মোট লেবেল পদ", min_value=1, value=8)
-num_plates = st.sidebar.number_input("প্লেট সংখ্যা", min_value=1, value=2)
+# --- Configuration ---
+st.sidebar.header("⚙️ সেটিংস")
+grid_size = st.sidebar.number_input("গ্রিড সাইজ", value=30)
+num_labels = st.sidebar.number_input("মোট লেবেল পদ", value=8)
 
-# --- Data Input Section ---
-st.subheader("📦 লেবেল কোয়ান্টিটি ইনপুট")
-labels_input = []
-cols = st.columns(2)
+# --- Sheet Input ---
+st.subheader("📄 শিট সংখ্যা ইনপুট (Plate-wise)")
+col_s1, col_s2 = st.columns(2)
+s1 = col_s1.number_input("Plate 1 Sheets", min_value=0, value=276)
+s2 = col_s2.number_input("Plate 2 Sheets", min_value=0, value=38)
+
+# --- Labels & Ups Input ---
+st.subheader("📦 লেবেল এবং ঘর (Ups) সেট করুন")
+labels_data = []
+
+# টেবিল হেডার
+header = st.columns([2, 2, 1, 1])
+header[0].write("**লেবেল নাম**")
+header[1].write("**টার্গেট QTY**")
+header[2].write("**Plate 1 Ups**")
+header[3].write("**Plate 2 Ups**")
+
 for i in range(int(num_labels)):
-    col_idx = i % 2
-    with cols[col_idx]:
-        c1, c2 = st.columns([2, 1])
-        l_name = c1.text_input(f"নাম {i+1}", value=f"Label {i+1}", key=f"name_{i}")
-        l_qty = c2.number_input(f"QTY", min_value=1, value=500, key=f"qty_{i}")
-        target = math.ceil(l_qty * (1 + extra_percent / 100))
-        labels_input.append({"Name": l_name, "Original QTY": l_qty, "Target QTY": target})
+    c = st.columns([2, 2, 1, 1])
+    name = c[0].text_input(f"Name {i+1}", value=f"Label {i+1}", key=f"n_{i}", label_visibility="collapsed")
+    target = c[1].number_input(f"Target {i+1}", value=1000, key=f"t_{i}", label_visibility="collapsed")
+    u1 = c[2].number_input(f"P1 U {i+1}", min_value=0, value=0, key=f"u1_{i}", label_visibility="collapsed")
+    u2 = c[3].number_input(f"P2 U {i+1}", min_value=0, value=0, key=f"u2_{i}", label_visibility="collapsed")
+    labels_data.append({"Name": name, "Target": target, "U1": u1, "U2": u2})
 
-# --- AI Optimization Engine ---
-if st.button("🚀 স্মার্ট ক্যালকুলেশন রান করুন"):
-    best_config = None
-    min_total_excess = float('inf')
+# --- Calculation & Report ---
+if st.button("📊 ক্যালকুলেট রিপোর্ট"):
+    final_rows = []
+    total_u1 = 0
+    total_u2 = 0
     
-    # সার্চ রেঞ্জ নির্ধারণ (ম্যানুয়াল রিপোর্টের স্টাইল)
-    total_q = sum(l['Target QTY'] for l in labels_input)
-    avg_s = total_q / (grid_size * num_plates)
+    for l in labels_data:
+        prod = (l["U1"] * s1) + (l["U2"] * s2)
+        excess = prod - l["Target"]
+        over_print = (excess / l["Target"] * 100) if l["Target"] > 0 else 0
+        
+        final_rows.append({
+            "Name": l["Name"],
+            "Target QTY": l["Target"],
+            "Plate 1 (Ups)": l["U1"],
+            "Plate 2 (Ups)": l["U2"],
+            "Total Produced": prod,
+            "Excess": excess,
+            "Over Print (%)": round(over_print, 2)
+        })
+        total_u1 += l["U1"]
+        total_u2 += l["U2"]
+
+    df = pd.DataFrame(final_rows)
     
-    # s1 হবে বড় শিট (বড় অর্ডারের জন্য), s2 হবে ছোট শিট (অ্যাডজাস্টমেন্টের জন্য)
-    s1_range = range(max(10, int(avg_s * 0.5)), int(avg_s * 1.5) + 100, 2)
-    s2_list = [38, 50, 75, 100, 150, 200] if num_plates > 1 else [0]
-
-    # প্রোগ্রেস বার
-    progress_bar = st.progress(0)
+    # গ্র্যান্ড টোটাল
+    total_target = df["Target QTY"].sum()
+    total_prod = df["Total Produced"].sum()
+    total_excess = total_prod - total_target
     
-    for idx, s1 in enumerate(s1_range):
-        for s2 in s2_list:
-            if num_plates == 1: s2 = 0
-            
-            current_ups = {"P1": [0]*len(labels_input), "P2": [0]*len(labels_input)}
-            possible_run = True
-            
-            for i, l in enumerate(labels_input):
-                best_l_excess = float('inf')
-                best_u_pair = (0, 0)
-                
-                # ঘর বণ্টন চেক
-                for u1 in range(grid_size + 1):
-                    for u2 in range(grid_size + 1) if num_plates > 1 else [0]:
-                        if (u1 + u2) > (grid_size * num_plates): continue
-                        
-                        prod = (u1 * s1) + (u2 * s2)
-                        if prod >= l["Target QTY"]:
-                            excess = prod - l["Target QTY"]
-                            if excess < best_l_excess:
-                                best_l_excess = excess
-                                best_u_pair = (u1, u2)
-                            break # টার্গেট পূরণ হলে পরবর্তী লেবেলে যাও
-                
-                current_ups["P1"][i] = best_u_pair[0]
-                current_ups["P2"][i] = best_u_pair[1]
-            
-            # গ্রিড সাইজ চেক (৩০ এর বেশি যেন না হয়)
-            if sum(current_ups["P1"]) <= grid_size and sum(current_ups["P2"]) <= grid_size:
-                total_excess = 0
-                for i, l in enumerate(labels_input):
-                    prod = (current_ups["P1"][i] * s1) + (current_ups["P2"][i] * s2)
-                    total_excess += (prod - l["Target QTY"])
-                
-                if total_excess < min_total_excess:
-                    min_total_excess = total_excess
-                    best_config = {"s1": s1, "s2": s2, "ups": current_ups}
-                    if min_total_excess == 0: break
-        
-        if idx % 10 == 0: progress_bar.progress(idx / len(s1_range))
+    st.divider()
+    st.subheader("📋 ফাইনাল রিপোর্ট")
+    st.table(df)
     
-    progress_bar.empty()
+    # সামারি কার্ডস
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Plate 1 Total Ups", f"{total_u1} / {grid_size}", delta=total_u1-grid_size, delta_color="inverse")
+    c2.metric("Plate 2 Total Ups", f"{total_u2} / {grid_size}", delta=total_u2-grid_size, delta_color="inverse")
+    c3.metric("Total Excess", f"{total_excess} Pcs", f"{round((total_excess/total_target*100),2) if total_target > 0 else 0}%")
 
-    if best_config:
-        # --- ঘর ৩০ পূর্ণ করার লজিক (Grid Filling) ---
-        for p_key in ["P1", "P2"]:
-            p_name = "Plate 1" if p_key == "P1" else "Plate 2"
-            used = sum(best_config["ups"][p_key])
-            if used < grid_size:
-                diff = grid_size - used
-                # সবচেয়ে বড় টার্গেট যে লেবেলের তাকে বাকি ঘর দাও
-                max_idx = 0
-                for i in range(len(labels_input)):
-                    if labels_input[i]["Target QTY"] > labels_input[max_idx]["Target QTY"]:
-                        max_idx = i
-                best_config["ups"][p_key][max_idx] += diff
-
-        # --- রিপোর্ট টেবিল জেনারেশন ---
-        final_data = []
-        for i, l in enumerate(labels_input):
-            u1 = best_config["ups"]["P1"][i]
-            u2 = best_config["ups"]["P2"][i]
-            prod = (u1 * best_config["s1"]) + (u2 * best_config["s2"])
-            final_data.append({
-                "Name": l["Name"],
-                "Target QTY": l["Target QTY"],
-                "Plate 1 (Ups)": u1,
-                "Plate 2 (Ups)": u2,
-                "Total Produced": prod,
-                "Excess": prod - l["Target QTY"],
-                "Over Print (%)": round(((prod - l["Target QTY"])/l["Target QTY"]*100), 4)
-            })
-
-        df_final = pd.DataFrame(final_data)
-        
-        # TOTAL Row
-        total_row = {
-            "Name": "TOTAL",
-            "Target QTY": df_final["Target QTY"].sum(),
-            "Plate 1 (Ups)": df_final["Plate 1 (Ups)"].sum(),
-            "Plate 2 (Ups)": df_final["Plate 2 (Ups)"].sum(),
-            "Total Produced": df_final["Total Produced"].sum(),
-            "Excess": df_final["Excess"].sum(),
-            "Over Print (%)": round((df_final["Excess"].sum() / df_final["Target QTY"].sum() * 100), 4)
-        }
-        
-        st.subheader("📊 ফাইনাল রিপোর্ট (Cross-Plate AI Optimized)")
-        st.table(pd.concat([df_final, pd.DataFrame([total_row])], ignore_index=True))
-
-        # প্রিন্টিং ইনস্ট্রাকশন
-        c1, c2 = st.columns(2)
-        with c1: st.info(f"📍 **Plate 1:** {best_config['s1']} শিট প্রিন্ট করুন।")
-        with c2: st.info(f"📍 **Plate 2:** {best_config['s2']} শিট প্রিন্ট করুন।")
-        
-        st.success(f"✅ AI সলিউশন পাওয়া গেছে! মোট অপচয় মাত্র {int(min_total_excess)} পিস।")
-    else:
-        st.error("দুঃখিত, এই কনফিগারেশনে কোনো রেশিও মেলানো সম্ভব হয়নি।")
+    if total_u1 > grid_size or total_u2 > grid_size:
+        st.error(f"⚠️ সাবধান! আপনার ঘর সংখ্যা গ্রিড সাইজ ({grid_size}) অতিক্রম করেছে।")
+    elif total_u1 == grid_size and total_u2 == grid_size:
+        st.success("✅ পারফেক্ট! গ্রিড পুরোপুরি পূর্ণ হয়েছে।")
