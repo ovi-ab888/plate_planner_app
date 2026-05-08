@@ -54,41 +54,44 @@ def check_password():
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # Custom password UI - No white box
+    # Custom CSS for black background password page
     st.markdown("""
     <style>
-        /* Remove all white backgrounds */
+        /* Black background for entire app */
         .stApp {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: black !important;
         }
         
-        /* Remove Streamlit default containers */
+        /* Remove all white backgrounds */
         .main > div {
             background: transparent !important;
         }
         
-        /* Style for password container - transparent */
+        /* Style for password container - transparent with glow */
         .password-container {
             max-width: 450px;
-            margin: 150px auto;
+            margin: 180px auto;
             padding: 2.5rem;
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(0, 0, 0, 0.85);
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            box-shadow: 0 20px 60px rgba(102,126,234,0.3);
             text-align: center;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid rgba(102,126,234,0.5);
         }
         
         .password-container h2 {
-            color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 0.5rem;
             font-size: 2rem;
             font-weight: 700;
         }
         
         .password-container p {
-            color: #666;
+            color: #aaa;
             margin-bottom: 1.5rem;
             font-size: 1rem;
         }
@@ -97,9 +100,11 @@ def check_password():
         .password-container input {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e0e0e0;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #333;
             border-radius: 10px;
             font-size: 1rem;
+            color: white;
             transition: all 0.3s ease;
         }
         
@@ -107,6 +112,11 @@ def check_password():
             border-color: #667eea;
             outline: none;
             box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .password-container input::placeholder {
+            color: #666;
         }
         
         /* Style error message */
@@ -115,6 +125,7 @@ def check_password():
             border-left: 4px solid #ff4444 !important;
             color: #ff4444 !important;
             border-radius: 10px !important;
+            margin-top: 1rem !important;
         }
         
         /* Hide default Streamlit elements */
@@ -126,24 +137,39 @@ def check_password():
         .block-container {
             padding-top: 0 !important;
         }
+        
+        /* Remove white boxes from all streamlit elements */
+        div.stTextInput > div > div > input {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-color: #333;
+        }
+        
+        div.stTextInput > div > div > input:focus {
+            border-color: #667eea;
+        }
+        
+        /* Fix label visibility error */
+        .stTextInput label {
+            display: none !important;
+        }
     </style>
     """, unsafe_allow_html=True)
     
-    # Display password form
-    with st.container():
-        st.markdown('<div class="password-container">', unsafe_allow_html=True)
-        st.markdown('<h2>🔐 Secure Access</h2>', unsafe_allow_html=True)
-        st.markdown('<p>Please enter your access code to continue</p>', unsafe_allow_html=True)
-        
-        # Password input
-        password = st.text_input("Enter Your Access Code", type="password", key="password", 
-                                 on_change=_password_entered, label_visibility="collowed")
-        
-        # Wrong password message
-        if st.session_state.get("password_correct") is False:
-            st.error("❌ Your password is incorrect. Please contact Mr. Ovi for assistance.")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
+    # Display password form without label_visibility parameter
+    st.markdown('<div class="password-container">', unsafe_allow_html=True)
+    st.markdown('<h2>🔐 Secure Access</h2>', unsafe_allow_html=True)
+    st.markdown('<p>Please enter your access code to continue</p>', unsafe_allow_html=True)
+    
+    # Password input - fixed version without label_visibility
+    password = st.text_input("Enter Your Access Code", type="password", key="password", 
+                             on_change=_password_entered)
+    
+    # Wrong password message
+    if st.session_state.get("password_correct") is False:
+        st.error("❌ Your password is incorrect. Please contact Mr. Ovi for assistance.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
     
     return False
 
@@ -151,10 +177,14 @@ def check_password():
 if not check_password():
     st.stop()
 
-# Custom CSS for professional styling
+# Custom CSS for main app styling
 st.markdown("""
 <style>
-    /* Main container styling */
+    /* Main container styling - Black background */
+    .stApp {
+        background: black !important;
+    }
+    
     .main {
         padding: 0rem 1rem;
     }
@@ -180,26 +210,29 @@ st.markdown("""
         font-size: 1.1rem;
     }
     
-    /* Card styling - Updated border color */
+    /* Card styling - Dark theme */
     .card {
-        background: white;
+        background: #1a1a1a;
         border-radius: 12px;
         padding: 1.5rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         margin-bottom: 1.5rem;
-        border: 1px solid #667eea;
+        border: 1px solid #333;
         transition: all 0.3s ease;
     }
     
     .card:hover {
         box-shadow: 0 5px 20px rgba(102,126,234,0.15);
-        border-color: #764ba2;
+        border-color: #667eea;
     }
     
     .card-title {
         font-size: 1.3rem;
         font-weight: 600;
-        color: #2c3e50;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         margin-bottom: 1rem;
         padding-bottom: 0.5rem;
         border-bottom: 2px solid #667eea;
@@ -249,12 +282,14 @@ st.markdown("""
         box-shadow: 0 5px 15px rgba(102,126,234,0.4);
     }
     
-    /* Input field styling */
+    /* Input field styling - Dark theme */
     .stTextInput > div > div > input,
     .stNumberInput > div > div > input {
         border-radius: 8px;
-        border: 1px solid #e0e0e0;
+        border: 1px solid #333;
         padding: 0.5rem;
+        background: #1a1a1a;
+        color: white;
     }
     
     .stTextInput > div > div > input:focus,
@@ -263,11 +298,18 @@ st.markdown("""
         box-shadow: 0 0 0 2px rgba(102,126,234,0.1);
     }
     
+    /* Label styling */
+    .stTextInput label, .stNumberInput label {
+        color: #ccc !important;
+    }
+    
     /* Table styling */
     .dataframe {
         border-radius: 10px;
         overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        background: #1a1a1a;
+        color: white;
     }
     
     /* Success/Info boxes */
@@ -286,13 +328,14 @@ st.markdown("""
     .footer {
         text-align: center;
         padding: 2rem;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        background: #1a1a1a;
         border-radius: 15px;
         margin-top: 2rem;
+        border: 1px solid #333;
     }
     
     .footer p {
-        color: #2c3e50;
+        color: #ccc;
         font-size: 0.9rem;
         margin: 0.5rem 0;
     }
@@ -300,7 +343,10 @@ st.markdown("""
     .designer-credit {
         font-size: 1rem;
         font-weight: 600;
-        color: #667eea;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         margin-top: 0.5rem;
     }
     
@@ -312,6 +358,18 @@ st.markdown("""
         border-radius: 20px;
         font-size: 0.85rem;
         color: white;
+    }
+    
+    /* Selectbox styling */
+    .stSelectbox label {
+        color: #ccc !important;
+    }
+    
+    /* Number input styling */
+    .stNumberInput div[data-baseweb="input"] input {
+        background: #1a1a1a;
+        color: white;
+        border-color: #333;
     }
 </style>
 """, unsafe_allow_html=True)
