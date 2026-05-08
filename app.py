@@ -54,39 +54,97 @@ def check_password():
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # Input box with custom styling
+    # Custom password UI - No white box
     st.markdown("""
     <style>
-    .password-container {
-        max-width: 400px;
-        margin: 100px auto;
-        padding: 2rem;
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        text-align: center;
-    }
-    .password-container h2 {
-        color: #2c3e50;
-        margin-bottom: 1rem;
-    }
-    .password-container p {
-        color: #666;
-        margin-bottom: 1.5rem;
-    }
+        /* Remove all white backgrounds */
+        .stApp {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        /* Remove Streamlit default containers */
+        .main > div {
+            background: transparent !important;
+        }
+        
+        /* Style for password container - transparent */
+        .password-container {
+            max-width: 450px;
+            margin: 150px auto;
+            padding: 2.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .password-container h2 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+            font-size: 2rem;
+            font-weight: 700;
+        }
+        
+        .password-container p {
+            color: #666;
+            margin-bottom: 1.5rem;
+            font-size: 1rem;
+        }
+        
+        /* Style input field */
+        .password-container input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .password-container input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
+        }
+        
+        /* Style error message */
+        .stAlert {
+            background: rgba(255, 0, 0, 0.1) !important;
+            border-left: 4px solid #ff4444 !important;
+            color: #ff4444 !important;
+            border-radius: 10px !important;
+        }
+        
+        /* Hide default Streamlit elements */
+        #MainMenu {visibility: hidden;}
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
+        
+        /* Center everything */
+        .block-container {
+            padding-top: 0 !important;
+        }
     </style>
     """, unsafe_allow_html=True)
     
-    st.markdown('<div class="password-container">', unsafe_allow_html=True)
-    st.markdown('<h2>🔐 Secure Access</h2>', unsafe_allow_html=True)
-    st.markdown('<p>Please enter your access code to continue</p>', unsafe_allow_html=True)
-    st.text_input("Enter Your Access Code", type="password", key="password", on_change=_password_entered, label_visibility="collapsed")
+    # Display password form
+    with st.container():
+        st.markdown('<div class="password-container">', unsafe_allow_html=True)
+        st.markdown('<h2>🔐 Secure Access</h2>', unsafe_allow_html=True)
+        st.markdown('<p>Please enter your access code to continue</p>', unsafe_allow_html=True)
+        
+        # Password input
+        password = st.text_input("Enter Your Access Code", type="password", key="password", 
+                                 on_change=_password_entered, label_visibility="collowed")
+        
+        # Wrong password message
+        if st.session_state.get("password_correct") is False:
+            st.error("❌ Your password is incorrect. Please contact Mr. Ovi for assistance.")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
-    # Wrong
-    if st.session_state.get("password_correct") is False:
-        st.error("❌ Your password is incorrect. Please contact Mr. Ovi for assistance.")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
     return False
 
 # Check password before showing main app
@@ -254,12 +312,6 @@ st.markdown("""
         border-radius: 20px;
         font-size: 0.85rem;
         color: white;
-    }
-    
-    /* Lock icon for password */
-    .lock-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
     }
 </style>
 """, unsafe_allow_html=True)
