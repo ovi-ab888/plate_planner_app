@@ -181,14 +181,15 @@ def check_password():
     # Show Header on password page
     st.markdown("""
     <div class="main-header">
-        <h1>🖨️ Pre-Press Planner V3</h1>
+        <h1>Pre-Press Planner</h1>
         <p>Professional Production Optimization System | Low Waste + Smart UPS Distribution</p>
+         <p>Design By Ovi</p>
     </div>
     """, unsafe_allow_html=True)
     
     # Display password form
     st.markdown('<div class="password-container">', unsafe_allow_html=True)
-    st.markdown('<h2>🔐 Secure Access</h2>', unsafe_allow_html=True)
+    st.markdown('<h2>🔐 Access Code </h2>', unsafe_allow_html=True)
     st.markdown('<p>Please enter your access code to continue</p>', unsafe_allow_html=True)
     
     # Password input
