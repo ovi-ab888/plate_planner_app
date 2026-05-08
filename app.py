@@ -11,7 +11,7 @@ from math import ceil, floor
 import string
 
 st.set_page_config(
-    page_title="Pre-Press Planner V3 | Professional Edition",
+    page_title="Pre-Press Planner | Professional Edition",
     page_icon="🖨️",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -162,7 +162,7 @@ def check_password():
         
         /* Remove white boxes from all streamlit elements */
         div.stTextInput > div > div > input {
-            background: rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0);
             color: white;
             border-color: #333;
         }
