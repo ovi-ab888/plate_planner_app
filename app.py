@@ -54,7 +54,7 @@ def check_password():
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # Custom CSS for black background password page
+    # Custom CSS for black background password page with header
     st.markdown("""
     <style>
         /* Black background for entire app */
@@ -67,10 +67,32 @@ def check_password():
             background: transparent !important;
         }
         
+        /* Main Header Styling - Same as main app */
+        .main-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            text-align: center;
+            margin-top: 1rem;
+        }
+        
+        .main-header h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .main-header p {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.1rem;
+        }
+        
         /* Style for password container - transparent with glow */
         .password-container {
             max-width: 450px;
-            margin: 180px auto;
+            margin: 50px auto;
             padding: 2.5rem;
             background: rgba(0, 0, 0, 0.85);
             border-radius: 20px;
@@ -156,12 +178,20 @@ def check_password():
     </style>
     """, unsafe_allow_html=True)
     
-    # Display password form without label_visibility parameter
+    # Show Header on password page
+    st.markdown("""
+    <div class="main-header">
+        <h1>🖨️ Pre-Press Planner V3</h1>
+        <p>Professional Production Optimization System | Low Waste + Smart UPS Distribution</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Display password form
     st.markdown('<div class="password-container">', unsafe_allow_html=True)
     st.markdown('<h2>🔐 Secure Access</h2>', unsafe_allow_html=True)
     st.markdown('<p>Please enter your access code to continue</p>', unsafe_allow_html=True)
     
-    # Password input - fixed version without label_visibility
+    # Password input
     password = st.text_input("Enter Your Access Code", type="password", key="password", 
                              on_change=_password_entered)
     
@@ -177,7 +207,7 @@ def check_password():
 if not check_password():
     st.stop()
 
-# Custom CSS for main app styling
+# Custom CSS for main app styling (same as before)
 st.markdown("""
 <style>
     /* Main container styling - Black background */
