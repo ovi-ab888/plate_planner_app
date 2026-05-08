@@ -94,7 +94,7 @@ def check_password():
             max-width: 450px;
             margin: 50px auto;
             padding: 2.5rem;
-            background: rgba(0, 0, 0, 0);
+            background: rgba(0, 0, 0, 1);
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(102,126,234,0.3);
             text-align: center;
