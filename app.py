@@ -17,6 +17,82 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# ================================================================
+#  PASSWORD CHECK SYSTEM
+# ================================================================
+def check_password():
+    """Simple password gate using secrets or environment."""
+    expected = None
+
+    # Prefer streamlit secrets
+    try:
+        expected = st.secrets.get("app_password", None)
+    except Exception:
+        expected = None
+
+    # Fallback env variable
+    if expected is None:
+        expected = os.environ.get("PEPCO_APP_PASSWORD")
+
+    # If not found → error
+    if expected is None:
+        st.error("App password not configured. Please set 'app_password' in secrets or PEPCO_APP_PASSWORD env var.")
+        return False
+
+    # When password typed
+    def _password_entered():
+        if st.session_state.get("password") == expected:
+            st.session_state["password_correct"] = True
+            try:
+                del st.session_state["password"]
+            except Exception:
+                pass
+        else:
+            st.session_state["password_correct"] = False
+
+    # Already correct?
+    if st.session_state.get("password_correct", None) is True:
+        return True
+
+    # Input box with custom styling
+    st.markdown("""
+    <style>
+    .password-container {
+        max-width: 400px;
+        margin: 100px auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+    .password-container h2 {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+    .password-container p {
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    st.markdown('<div class="password-container">', unsafe_allow_html=True)
+    st.markdown('<h2>🔐 Secure Access</h2>', unsafe_allow_html=True)
+    st.markdown('<p>Please enter your access code to continue</p>', unsafe_allow_html=True)
+    st.text_input("Enter Your Access Code", type="password", key="password", on_change=_password_entered, label_visibility="collapsed")
+    
+    # Wrong
+    if st.session_state.get("password_correct") is False:
+        st.error("❌ Your password is incorrect. Please contact Mr. Ovi for assistance.")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+    return False
+
+# Check password before showing main app
+if not check_password():
+    st.stop()
+
 # Custom CSS for professional styling
 st.markdown("""
 <style>
@@ -46,14 +122,20 @@ st.markdown("""
         font-size: 1.1rem;
     }
     
-    /* Card styling */
+    /* Card styling - Updated border color */
     .card {
         background: white;
         border-radius: 12px;
         padding: 1.5rem;
         box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         margin-bottom: 1.5rem;
-        border: 1px solid #e0e0e0;
+        border: 1px solid #667eea;
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        box-shadow: 0 5px 20px rgba(102,126,234,0.15);
+        border-color: #764ba2;
     }
     
     .card-title {
@@ -73,6 +155,11 @@ st.markdown("""
         padding: 1rem;
         color: white;
         text-align: center;
+        transition: transform 0.3s ease;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
     }
     
     .metric-value {
@@ -137,31 +224,41 @@ st.markdown("""
         background: linear-gradient(to right, #667eea, transparent);
     }
     
-    /* Footer */
+    /* Footer styling */
     .footer {
         text-align: center;
         padding: 2rem;
-        color: #666;
-        font-size: 0.9rem;
-        border-top: 1px solid #e0e0e0;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        border-radius: 15px;
         margin-top: 2rem;
+    }
+    
+    .footer p {
+        color: #2c3e50;
+        font-size: 0.9rem;
+        margin: 0.5rem 0;
+    }
+    
+    .designer-credit {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #667eea;
+        margin-top: 0.5rem;
     }
     
     /* Badge styling */
     .badge {
         display: inline-block;
         padding: 0.25rem 0.75rem;
-        background: #f0f0f0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border-radius: 20px;
         font-size: 0.85rem;
-        color: #666;
+        color: white;
     }
     
-    /* Two column layout for inputs */
-    .input-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
+    /* Lock icon for password */
+    .lock-icon {
+        font-size: 3rem;
         margin-bottom: 1rem;
     }
 </style>
@@ -320,7 +417,6 @@ st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="card">', unsafe_allow_html=True)
 st.markdown('<div class="card-title">📦 Tag Quantity Details</div>', unsafe_allow_html=True)
 
-left, right = st.columns(2)
 tags = []
 qty = []
 
@@ -535,7 +631,7 @@ if generate_clicked:
         )
 
 # =====================================================
-# FOOTER
+# FOOTER WITH DESIGNER CREDIT
 # =====================================================
 
 st.markdown("---")
@@ -543,5 +639,7 @@ st.markdown("""
 <div class="footer">
     <p>🔥 Pre-Press Planner V3 Professional Edition — Low Waste Optimization + Smart UPS Distribution</p>
     <p class="badge">Version 3.0 | Enterprise Ready</p>
+    <p class="designer-credit">✨ Design & Developed by <strong style="color:#764ba2">Md Ovi</strong> ✨</p>
+    <p style="font-size:0.8rem; opacity:0.7;">© 2026 All Rights Reserved</p>
 </div>
 """, unsafe_allow_html=True)
