@@ -1,4 +1,4 @@
-# app.py — VERSION 2 OPTIMIZER (LOW WASTE LOGIC)
+# app.py — VERSION 3 OPTIMIZER (LOW WASTE + TOTAL ROW)
 
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -11,23 +11,29 @@ from math import ceil, floor
 import string
 
 st.set_page_config(
-    page_title="Pre-Press Planner V2",
+    page_title="Pre-Press Planner V3",
     page_icon="🖨️",
     layout="wide"
 )
 
 # =====================================================
-# Plate Name
+# Plate Name Generator
 # =====================================================
 
 def plate_name(n):
+
     n -= 1
+
     chars = string.ascii_uppercase
+
     out = ""
 
     while True:
+
         out = chars[n % 26] + out
+
         n = n // 26 - 1
+
         if n < 0:
             break
 
@@ -35,7 +41,7 @@ def plate_name(n):
 
 
 # =====================================================
-# VERSION 2: SMART BALANCED UPS (CORE LOGIC)
+# SMART BALANCED UPS
 # =====================================================
 
 def smart_layout(demand, cap):
@@ -45,20 +51,39 @@ def smart_layout(demand, cap):
     if total == 0:
         return {}
 
-    # Step 1: fractional allocation
     raw = {}
     floor_vals = {}
     remainders = {}
 
     for k, v in demand.items():
+
         ratio = (v / total) * cap
+
         raw[k] = ratio
+
         floor_vals[k] = floor(ratio)
+
         remainders[k] = ratio - floor_vals[k]
 
     layout = dict(floor_vals)
 
-    # Step 2: fill remaining capacity using largest remainder
+    # ensure at least 1 UPS
+    for k in layout:
+
+        if layout[k] == 0:
+            layout[k] = 1
+
+    # fix overflow
+    while sum(layout.values()) > cap:
+
+        biggest = max(layout, key=layout.get)
+
+        if layout[biggest] > 1:
+            layout[biggest] -= 1
+        else:
+            break
+
+    # fill remaining
     remaining_cap = cap - sum(layout.values())
 
     while remaining_cap > 0:
@@ -66,20 +91,24 @@ def smart_layout(demand, cap):
         best = max(remainders, key=remainders.get)
 
         layout[best] += 1
-        remainders[best] = 0  # prevent repeat bias
+
+        remainders[best] = 0
+
         remaining_cap -= 1
 
     return layout
 
 
 # =====================================================
-# Auto Planner
+# AUTO PLAN
 # =====================================================
 
 def auto_plan(demand, cap, max_plates):
 
     remaining = demand.copy()
+
     plates = []
+
     produced = Counter()
 
     for i in range(max_plates):
@@ -87,12 +116,14 @@ def auto_plan(demand, cap, max_plates):
         if not any(v > 0 for v in remaining.values()):
             break
 
-        layout = smart_layout(remaining, cap)
+        layout = smart_layout(
+            remaining,
+            cap
+        )
 
         if not layout:
             break
 
-        # sheets calculation (balanced)
         possible = [
             ceil(remaining[k] / v)
             for k, v in layout.items()
@@ -103,11 +134,14 @@ def auto_plan(demand, cap, max_plates):
 
         for k, v in layout.items():
 
-            used = v * sheets
+            produced_qty = v * sheets
 
-            remaining[k] = max(0, remaining[k] - used)
+            remaining[k] = max(
+                0,
+                remaining[k] - produced_qty
+            )
 
-            produced[k] += used
+            produced[k] += produced_qty
 
         plates.append({
             "name": plate_name(len(plates) + 1),
@@ -115,7 +149,10 @@ def auto_plan(demand, cap, max_plates):
             "sheets": sheets
         })
 
-    # overflow handling
+    # =================================================
+    # AUTO OVERPRINT FIX
+    # =================================================
+
     if any(v > 0 for v in remaining.values()) and plates:
 
         last = plates[-1]
@@ -124,9 +161,14 @@ def auto_plan(demand, cap, max_plates):
 
             if remaining[k] > 0:
 
-                per_sheet = last["layout"].get(k, 1)
+                per_sheet = max(
+                    1,
+                    last["layout"].get(k, 1)
+                )
 
-                add_sheets = ceil(remaining[k] / per_sheet)
+                add_sheets = ceil(
+                    remaining[k] / per_sheet
+                )
 
                 last["sheets"] += add_sheets
 
@@ -141,37 +183,72 @@ def auto_plan(demand, cap, max_plates):
 # UI
 # =====================================================
 
-st.title("🖨️ Pre-Press Planner V2 (Low Waste Optimizer)")
+st.title("🖨️ Pre-Press Planner V3")
 
 col1, col2, col3, col4 = st.columns(4)
 
-n = col1.number_input("Tag Count", 1, 50, 6)
-cap = col2.number_input("Plate Capacity", 1, 64, 12)
-maxp = col3.number_input("Max Plates", 1, 50, 3)
-addon = col4.number_input("Add-on %", 0.0, 50.0, 3.0)
+n = col1.number_input(
+    "Tag Count",
+    1,
+    50,
+    6
+)
+
+cap = col2.number_input(
+    "Plate Capacity",
+    1,
+    64,
+    12
+)
+
+maxp = col3.number_input(
+    "Max Plates",
+    1,
+    50,
+    2
+)
+
+addon = col4.number_input(
+    "Add-on %",
+    0.0,
+    50.0,
+    0.0,
+    step=0.5
+)
 
 st.markdown("---")
-st.subheader("📦 Input Tags")
 
-l, r = st.columns(2)
+st.subheader("📦 Tag QTY")
+
+left, right = st.columns(2)
 
 tags = []
 qty = []
 
 for i in range(n):
 
-    name = l.text_input(f"Tag {i+1}", f"Tag {i+1}", key=f"t{i}")
-    q = r.number_input(f"{name} Qty", 0, step=10, key=f"q{i}")
+    name = left.text_input(
+        f"Tag {i+1}",
+        f"Tag {i+1}",
+        key=f"tag_{i}"
+    )
+
+    q = right.number_input(
+        f"{name} Qty",
+        0,
+        step=10,
+        key=f"qty_{i}"
+    )
 
     tags.append(name)
+
     qty.append(q)
 
-
 # =====================================================
-# Data
+# DATA
 # =====================================================
 
-original = {
+original_qty = {
     t: int(q)
     for t, q in zip(tags, qty)
     if q > 0
@@ -183,21 +260,36 @@ demand = {
     if q > 0
 }
 
-
 # =====================================================
-# Generate
+# GENERATE
 # =====================================================
 
-if st.button("🚀 Generate V2 Plan"):
+if st.button("🚀 Generate V3 Plan"):
 
     if not demand:
-        st.error("Enter at least 1 tag")
+
+        st.error("কমপক্ষে ১টি Tag Qty দিন")
+
         st.stop()
 
-    plates, produced = auto_plan(demand, cap, maxp)
+    progress = st.progress(
+        0,
+        text="🔄 Optimizing..."
+    )
+
+    plates, produced = auto_plan(
+        demand,
+        cap,
+        maxp
+    )
+
+    progress.progress(
+        100,
+        text="✅ Done!"
+    )
 
     # =================================================
-    # FINAL TABLE
+    # FINAL SUMMARY
     # =================================================
 
     rows = []
@@ -206,68 +298,167 @@ if st.button("🚀 Generate V2 Plan"):
 
         row = {
             "Tag": tag,
-            "Original QTY": original[tag],
+            "Original QTY": original_qty[tag],
             "Produced (+Add-on)": demand[tag]
         }
 
-        total = 0
+        total_produced = 0
 
+        # dynamic plates
         for p in plates:
 
             ups = p["layout"].get(tag, 0)
 
             row[f"Plate {p['name']}"] = ups
 
-            total += ups * p["sheets"]
+            total_produced += (
+                ups * p["sheets"]
+            )
 
-        excess = total - demand[tag]
+        excess = total_produced - demand[tag]
 
-        row["Total Produced QTY"] = total
+        excess_percent = (
+            round(
+                (excess / demand[tag]) * 100,
+                2
+            )
+            if demand[tag]
+            else 0
+        )
+
+        row["Total Produced QTY"] = total_produced
+
         row["Excess"] = excess
-        row["Excess %"] = round((excess / demand[tag]) * 100, 2)
+
+        row["Excess %"] = excess_percent
 
         rows.append(row)
 
     df = pd.DataFrame(rows)
 
-    st.markdown("## 📊 V2 Optimized Production Summary")
-
-    st.dataframe(df, use_container_width=True)
-
     # =================================================
-    # Plate Info
+    # TOTAL ROW
     # =================================================
 
-    st.markdown("## 🧾 Plate Info")
-
-    pinfo = []
+    total_row = {
+        "Tag": "TOTAL",
+        "Original QTY": df["Original QTY"].sum(),
+        "Produced (+Add-on)": df["Produced (+Add-on)"].sum(),
+    }
 
     for p in plates:
 
-        pinfo.append({
-            "Plate": p["name"],
-            "Sheets": p["sheets"],
-            "Total UPS": sum(p["layout"].values())
-        })
+        col = f"Plate {p['name']}"
 
-    st.dataframe(pd.DataFrame(pinfo), use_container_width=True)
+        total_row[col] = df[col].sum()
+
+    total_row["Total Produced QTY"] = df["Total Produced QTY"].sum()
+
+    total_row["Excess"] = df["Excess"].sum()
+
+    total_row["Excess %"] = round(
+        (
+            total_row["Excess"]
+            /
+            total_row["Produced (+Add-on)"]
+        ) * 100,
+        2
+    )
+
+    # add total row
+    df = pd.concat(
+        [
+            df,
+            pd.DataFrame([total_row])
+        ],
+        ignore_index=True
+    )
 
     # =================================================
-    # Excel Export
+    # SHOW TABLE
+    # =================================================
+
+    st.markdown("## 📊 V3 Optimized Production Summary")
+
+    st.dataframe(
+        df,
+        use_container_width=True
+    )
+
+    # =================================================
+    # PLATE INFO
+    # =================================================
+
+    st.markdown("## 🧾 Plate Information")
+
+    plate_rows = []
+
+    for p in plates:
+
+        plate_rows.append({
+            "Plate": p["name"],
+            "Sheets": p["sheets"],
+            "Total UPS": sum(
+                p["layout"].values()
+            )
+        })
+
+    plate_df = pd.DataFrame(plate_rows)
+
+    st.dataframe(
+        plate_df,
+        use_container_width=True
+    )
+
+    # =================================================
+    # TOTAL INFO
+    # =================================================
+
+    total_sheets = sum(
+        p["sheets"]
+        for p in plates
+    )
+
+    total_excess = df.iloc[:-1]["Excess"].sum()
+
+    st.success(
+        f"✅ Total Sheets: {total_sheets}"
+    )
+
+    st.info(
+        f"🧾 Total Excess: {total_excess}"
+    )
+
+    # =================================================
+    # EXCEL EXPORT
     # =================================================
 
     bio = BytesIO()
 
-    with pd.ExcelWriter(bio, engine="openpyxl") as w:
-        df.to_excel(w, sheet_name="V2 Summary", index=False)
+    with pd.ExcelWriter(
+        bio,
+        engine="openpyxl"
+    ) as writer:
+
+        df.to_excel(
+            writer,
+            sheet_name="V3 Production Summary",
+            index=False
+        )
 
     bio.seek(0)
 
     st.download_button(
         "⬇️ Download Excel",
         data=bio,
-        file_name="v2_optimized_plan.xlsx",
+        file_name="v3_optimized_plan.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
-st.caption("🔥 V2 Optimizer: Low waste, proportional UPS, manual-like accuracy")
+# =====================================================
+# FOOTER
+# =====================================================
+
+st.caption(
+    "🔥 Version 3 Optimizer — Low Waste + Smart UPS + Total Summary"
+)
