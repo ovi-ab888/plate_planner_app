@@ -11,7 +11,7 @@ from math import ceil, floor
 import string
 
 st.set_page_config(
-    page_title="Pre-Press Planner | Professional Edition",
+    page_title="Pre-Press Planner V3 | Professional Edition",
     page_icon="🖨️",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -24,22 +24,18 @@ def check_password():
     """Simple password gate using secrets or environment."""
     expected = None
 
-    # Prefer streamlit secrets
     try:
         expected = st.secrets.get("app_password", None)
     except Exception:
         expected = None
 
-    # Fallback env variable
     if expected is None:
         expected = os.environ.get("PEPCO_APP_PASSWORD")
 
-    # If not found → error
     if expected is None:
-        st.error("App password not configured. Please set 'app_password' in secrets or PEPCO_APP_PASSWORD env var.")
+        st.error("App password not configured.")
         return False
 
-    # When password typed
     def _password_entered():
         if st.session_state.get("password") == expected:
             st.session_state["password_correct"] = True
@@ -50,31 +46,100 @@ def check_password():
         else:
             st.session_state["password_correct"] = False
 
-    # Already correct?
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # Custom CSS for black background password page with header
+    # Complete CSS to remove ALL boxes
     st.markdown("""
     <style>
-        /* Black background for entire app */
+        /* Remove all default streamlit containers */
         .stApp {
             background: black !important;
         }
         
-        /* Remove all white backgrounds */
+        /* Remove main container padding and background */
         .main > div {
+            background: transparent !important;
+            padding: 0 !important;
+        }
+        
+        /* Remove all block containers */
+        .block-container {
+            padding: 0rem !important;
+            max-width: 100% !important;
+        }
+        
+        /* Remove element containers */
+        .element-container {
+            background: transparent !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        /* Remove stMarkdown containers */
+        .stMarkdown {
             background: transparent !important;
         }
         
-        /* Main Header Styling - Same as main app */
+        /* Remove ALL div backgrounds */
+        div:not(.password-container):not(.main-header):not(.metric-card):not(.card):not(.footer) {
+            background: transparent !important;
+        }
+        
+        /* Specifically target Streamlit text input wrapper */
+        div[data-testid="stTextInput"] {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        
+        div[data-testid="stTextInput"] > div {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+        }
+        
+        .stTextInput {
+            background: transparent !important;
+            border: none !important;
+        }
+        
+        .stTextInput > div {
+            background: transparent !important;
+            border: none !important;
+        }
+        
+        /* Hide labels */
+        .stTextInput label {
+            display: none !important;
+        }
+        
+        /* Style only the input field */
+        .stTextInput input {
+            background: rgba(255,255,255,0.1) !important;
+            border: 2px solid #333 !important;
+            border-radius: 10px !important;
+            color: white !important;
+            padding: 12px !important;
+            width: 100% !important;
+            margin: 0 !important;
+        }
+        
+        .stTextInput input:focus {
+            border-color: #667eea !important;
+            outline: none !important;
+        }
+        
+        /* Header styling */
         .main-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 2rem;
             border-radius: 15px;
-            margin-bottom: 2rem;
+            margin: 1rem 1rem 2rem 1rem;
             text-align: center;
-            margin-top: 1rem;
         }
         
         .main-header h1 {
@@ -89,16 +154,21 @@ def check_password():
             font-size: 1.1rem;
         }
         
-        /* Style for password container - transparent with glow */
+        .designer-name {
+            color: #ffd700;
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        /* Password container - THE ONLY BOX THAT SHOULD REMAIN */
         .password-container {
             max-width: 450px;
             margin: 50px auto;
             padding: 2.5rem;
-            background: rgba(0, 0, 0, 5);
+            background: rgba(0, 0, 0, 0.85);
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(102,126,234,0.3);
             text-align: center;
-            backdrop-filter: blur(10px);
             border: 1px solid rgba(102,126,234,0.5);
         }
         
@@ -118,29 +188,6 @@ def check_password():
             font-size: 1rem;
         }
         
-        /* Style input field */
-        .password-container input {
-            width: 100%;
-            padding: 12px;
-            background: rgba(255,255,255,0.1);
-            border: 2px solid #333;
-            border-radius: 10px;
-            font-size: 1rem;
-            color: white;
-            transition: all 0.3s ease;
-        }
-        
-        .password-container input:focus {
-            border-color: #667eea;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.2);
-            background: rgba(255,255,255,0.15);
-        }
-        
-        .password-container input::placeholder {
-            color: #666;
-        }
-        
         /* Style error message */
         .stAlert {
             background: rgba(255, 0, 0, 0.1) !important;
@@ -150,53 +197,42 @@ def check_password():
             margin-top: 1rem !important;
         }
         
-        /* Hide default Streamlit elements */
+        /* Hide everything else */
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
         footer {visibility: hidden;}
         
-        /* Center everything */
-        .block-container {
-            padding-top: 0 !important;
+        /* Remove any viewport padding */
+        .view-container {
+            padding: 0 !important;
         }
         
-        /* Remove white boxes from all streamlit elements */
-        div.stTextInput > div > div > input {
-            background: rgba(0,0,0,0);
-            color: white;
-            border-color: #333;
-        }
-        
-        div.stTextInput > div > div > input:focus {
-            border-color: #667eea;
-        }
-        
-        /* Fix label visibility error */
-        .stTextInput label {
-            display: none !important;
+        /* Remove any white space */
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
         }
     </style>
     """, unsafe_allow_html=True)
     
-    # Show Header on password page
+    # Show Header
     st.markdown("""
     <div class="main-header">
-        <h1>Pre-Press Planner</h1>
+        <h1>🖨️ Pre-Press Planner V3</h1>
         <p>Professional Production Optimization System | Low Waste + Smart UPS Distribution</p>
-         <p>Design By Ovi</p>
+        <p class="designer-name">✨ Design by Ovi ✨</p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Display password form
+    # Password form
     st.markdown('<div class="password-container">', unsafe_allow_html=True)
-    st.markdown('<h2>🔐 Access Code </h2>', unsafe_allow_html=True)
+    st.markdown('<h2>🔐 Access Code</h2>', unsafe_allow_html=True)
     st.markdown('<p>Please enter your access code to continue</p>', unsafe_allow_html=True)
     
-    # Password input
-    password = st.text_input("Enter Your Access Code", type="password", key="password", 
-                             on_change=_password_entered)
+    # Password input with hidden label
+    st.text_input("Enter Your Access Code", type="password", key="password", 
+                  on_change=_password_entered, label_visibility="collapsed")
     
-    # Wrong password message
     if st.session_state.get("password_correct") is False:
         st.error("❌ Your password is incorrect. Please contact Mr. Ovi for assistance.")
     
@@ -208,19 +244,13 @@ def check_password():
 if not check_password():
     st.stop()
 
-# Custom CSS for main app styling (same as before)
+# Custom CSS for main app styling
 st.markdown("""
 <style>
-    /* Main container styling - Black background */
     .stApp {
         background: black !important;
     }
     
-    .main {
-        padding: 0rem 1rem;
-    }
-    
-    /* Header styling */
     .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 2rem;
@@ -241,7 +271,6 @@ st.markdown("""
         font-size: 1.1rem;
     }
     
-    /* Card styling - Dark theme */
     .card {
         background: #1a1a1a;
         border-radius: 12px;
@@ -249,11 +278,9 @@ st.markdown("""
         box-shadow: 0 2px 10px rgba(0,0,0,0.3);
         margin-bottom: 1.5rem;
         border: 1px solid #333;
-        transition: all 0.3s ease;
     }
     
     .card:hover {
-        box-shadow: 0 5px 20px rgba(102,126,234,0.15);
         border-color: #667eea;
     }
     
@@ -263,14 +290,12 @@ st.markdown("""
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        background-clip: text;
         margin-bottom: 1rem;
         padding-bottom: 0.5rem;
         border-bottom: 2px solid #667eea;
         display: inline-block;
     }
     
-    /* Metrics styling */
     .metric-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border-radius: 10px;
@@ -295,7 +320,6 @@ st.markdown("""
         margin-top: 0.5rem;
     }
     
-    /* Button styling */
     .stButton > button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -304,7 +328,6 @@ st.markdown("""
         font-size: 1rem;
         font-weight: 600;
         border-radius: 8px;
-        transition: all 0.3s ease;
         width: 100%;
     }
     
@@ -313,7 +336,6 @@ st.markdown("""
         box-shadow: 0 5px 15px rgba(102,126,234,0.4);
     }
     
-    /* Input field styling - Dark theme */
     .stTextInput > div > div > input,
     .stNumberInput > div > div > input {
         border-radius: 8px;
@@ -323,39 +345,6 @@ st.markdown("""
         color: white;
     }
     
-    .stTextInput > div > div > input:focus,
-    .stNumberInput > div > div > input:focus {
-        border-color: #667eea;
-        box-shadow: 0 0 0 2px rgba(102,126,234,0.1);
-    }
-    
-    /* Label styling */
-    .stTextInput label, .stNumberInput label {
-        color: #ccc !important;
-    }
-    
-    /* Table styling */
-    .dataframe {
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        background: #1a1a1a;
-        color: white;
-    }
-    
-    /* Success/Info boxes */
-    .stSuccess, .stInfo {
-        border-radius: 10px;
-        padding: 1rem;
-    }
-    
-    /* Divider styling */
-    hr {
-        margin: 2rem 0;
-        background: linear-gradient(to right, #667eea, transparent);
-    }
-    
-    /* Footer styling */
     .footer {
         text-align: center;
         padding: 2rem;
@@ -377,11 +366,8 @@ st.markdown("""
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-top: 0.5rem;
     }
     
-    /* Badge styling */
     .badge {
         display: inline-block;
         padding: 0.25rem 0.75rem;
@@ -389,18 +375,6 @@ st.markdown("""
         border-radius: 20px;
         font-size: 0.85rem;
         color: white;
-    }
-    
-    /* Selectbox styling */
-    .stSelectbox label {
-        color: #ccc !important;
-    }
-    
-    /* Number input styling */
-    .stNumberInput div[data-baseweb="input"] input {
-        background: #1a1a1a;
-        color: white;
-        border-color: #333;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -420,7 +394,6 @@ def plate_name(n):
             break
     return out
 
-
 # =====================================================
 # SMART BALANCED UPS
 # =====================================================
@@ -429,12 +402,10 @@ def smart_layout(demand, cap):
     total = sum(demand.values())
     if total == 0:
         return {}
-    raw = {}
     floor_vals = {}
     remainders = {}
     for k, v in demand.items():
         ratio = (v / total) * cap
-        raw[k] = ratio
         floor_vals[k] = floor(ratio)
         remainders[k] = ratio - floor_vals[k]
     layout = dict(floor_vals)
@@ -454,7 +425,6 @@ def smart_layout(demand, cap):
         remainders[best] = 0
         remaining_cap -= 1
     return layout
-
 
 # =====================================================
 # AUTO PLAN
@@ -496,7 +466,6 @@ def auto_plan(demand, cap, max_plates):
                 remaining[k] = 0
     return plates, dict(produced)
 
-
 # =====================================================
 # UI
 # =====================================================
@@ -516,41 +485,16 @@ st.markdown('<div class="card-title">⚙️ Production Configuration</div>', uns
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    n = st.number_input(
-        "🏷️ Tag Count",
-        min_value=1,
-        max_value=50,
-        value=6,
-        help="Number of different tags/labels to print"
-    )
+    n = st.number_input("🏷️ Tag Count", 1, 50, 6)
 
 with col2:
-    cap = st.number_input(
-        "📀 Plate Capacity",
-        min_value=1,
-        max_value=64,
-        value=12,
-        help="Maximum number of UPS per plate"
-    )
+    cap = st.number_input("📀 Plate Capacity", 1, 64, 12)
 
 with col3:
-    maxp = st.number_input(
-        "🎨 Max Plates",
-        min_value=1,
-        max_value=50,
-        value=2,
-        help="Maximum number of plates allowed"
-    )
+    maxp = st.number_input("🎨 Max Plates", 1, 50, 2)
 
 with col4:
-    addon = st.number_input(
-        "📈 Add-on %",
-        min_value=0.0,
-        max_value=50.0,
-        value=0.0,
-        step=0.5,
-        help="Additional percentage for safety stock"
-    )
+    addon = st.number_input("📈 Add-on %", 0.0, 50.0, 0.0, step=0.5)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -564,49 +508,22 @@ qty = []
 for i in range(n):
     col1, col2 = st.columns(2)
     with col1:
-        name = st.text_input(
-            f"Tag {i+1} Name",
-            f"Tag {i+1}",
-            key=f"tag_{i}",
-            help=f"Enter name for tag {i+1}"
-        )
+        name = st.text_input(f"Tag {i+1} Name", f"Tag {i+1}", key=f"tag_{i}")
     with col2:
-        q = st.number_input(
-            f"Quantity",
-            min_value=0,
-            step=10,
-            key=f"qty_{i}",
-            help=f"Enter quantity for {name}"
-        )
+        q = st.number_input(f"Quantity", 0, step=10, key=f"qty_{i}")
     tags.append(name)
     qty.append(q)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# =====================================================
-# DATA
-# =====================================================
-
-original_qty = {
-    t: int(q)
-    for t, q in zip(tags, qty)
-    if q > 0
-}
-
-demand = {
-    t: ceil(int(q) * (1 + addon / 100))
-    for t, q in zip(tags, qty)
-    if q > 0
-}
+# Data
+original_qty = {t: int(q) for t, q in zip(tags, qty) if q > 0}
+demand = {t: ceil(int(q) * (1 + addon / 100)) for t, q in zip(tags, qty) if q > 0}
 
 # Generate Button
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     generate_clicked = st.button("🚀 Generate Optimized Plan", use_container_width=True)
-
-# =====================================================
-# GENERATE
-# =====================================================
 
 if generate_clicked:
     if not demand:
@@ -616,28 +533,16 @@ if generate_clicked:
     with st.spinner("🔄 Optimizing production plan..."):
         plates, produced = auto_plan(demand, cap, maxp)
     
-    # =================================================
-    # FINAL SUMMARY
-    # =================================================
-    
     rows = []
     for tag in demand:
-        row = {
-            "Tag": tag,
-            "Original QTY": original_qty[tag],
-            "Produced (+Add-on)": demand[tag]
-        }
+        row = {"Tag": tag, "Original QTY": original_qty[tag], "Produced (+Add-on)": demand[tag]}
         total_produced = 0
         for p in plates:
             ups = p["layout"].get(tag, 0)
             row[f"Plate {p['name']}"] = ups
             total_produced += (ups * p["sheets"])
         excess = total_produced - demand[tag]
-        excess_percent = (
-            round((excess / demand[tag]) * 100, 2)
-            if demand[tag]
-            else 0
-        )
+        excess_percent = round((excess / demand[tag]) * 100, 2) if demand[tag] else 0
         row["Total Produced QTY"] = total_produced
         row["Excess"] = excess
         row["Excess %"] = excess_percent
@@ -645,87 +550,38 @@ if generate_clicked:
     
     df = pd.DataFrame(rows)
     
-    # =================================================
-    # TOTAL ROW
-    # =================================================
-    
     total_row = {
         "Tag": "📊 TOTAL",
         "Original QTY": df["Original QTY"].sum(),
         "Produced (+Add-on)": df["Produced (+Add-on)"].sum(),
     }
     for p in plates:
-        col = f"Plate {p['name']}"
-        total_row[col] = df[col].sum()
+        total_row[f"Plate {p['name']}"] = df[f"Plate {p['name']}"].sum()
     total_row["Total Produced QTY"] = df["Total Produced QTY"].sum()
     total_row["Excess"] = df["Excess"].sum()
-    total_row["Excess %"] = round(
-        (total_row["Excess"] / total_row["Produced (+Add-on)"]) * 100, 2
-    ) if total_row["Produced (+Add-on)"] > 0 else 0
+    total_row["Excess %"] = round((total_row["Excess"] / total_row["Produced (+Add-on)"]) * 100, 2) if total_row["Produced (+Add-on)"] > 0 else 0
     
     df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
-    
-    # =================================================
-    # KEY METRICS
-    # =================================================
     
     total_sheets = sum(p["sheets"] for p in plates)
     total_excess = df.iloc[:-1]["Excess"].sum()
     waste_percentage = (total_excess / df.iloc[:-1]["Produced (+Add-on)"].sum() * 100) if df.iloc[:-1]["Produced (+Add-on)"].sum() > 0 else 0
     
     col1, col2, col3, col4 = st.columns(4)
-    
     with col1:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{len(plates)}</div>
-            <div class="metric-label">Total Plates</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown(f'<div class="metric-card"><div class="metric-value">{len(plates)}</div><div class="metric-label">Total Plates</div></div>', unsafe_allow_html=True)
     with col2:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{total_sheets}</div>
-            <div class="metric-label">Total Sheets</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown(f'<div class="metric-card"><div class="metric-value">{total_sheets}</div><div class="metric-label">Total Sheets</div></div>', unsafe_allow_html=True)
     with col3:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{total_excess:,}</div>
-            <div class="metric-label">Total Excess</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown(f'<div class="metric-card"><div class="metric-value">{total_excess:,}</div><div class="metric-label">Total Excess</div></div>', unsafe_allow_html=True)
     with col4:
-        st.markdown(f"""
-        <div class="metric-card">
-            <div class="metric-value">{waste_percentage:.1f}%</div>
-            <div class="metric-label">Waste Rate</div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # =================================================
-    # PRODUCTION SUMMARY TABLE
-    # =================================================
+        st.markdown(f'<div class="metric-card"><div class="metric-value">{waste_percentage:.1f}%</div><div class="metric-label">Waste Rate</div></div>', unsafe_allow_html=True)
     
     st.markdown("---")
     st.markdown("## 📊 Production Summary")
-    
-    st.dataframe(
-        df,
-        use_container_width=True,
-        hide_index=True
-    )
-    
-    # =================================================
-    # PLATE INFORMATION
-    # =================================================
+    st.dataframe(df, use_container_width=True, hide_index=True)
     
     st.markdown("## 🧾 Plate Configuration Details")
-    
     plate_rows = []
     for p in plates:
         plate_rows.append({
@@ -734,47 +590,23 @@ if generate_clicked:
             "Total UPS": sum(p["layout"].values()),
             "Layout": ", ".join([f"{k}:{v}" for k, v in p["layout"].items()])
         })
-    
     plate_df = pd.DataFrame(plate_rows)
-    st.dataframe(
-        plate_df,
-        use_container_width=True,
-        hide_index=True
-    )
-    
-    # =================================================
-    # SUCCESS MESSAGE & EXPORT
-    # =================================================
+    st.dataframe(plate_df, use_container_width=True, hide_index=True)
     
     col1, col2 = st.columns(2)
-    
     with col1:
         st.success(f"✅ Production plan optimized successfully! Total sheets: {total_sheets}")
-    
-    # =================================================
-    # EXCEL EXPORT
-    # =================================================
     
     bio = BytesIO()
     with pd.ExcelWriter(bio, engine="openpyxl") as writer:
         df.to_excel(writer, sheet_name="Production Summary", index=False)
         plate_df.to_excel(writer, sheet_name="Plate Details", index=False)
-    
     bio.seek(0)
     
     with col2:
-        st.download_button(
-            "⬇️ Download Excel Report",
-            data=bio,
-            file_name="prepress_optimized_plan.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            use_container_width=True
-        )
+        st.download_button("⬇️ Download Excel Report", data=bio, file_name="prepress_optimized_plan.xlsx", use_container_width=True)
 
-# =====================================================
-# FOOTER WITH DESIGNER CREDIT
-# =====================================================
-
+# Footer
 st.markdown("---")
 st.markdown("""
 <div class="footer">
