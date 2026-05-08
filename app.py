@@ -1,4 +1,4 @@
-# app.py — FINAL CLEAN VERSION
+# app.py — FINAL PRODUCTION VERSION
 
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -16,16 +16,23 @@ st.set_page_config(
     layout="wide"
 )
 
-# ---------- Helper Functions ----------
+# =========================================================
+# Helper Functions
+# =========================================================
 
 def plate_name(n):
     """Generate plate names A, B, C..."""
+
     n -= 1
+
     chars = string.ascii_uppercase
+
     out = ""
 
     while True:
+
         out = chars[n % 26] + out
+
         n = n // 26 - 1
 
         if n < 0:
@@ -35,50 +42,39 @@ def plate_name(n):
 
 
 def proportional_layout(remaining, cap):
+    """
+    Always ensures:
+    total UPS == Plate Capacity
+    """
 
-    total = sum(remaining.values())
-
-    if total == 0:
-        return {}
-
-    layout = {
-        k: int((remaining[k] / total) * cap)
-        for k in remaining if remaining[k] > 0
+    active = {
+        k: v
+        for k, v in remaining.items()
+        if v > 0
     }
 
-    # minimum 1
-    for k in layout:
-        if layout[k] == 0:
-            layout[k] = 1
+    if not active:
+        return {}
 
-    # fill capacity
-    while sum(layout.values()) < cap:
+    # minimum 1 UPS
+    layout = {
+        k: 1
+        for k in active
+    }
 
-        for k in sorted(
-            remaining,
-            key=lambda x: remaining[x],
-            reverse=True
-        ):
+    current_total = sum(layout.values())
 
-            if sum(layout.values()) >= cap:
-                break
+    # distribute remaining UPS
+    while current_total < cap:
 
-            layout[k] += 1
+        biggest = max(
+            active,
+            key=active.get
+        )
 
-    # trim capacity
-    while sum(layout.values()) > cap:
+        layout[biggest] += 1
 
-        for k in sorted(
-            layout,
-            key=lambda x: layout[x],
-            reverse=True
-        ):
-
-            if sum(layout.values()) <= cap:
-                break
-
-            if layout[k] > 1:
-                layout[k] -= 1
+        current_total += 1
 
     return layout
 
@@ -114,6 +110,7 @@ def auto_plan(demand, cap, max_plates=3):
 
         sheets = max(1, sheets)
 
+        # update remaining
         for k, v in layout.items():
 
             remaining[k] = max(
@@ -129,7 +126,10 @@ def auto_plan(demand, cap, max_plates=3):
             "sheets": sheets
         })
 
-    # auto overprint
+    # =====================================================
+    # AUTO OVERPRINT
+    # =====================================================
+
     if any(v > 0 for v in remaining.values()) and plates:
 
         last = plates[-1]
@@ -153,7 +153,9 @@ def auto_plan(demand, cap, max_plates=3):
     return plates, dict(produced)
 
 
-# ---------- UI ----------
+# =========================================================
+# UI
+# =========================================================
 
 st.title("🖨️ Auto Multi-Plate Planner")
 
@@ -161,30 +163,30 @@ col1, col2, col3, col4 = st.columns(4)
 
 n = col1.number_input(
     "কতটি Tag",
-    1,
-    50,
-    6
+    min_value=1,
+    max_value=50,
+    value=6
 )
 
 cap = col2.number_input(
     "Plate Capacity",
-    1,
-    64,
-    12
+    min_value=1,
+    max_value=64,
+    value=12
 )
 
 maxp = col3.number_input(
     "কতটি Plate বানাতে চান",
-    1,
-    50,
-    3
+    min_value=1,
+    max_value=50,
+    value=3
 )
 
 addon = col4.number_input(
     "Add-on %",
-    0.0,
-    50.0,
-    3.0,
+    min_value=0.0,
+    max_value=50.0,
+    value=3.0,
     step=0.5
 )
 
@@ -192,30 +194,32 @@ st.markdown("---")
 
 st.subheader("📦 Tag QTY দিন")
 
-l, r = st.columns(2)
+left, right = st.columns(2)
 
 tags = []
 qty = []
 
 for i in range(n):
 
-    name = l.text_input(
+    name = left.text_input(
         f"Tag {i+1}",
         f"Tag {i+1}",
-        key=f"t{i}"
+        key=f"tag_{i}"
     )
 
-    q = r.number_input(
+    q = right.number_input(
         f"{name} Qty",
-        0,
+        min_value=0,
         step=10,
-        key=f"q{i}"
+        key=f"qty_{i}"
     )
 
     tags.append(name)
     qty.append(q)
 
-# ---------- Demand ----------
+# =========================================================
+# Demand Calculation
+# =========================================================
 
 original_qty = {
     t: int(q)
@@ -229,7 +233,9 @@ demand = {
     if q > 0
 }
 
-# ---------- Generate ----------
+# =========================================================
+# Generate Plan
+# =========================================================
 
 if st.button("🚀 Generate Plan"):
 
@@ -255,7 +261,9 @@ if st.button("🚀 Generate Plan"):
         text="✅ Done!"
     )
 
-    # ---------- Final Summary ----------
+    # =====================================================
+    # Final Summary
+    # =====================================================
 
     summary_rows = []
 
@@ -269,14 +277,13 @@ if st.button("🚀 Generate Plan"):
 
         total_produced = 0
 
+        # dynamic plate columns
         for p in plates:
 
-            # UPS qty
             ups = p["layout"].get(tag, 0)
 
             row[f"Plate {p['name']}"] = ups
 
-            # produced qty
             total_produced += (
                 ups * p["sheets"]
             )
@@ -300,6 +307,53 @@ if st.button("🚀 Generate Plan"):
 
     summary_df = pd.DataFrame(summary_rows)
 
+    # =====================================================
+    # TOTAL ROW
+    # =====================================================
+
+    total_row = {
+        "Tag": "TOTAL",
+        "Original QTY": summary_df["Original QTY"].sum(),
+        "Produced (+Add-on)": summary_df["Produced (+Add-on)"].sum(),
+    }
+
+    for p in plates:
+
+        col = f"Plate {p['name']}"
+
+        total_row[col] = summary_df[col].sum()
+
+    total_row["Total Produced QTY"] = summary_df["Total Produced QTY"].sum()
+
+    total_row["Excess"] = summary_df["Excess"].sum()
+
+    total_excess_percent = (
+        (
+            total_row["Excess"]
+            /
+            total_row["Produced (+Add-on)"]
+        ) * 100
+        if total_row["Produced (+Add-on)"] > 0
+        else 0
+    )
+
+    total_row["Excess %"] = round(
+        total_excess_percent,
+        2
+    )
+
+    summary_df = pd.concat(
+        [
+            summary_df,
+            pd.DataFrame([total_row])
+        ],
+        ignore_index=True
+    )
+
+    # =====================================================
+    # Show Table
+    # =====================================================
+
     st.markdown("## 📊 Final Production Summary")
 
     st.dataframe(
@@ -307,7 +361,9 @@ if st.button("🚀 Generate Plan"):
         use_container_width=True
     )
 
-    # ---------- Plate Information ----------
+    # =====================================================
+    # Plate Information
+    # =====================================================
 
     st.markdown("## 🧾 Plate Sheet Information")
 
@@ -317,7 +373,10 @@ if st.button("🚀 Generate Plan"):
 
         plate_info.append({
             "Plate": p["name"],
-            "Sheets": p["sheets"]
+            "Sheets": p["sheets"],
+            "Total UPS": sum(
+                p["layout"].values()
+            )
         })
 
     plate_info_df = pd.DataFrame(plate_info)
@@ -327,20 +386,28 @@ if st.button("🚀 Generate Plan"):
         use_container_width=True
     )
 
-    # ---------- Totals ----------
+    # =====================================================
+    # Totals
+    # =====================================================
 
     total_sheets = sum(
         p["sheets"]
         for p in plates
     )
 
-    total_excess = summary_df["Excess"].sum()
+    total_excess = summary_df.iloc[:-1]["Excess"].sum()
 
-    st.success(f"✅ Total Sheets: {total_sheets}")
+    st.success(
+        f"✅ Total Sheets: {total_sheets}"
+    )
 
-    st.info(f"🧾 Total Excess: {total_excess}")
+    st.info(
+        f"🧾 Total Excess: {total_excess}"
+    )
 
-    # ---------- Excel Export ----------
+    # =====================================================
+    # Excel Export
+    # =====================================================
 
     bio = BytesIO()
 
@@ -364,6 +431,10 @@ if st.button("🚀 Generate Plan"):
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
+# =========================================================
+# Footer
+# =========================================================
+
 st.caption(
-    "💡 Dynamic multi-plate planning with automatic overprint handling."
+    "💡 Dynamic multi-plate production planning with exact plate capacity control and automatic overprint handling."
 )
