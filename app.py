@@ -65,7 +65,7 @@ def check_password():
         
         .block-container {
             padding: 0rem !important;
-            max-width: 80% !important;
+            max-width: 40% !important;
         }
         
         .element-container {
