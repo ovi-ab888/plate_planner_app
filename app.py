@@ -160,17 +160,7 @@ def check_password():
             margin-top: 0.5rem;
         }
         
-        /* Password container - THE ONLY BOX THAT SHOULD REMAIN */
-        .password-container {
-            max-width: 200px;
-            margin: 50px auto;
-            padding: 2.5rem;
-            background: rgba(0, 0, 0, 0.85);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(102,126,234,0.3);
-            text-align: center;
-            border: 1px solid rgba(102,126,234,0.5);
-        }
+
         
         .password-container h2 {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
