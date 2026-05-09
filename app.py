@@ -629,7 +629,7 @@ st.markdown("""
 <div class="footer">
     <p>📊 Plate Ratio System — Smart UPS Ratio Optimization + Zero Waste Planning</p>
     <p class="badge">Version 3.0 | Enterprise Ready</p>
-    <p class="designer-credit">✨ Design & Developed by <strong style="color:#764ba2">Md Ovi</strong> ✨</p>
+    <p class="designer-credit">✨ Design & Developed by <strong style="color:#764ba2">Ovi</strong> ✨</p>
     <p style="font-size:0.8rem; opacity:0.7;">© 2026 All Rights Reserved</p>
 </div>
 """, unsafe_allow_html=True)
