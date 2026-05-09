@@ -1,4 +1,4 @@
-# app.py — VERSION 3 OPTIMIZER (LOW WASTE + TOTAL ROW) - PROFESSIONAL UI
+# app.py — PLATE RATIO SYSTEM | DESIGN BY OVI
 
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -16,7 +16,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-
 
 # ================================================================
 #  PASSWORD CHECK SYSTEM
@@ -50,44 +49,41 @@ def check_password():
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # Complete CSS to remove ALL boxes
+    # CSS for password page
     st.markdown("""
     <style>
-        /* Remove all default streamlit containers */
+        /* Black background */
         .stApp {
             background: black !important;
         }
         
-        /* Remove main container padding and background */
+        /* Remove all default containers */
         .main > div {
             background: transparent !important;
             padding: 0 !important;
         }
         
-        /* Remove all block containers */
         .block-container {
             padding: 0rem !important;
             max-width: 100% !important;
         }
         
-        /* Remove element containers */
         .element-container {
             background: transparent !important;
             margin: 0 !important;
             padding: 0 !important;
         }
         
-        /* Remove stMarkdown containers */
         .stMarkdown {
             background: transparent !important;
         }
         
-        /* Remove ALL div backgrounds */
+        /* Remove ALL div backgrounds except our containers */
         div:not(.password-container):not(.main-header):not(.metric-card):not(.card):not(.footer) {
             background: transparent !important;
         }
         
-        /* Specifically target Streamlit text input wrapper */
+        /* Remove Streamlit text input wrapper */
         div[data-testid="stTextInput"] {
             background: transparent !important;
             border: none !important;
@@ -118,23 +114,7 @@ def check_password():
             display: none !important;
         }
         
-        /* Style only the input field */
-        .stTextInput input {
-            background: rgba(255,255,255,0.1) !important;
-            border: 2px solid #333 !important;
-            border-radius: 10px !important;
-            color: white !important;
-            padding: 12px !important;
-            width: 50% !important;
-            margin: 0 !important;
-        }
-        
-        .stTextInput input:focus {
-            border-color: #667eea !important;
-            outline: none !important;
-        }
-        
-        /* Header styling */
+        /* Main header styling */
         .main-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 2rem;
@@ -161,7 +141,17 @@ def check_password():
             margin-top: 0.5rem;
         }
         
-
+        /* Password container - centered */
+        .password-container {
+            max-width: 450px;
+            margin: 80px auto;
+            padding: 2.5rem;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(102,126,234,0.3);
+            text-align: center;
+            border: 1px solid rgba(102,126,234,0.5);
+        }
         
         .password-container h2 {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -169,7 +159,7 @@ def check_password():
             -webkit-text-fill-color: transparent;
             background-clip: text;
             margin-bottom: 0.5rem;
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 700;
         }
         
@@ -179,7 +169,23 @@ def check_password():
             font-size: 1rem;
         }
         
-        /* Style error message */
+        /* Remove input styling - let default be */
+        .stTextInput input {
+            background: rgba(255,255,255,0.1) !important;
+            border: 2px solid #333 !important;
+            border-radius: 10px !important;
+            color: white !important;
+            padding: 12px !important;
+            width: 100% !important;
+            margin: 0 !important;
+        }
+        
+        .stTextInput input:focus {
+            border-color: #667eea !important;
+            outline: none !important;
+        }
+        
+        /* Error message */
         .stAlert {
             background: rgba(255, 0, 0, 0.1) !important;
             border-left: 4px solid #ff4444 !important;
@@ -188,17 +194,16 @@ def check_password():
             margin-top: 1rem !important;
         }
         
-        /* Hide everything else */
+        /* Hide menu and footer */
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
         footer {visibility: hidden;}
         
-        /* Remove any viewport padding */
+        /* Remove padding */
         .view-container {
             padding: 0 !important;
         }
         
-        /* Remove any white space */
         html, body {
             margin: 0 !important;
             padding: 0 !important;
@@ -209,18 +214,18 @@ def check_password():
     # Show Header
     st.markdown("""
     <div class="main-header">
-        <h1>🖨️ Pre-Press Planner V3</h1>
-        <p>Professional Production Optimization System | Low Waste + Smart UPS Distribution</p>
+        <h1>📊 Plate Ratio System</h1>
+        <p>Professional UPS Ratio Optimization | Low Waste + Smart Distribution</p>
         <p class="designer-name">✨ Design by Ovi ✨</p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Password form
+    # Password form - Centered
     st.markdown('<div class="password-container">', unsafe_allow_html=True)
     st.markdown('<h2>🔐 Access Code</h2>', unsafe_allow_html=True)
     st.markdown('<p>Please enter your access code to continue</p>', unsafe_allow_html=True)
     
-    # Password input with hidden label
+    # Password input
     st.text_input("Enter Your Access Code", type="password", key="password", 
                   on_change=_password_entered, label_visibility="collapsed")
     
@@ -238,10 +243,12 @@ if not check_password():
 # Custom CSS for main app styling
 st.markdown("""
 <style>
+    /* Black background */
     .stApp {
         background: black !important;
     }
     
+    /* Main header */
     .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 2rem;
@@ -262,6 +269,7 @@ st.markdown("""
         font-size: 1.1rem;
     }
     
+    /* Card styling */
     .card {
         background: #1a1a1a;
         border-radius: 12px;
@@ -287,6 +295,7 @@ st.markdown("""
         display: inline-block;
     }
     
+    /* Metric cards */
     .metric-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border-radius: 10px;
@@ -311,6 +320,7 @@ st.markdown("""
         margin-top: 0.5rem;
     }
     
+    /* Button */
     .stButton > button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -327,6 +337,7 @@ st.markdown("""
         box-shadow: 0 5px 15px rgba(102,126,234,0.4);
     }
     
+    /* Input fields */
     .stTextInput > div > div > input,
     .stNumberInput > div > div > input {
         border-radius: 8px;
@@ -336,6 +347,12 @@ st.markdown("""
         color: white;
     }
     
+    .stTextInput > div > div > input:focus,
+    .stNumberInput > div > div > input:focus {
+        border-color: #667eea;
+    }
+    
+    /* Footer */
     .footer {
         text-align: center;
         padding: 2rem;
@@ -386,7 +403,7 @@ def plate_name(n):
     return out
 
 # =====================================================
-# SMART BALANCED UPS
+# SMART BALANCED UPS - RATIO BASED
 # =====================================================
 
 def smart_layout(demand, cap):
@@ -464,8 +481,8 @@ def auto_plan(demand, cap, max_plates):
 # Header Section
 st.markdown("""
 <div class="main-header">
-    <h1>🖨️ Pre-Press Planner V3</h1>
-    <p>Professional Production Optimization System | Low Waste + Smart UPS Distribution</p>
+    <h1>📊 Plate Ratio System</h1>
+    <p>Professional UPS Ratio Optimization | Low Waste + Smart Distribution</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -595,13 +612,13 @@ if generate_clicked:
     bio.seek(0)
     
     with col2:
-        st.download_button("⬇️ Download Excel Report", data=bio, file_name="prepress_optimized_plan.xlsx", use_container_width=True)
+        st.download_button("⬇️ Download Excel Report", data=bio, file_name="plate_ratio_plan.xlsx", use_container_width=True)
 
 # Footer
 st.markdown("---")
 st.markdown("""
 <div class="footer">
-    <p>🔥 Pre-Press Planner V3 Professional Edition — Low Waste Optimization + Smart UPS Distribution</p>
+    <p>📊 Plate Ratio System — Smart UPS Ratio Optimization + Zero Waste Planning</p>
     <p class="badge">Version 3.0 | Enterprise Ready</p>
     <p class="designer-credit">✨ Design & Developed by <strong style="color:#764ba2">Md Ovi</strong> ✨</p>
     <p style="font-size:0.8rem; opacity:0.7;">© 2026 All Rights Reserved</p>
