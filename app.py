@@ -508,7 +508,7 @@ with col2:
     cap = st.number_input("📀 Plate Capacity", 1, 64, 10)
 
 with col3:
-    maxp = st.number_input("🎨 Max Plates", 1, 50, 2)
+    maxp = st.number_input("🎨 Max Plates", 1, 50, 3)
 
 with col4:
     addon = st.number_input("📈 Add-on %", 0.0, 50.0, 0.0, step=0.5)
