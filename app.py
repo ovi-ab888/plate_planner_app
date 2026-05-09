@@ -18,7 +18,7 @@ st.set_page_config(
 )
 
 # ================================================================
-#  PASSWORD CHECK SYSTEM
+#  PASSWORD CHECK SYSTEM (UPDATED - HEADER + CENTERED BOX)
 # ================================================================
 def check_password():
     """Simple password gate using secrets or environment."""
@@ -49,7 +49,7 @@ def check_password():
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # CSS for password page
+    # CSS for password page - ONLY password container styling
     st.markdown("""
     <style>
         /* Black background */
@@ -57,7 +57,7 @@ def check_password():
             background: black !important;
         }
         
-        /* Remove all default containers */
+        /* Remove all default streamlit containers */
         .main > div {
             background: transparent !important;
             padding: 0 !important;
@@ -78,12 +78,7 @@ def check_password():
             background: transparent !important;
         }
         
-        /* Remove ALL div backgrounds except our containers */
-        div:not(.password-container):not(.main-header):not(.metric-card):not(.card):not(.footer) {
-            background: transparent !important;
-        }
-        
-        /* Remove Streamlit text input wrapper */
+        /* Remove Streamlit text input wrapper backgrounds */
         div[data-testid="stTextInput"] {
             background: transparent !important;
             border: none !important;
@@ -114,12 +109,31 @@ def check_password():
             display: none !important;
         }
         
-        /* Main header styling */
+        /* Input field styling */
+        .stTextInput input {
+            background: rgba(255,255,255,0.1) !important;
+            border: 2px solid #333 !important;
+            border-radius: 10px !important;
+            color: white !important;
+            padding: 14px !important;
+            width: 100% !important;
+            margin: 0 !important;
+            font-size: 16px !important;
+            text-align: center !important;
+        }
+        
+        .stTextInput input:focus {
+            border-color: #667eea !important;
+            outline: none !important;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
+        }
+        
+        /* Main header styling - Top of page */
         .main-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 2rem;
             border-radius: 15px;
-            margin: 1rem 1rem 2rem 1rem;
+            margin: 1rem 1rem 0rem 1rem;
             text-align: center;
         }
         
@@ -141,10 +155,10 @@ def check_password():
             margin-top: 0.5rem;
         }
         
-        /* Password container - centered */
+        /* Password container - Centered with margin top */
         .password-container {
             max-width: 450px;
-            margin: 80px auto;
+            margin: 60px auto 0 auto;
             padding: 2.5rem;
             background: rgba(0, 0, 0, 0.85);
             border-radius: 20px;
@@ -169,37 +183,24 @@ def check_password():
             font-size: 1rem;
         }
         
-        /* Remove input styling - let default be */
-        .stTextInput input {
-            background: rgba(255,255,255,0.1) !important;
-            border: 2px solid #333 !important;
-            border-radius: 10px !important;
-            color: white !important;
-            padding: 12px !important;
-            width: 100% !important;
-            margin: 0 !important;
-        }
-        
-        .stTextInput input:focus {
-            border-color: #667eea !important;
-            outline: none !important;
-        }
-        
-        /* Error message */
+        /* Error message styling */
         .stAlert {
             background: rgba(255, 0, 0, 0.1) !important;
             border-left: 4px solid #ff4444 !important;
             color: #ff4444 !important;
             border-radius: 10px !important;
             margin-top: 1rem !important;
+            max-width: 450px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
         }
         
-        /* Hide menu and footer */
+        /* Hide Streamlit menu and footer */
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
         footer {visibility: hidden;}
         
-        /* Remove padding */
+        /* Remove all padding */
         .view-container {
             padding: 0 !important;
         }
@@ -211,7 +212,7 @@ def check_password():
     </style>
     """, unsafe_allow_html=True)
     
-    # Show Header
+    # Show Header at the top
     st.markdown("""
     <div class="main-header">
         <h1>📊 Plate Ratio System</h1>
@@ -220,19 +221,27 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
     
-    # Password form - Centered
-    st.markdown('<div class="password-container">', unsafe_allow_html=True)
-    st.markdown('<h2>🔐 Access Code</h2>', unsafe_allow_html=True)
-    st.markdown('<p>Please enter your access code to continue</p>', unsafe_allow_html=True)
+    # Password form - Centered below header with some gap
+    st.markdown("""
+    <div style="height: 40px;"></div>
+    <div class="password-container">
+        <h2>🔐 Access Code</h2>
+        <p>Please enter your access code to continue</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Password input
-    st.text_input("Enter Your Access Code", type="password", key="password", 
-                  on_change=_password_entered, label_visibility="collapsed")
+    # Password input (inside the container area)
+    # Using empty columns to center the input
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.text_input("Enter Your Access Code", type="password", key="password", 
+                      on_change=_password_entered, label_visibility="collapsed")
     
+    # Error message centered
     if st.session_state.get("password_correct") is False:
-        st.error("❌ Your password is incorrect. Please contact Mr. Ovi for assistance.")
-    
-    st.markdown('</div>', unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.error("❌ Your password is incorrect. Please contact Mr. Ovi for assistance.")
     
     return False
 
