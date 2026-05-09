@@ -540,7 +540,7 @@ demand = {t: ceil(int(q) * (1 + addon / 100)) for t, q in zip(tags, qty) if q > 
 # Generate Button
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    generate_clicked = st.button("🚀 Generate Optimized Plan", use_container_width=True)
+    generate_clicked = st.button("Generate Plan", use_container_width=True)
 
 if generate_clicked:
     if not demand:
