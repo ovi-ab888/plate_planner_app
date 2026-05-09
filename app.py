@@ -11,11 +11,12 @@ from math import ceil, floor
 import string
 
 st.set_page_config(
-    page_title="Pre-Press Planner V3 | Professional Edition",
-    page_icon="🖨️",
+    page_title="Plate Ratio System | Design by Ovi",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
 
 # ================================================================
 #  PASSWORD CHECK SYSTEM
