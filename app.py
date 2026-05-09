@@ -502,10 +502,10 @@ st.markdown('<div class="card-title">⚙️ Production Configuration</div>', uns
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
-    n = st.number_input("🏷️ Tag Count", 1, 50, 6)
+    n = st.number_input("🏷️ Tag Count", 1, 50, 1)
 
 with col2:
-    cap = st.number_input("📀 Plate Capacity", 1, 64, 12)
+    cap = st.number_input("📀 Plate Capacity", 1, 64, 10)
 
 with col3:
     maxp = st.number_input("🎨 Max Plates", 1, 50, 2)
