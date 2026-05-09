@@ -169,16 +169,6 @@ def check_password():
             font-size: 1rem;
         }
         
-        /* Remove input styling - let default be */
-        .stTextInput input {
-            background: rgba(255,255,255,0.1) !important;
-            border: 2px solid #333 !important;
-            border-radius: 10px !important;
-            color: white !important;
-            padding: 12px !important;
-            width: 100% !important;
-            margin: 0 !important;
-        }
         
         .stTextInput input:focus {
             border-color: #667eea !important;
