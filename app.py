@@ -162,7 +162,7 @@ def check_password():
         
         /* Password container - THE ONLY BOX THAT SHOULD REMAIN */
         .password-container {
-            max-width: 450px;
+            max-width: 200px;
             margin: 50px auto;
             padding: 2.5rem;
             background: rgba(0, 0, 0, 0.85);
