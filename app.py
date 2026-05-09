@@ -116,7 +116,7 @@ def check_password():
             border-radius: 10px !important;
             color: white !important;
             padding: 5px !important;
-            width: 80% !important;
+            width: 100% !important;
             margin: 50 !important;
             font-size: 16px !important;
             text-align: center !important;
