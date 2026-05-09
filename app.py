@@ -173,9 +173,9 @@ def check_password():
         .stTextInput input {
             background: rgba(255,255,255,0.1) !important;
             border: 2px solid #333 !important;
-            border-radius: 10px !important;
+            border-radius: 20px !important;
             color: white !important;
-            padding: 20px !important;
+            padding: 22px !important;
             width: 50% !important;
             margin: 0 !important;
         }
