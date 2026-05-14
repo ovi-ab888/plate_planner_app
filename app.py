@@ -107,8 +107,8 @@ def check_password():
     
     st.markdown("""
     <div class="main-header">
-        <h1>📊 10-in-1 Plate Ratio Comparator</h1>
-        <p>V3 • V4 • V5 • V6 • V7 • V8 • V9 • V10 | Compare All | Pick Best</p>
+        <h1>📊 Plate Ratio System</h1>
+        <p>Compare All | Pick Best</p>
         <p class="designer-name">✨ Design by Ovi ✨</p>
     </div>
     """, unsafe_allow_html=True)
