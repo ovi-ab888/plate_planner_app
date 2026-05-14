@@ -23,6 +23,18 @@ try:
 except ImportError:
     PULP_AVAILABLE = False
 
+# Try to import reportlab for PDF
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
+    print("reportlab not installed")
+
 st.set_page_config(
     page_title="10-in-1 Plate Ratio Comparator | Ovi",
     page_icon="📊",
@@ -274,10 +286,14 @@ def build_full_summary(plates, demand, original_qty):
 
 def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
     """Generate PDF report without Layout column"""
-    if not REPORTLAB_AVAILABLE:
-        return None
-    
     try:
+        # Import all reportlab components inside the function
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4, landscape
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.enums import TA_CENTER
+        
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
         styles = getSampleStyleSheet()
@@ -339,7 +355,7 @@ def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
         story.append(summary_table)
         story.append(Spacer(1, 15))
         
-        # Plate Information Table ( WITHOUT LAYOUT COLUMN )
+        # Plate Information Table (WITHOUT LAYOUT COLUMN)
         plate_data = [["SL", "Plate ID", "Sheets", "Total UPS"]]
         for idx, p in enumerate(plates, 1):
             plate_data.append([str(idx), p["name"], str(p["sheets"]), str(sum(p["layout"].values()))])
