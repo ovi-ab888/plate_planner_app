@@ -680,11 +680,11 @@ st.markdown("""
 st.markdown('<div class="card"><div class="card-title">⚙️ Production Configuration</div>', unsafe_allow_html=True)
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    n = st.number_input("🏷️ Number of Items", 1, 20, 3)
+    n = st.number_input("🏷️ Number of Items", 1, 100, 1)
 with col2:
-    cap = st.number_input("📀 Plate Capacity", 1, 64, 10)
+    cap = st.number_input("📀 Plate Capacity", 1, 100, 10)
 with col3:
-    maxp = st.number_input("🎨 Max Plates", 1, 20, 3)
+    maxp = st.number_input("🎨 Max Plates", 1, 30, 3)
 with col4:
     addon = st.number_input("📈 Add-on %", 0.0, 50.0, 0.0, step=0.5)
 st.markdown('</div>', unsafe_allow_html=True)
