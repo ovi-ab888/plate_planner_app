@@ -16,67 +16,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# =========================================================
-# PASSWORD
-# =========================================================
 
-APP_PASSWORD = "aapress"
-
-
-def check_password():
-
-    st.markdown("""
-    <style>
-    .login-box{
-        background:linear-gradient(135deg,#667eea,#764ba2);
-        padding:60px;
-        border-radius:25px;
-        text-align:center;
-        color:white;
-        margin-top:40px;
-    }
-
-    .title{
-        font-size:48px;
-        font-weight:700;
-    }
-
-    .subtitle{
-        font-size:20px;
-        opacity:0.9;
-        margin-top:10px;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="login-box">
-        <div class="title">🖨️ Pre-Press Planner V4</div>
-        <div class="subtitle">
-            Common Sheet Optimizer • Industrial Low Waste Planning
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    password = st.text_input(
-        "🔐 Enter Password",
-        type="password"
-    )
-
-    if password == APP_PASSWORD:
-        st.session_state["auth"] = True
-        st.rerun()
-
-    elif password:
-        st.error("❌ Incorrect Password")
-
-
-if "auth" not in st.session_state:
-    st.session_state["auth"] = False
-
-if not st.session_state["auth"]:
-    check_password()
-    st.stop()
 
 # =========================================================
 # Helper
