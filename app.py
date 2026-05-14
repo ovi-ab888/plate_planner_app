@@ -1,5 +1,6 @@
 # app.py — 5-IN-1 PLATE RATIO COMPARATOR (UPDATED)
-# Fixed Tag List + PDF + Excel Report
+# Fixed Tag List: Item 1, Item 2, Item 3...
+# PDF + Excel Report
 # Design by Ovi
 
 import os
@@ -14,12 +15,19 @@ import string
 import copy
 import random
 from datetime import datetime
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.lib.enums import TA_CENTER, TA_LEFT
+
+# Try to import reportlab, if not available show error
+try:
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
+    st.warning("⚠️ ReportLab not installed. PDF download will be disabled. Run: pip install reportlab")
 
 st.set_page_config(
     page_title="5-in-1 Plate Ratio Comparator | Ovi",
@@ -177,10 +185,14 @@ st.markdown("""
         border-radius: 15px;
         margin-top: 2rem;
     }
-    div[data-testid="stTextInput"] input {
-        background: #1a1a1a !important;
-        color: white !important;
-        border: 1px solid #333 !important;
+    .tag-display {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #667eea;
+        color: #667eea;
+        font-weight: bold;
+        text-align: center;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -259,6 +271,9 @@ def build_full_summary(plates, demand, original_qty):
 
 def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
     """Generate PDF report in the same format"""
+    if not REPORTLAB_AVAILABLE:
+        return None
+    
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
     styles = getSampleStyleSheet()
@@ -266,7 +281,6 @@ def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
     # Custom styles
     title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=16, alignment=TA_CENTER, textColor=colors.HexColor('#667eea'))
     subtitle_style = ParagraphStyle('CustomSubtitle', parent=styles['Normal'], fontSize=10, alignment=TA_CENTER, textColor=colors.grey)
-    header_style = ParagraphStyle('Header', parent=styles['Normal'], fontSize=12, alignment=TA_LEFT, textColor=colors.white)
     
     story = []
     
@@ -295,13 +309,21 @@ def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
         summary_data.append(row)
         sl += 1
     
-    # Total row
-    total_row = ["📊", "TOTAL", str(sum(original_qty.values())), str(sum(demand.values()))]
+    # Total row calculation
+    total_original = sum(original_qty.values())
+    total_demand = sum(demand.values())
+    total_row = ["📊", "TOTAL", str(total_original), str(total_demand)]
+    total_produced_sum = 0
     for p in plates:
-        total_row.append(str(sum(df[f"Plate {p['name']}"].sum() for df in [pd.DataFrame([{f"Plate {p['name']}": 0}])])))
-    total_produced_sum = sum(original_qty.values())  # Placeholder
-    total_excess_sum = 0
-    total_row.extend([str(total_produced_sum), str(total_excess_sum), "0%"])
+        plate_total = 0
+        for tag in demand:
+            plate_total += p["layout"].get(tag, 0) * p["sheets"]
+        total_row.append(str(plate_total))
+        total_produced_sum += plate_total
+    total_excess_sum = total_produced_sum - total_demand
+    total_excess_percent = f"{round((total_excess_sum / total_produced_sum) * 100, 2) if total_produced_sum > 0 else 0}%"
+    total_row.extend([str(total_produced_sum), str(total_excess_sum), total_excess_percent])
+    summary_data.append(total_row)
     
     summary_table = Table(summary_data)
     summary_table.setStyle(TableStyle([
@@ -309,11 +331,10 @@ def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('FONTSIZE', (0, 0), (-1, 0), 9),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('BACKGROUND', (0, 1), (-1, -2), colors.beige),
         ('GRID', (0, 0), (-1, -1), 1, colors.black),
-        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('FONTSIZE', (0, 1), (-1, -1), 7),
     ]))
     
     story.append(summary_table)
@@ -345,7 +366,7 @@ def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
     return buffer
 
 # ================================================================
-# ALGORITHMS (V3 to V7) - Same as before
+# ALGORITHMS (V3 to V7)
 # ================================================================
 def smart_layout_v3(demand, cap):
     total = sum(demand.values())
@@ -668,25 +689,21 @@ with col4:
     addon = st.number_input("📈 Add-on %", 0.0, 50.0, 0.0, step=0.5)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Tag Quantity Section - FIXED LIST (Non-editable names)
+# Tag Quantity Section - Fixed Item 1, Item 2, Item 3 format
 st.markdown('<div class="card"><div class="card-title">📦 Item Quantity Details</div>', unsafe_allow_html=True)
-
-# Predefined item names (Non-editable)
-default_items = ["Item A", "Item B", "Item C", "Item D", "Item E", "Item F", "Item G", "Item H", "Item I", "Item J",
-                 "Item K", "Item L", "Item M", "Item N", "Item O", "Item P", "Item Q", "Item R", "Item S", "Item T"]
 
 tags = []
 qty = []
 
 for i in range(n):
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1, 2])
     with col1:
-        # Non-editable tag name - using display only
-        st.markdown(f"<div style='background:#2a2a2a; padding:10px; border-radius:8px; color:#667eea; font-weight:bold;'>{default_items[i]}</div>", unsafe_allow_html=True)
-        tag_name = default_items[i]  # Fixed name
+        # Non-editable tag name: Item 1, Item 2, Item 3...
+        item_name = f"Item {i+1}"
+        st.markdown(f"<div class='tag-display'>{item_name}</div>", unsafe_allow_html=True)
     with col2:
-        q = st.number_input(f"Quantity for {tag_name}", 0, 100000, step=10, key=f"qty_{i}")
-    tags.append(tag_name)
+        q = st.number_input(f"Quantity for {item_name}", 0, 100000, step=10, key=f"qty_{i}", label_visibility="collapsed")
+    tags.append(item_name)
     qty.append(q)
 
 st.markdown('</div>', unsafe_allow_html=True)
@@ -825,15 +842,21 @@ if generate_clicked:
         )
     
     with col2:
-        # PDF Export
-        pdf_buffer = generate_pdf_report(selected_plates, demand, original_qty, selected_algo, selected_waste)
-        st.download_button(
-            "📄 Download PDF Report",
-            data=pdf_buffer,
-            file_name=f"{algo_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
+        # PDF Export (if available)
+        if REPORTLAB_AVAILABLE:
+            pdf_buffer = generate_pdf_report(selected_plates, demand, original_qty, selected_algo, selected_waste)
+            if pdf_buffer:
+                st.download_button(
+                    "📄 Download PDF Report",
+                    data=pdf_buffer,
+                    file_name=f"{algo_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+            else:
+                st.error("PDF generation failed")
+        else:
+            st.warning("⚠️ PDF download not available. Install reportlab: pip install reportlab")
 
 # Footer
 st.markdown("---")
