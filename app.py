@@ -1179,6 +1179,6 @@ st.markdown("""
 <div class="footer">
     <p>Plate Ratio System</p>
     <p style="color: #667eea;">✨ Design & Developed by <strong>Ovi</strong> ✨</p>
-    <p style="font-size:0.8rem;">Thank you for using Ovi's Plate Ratio System!</p>
+    <p style="font-size:1rem;">Thank you for using Ovi's Plate Ratio System!</p>
 </div>
 """, unsafe_allow_html=True)
