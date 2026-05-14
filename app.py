@@ -15,7 +15,7 @@ import copy
 import random
 
 st.set_page_config(
-    page_title="5-in-1 Plate Ratio Comparator | Ovi",
+    page_title="Plate Ratio Comparator | Ovi",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed"
