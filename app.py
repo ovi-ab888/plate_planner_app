@@ -1,5 +1,5 @@
-# app.py — V4 COMMON SHEET OPTIMIZER
-# Industrial Style Low-Waste Planner
+# app.py — V5 SMART BALANCING OPTIMIZER
+# Advanced Industrial Pre-Press Planning
 
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -11,7 +11,7 @@ from math import ceil
 import string
 
 st.set_page_config(
-    page_title="Pre-Press Planner V4",
+    page_title="Pre-Press Planner V5",
     page_icon="🖨️",
     layout="wide"
 )
@@ -19,7 +19,7 @@ st.set_page_config(
 
 
 # =========================================================
-# Helper
+# HELPERS
 # =========================================================
 
 def plate_name(n):
@@ -43,21 +43,110 @@ def plate_name(n):
 
 
 # =========================================================
-# COMMON SHEET OPTIMIZER
+# SMART UPS DISTRIBUTION
 # =========================================================
 
-def common_sheet_optimizer(demand, capacity, max_plates):
+def build_balanced_layout(remaining, capacity):
 
-    total_qty = sum(demand.values())
+    active = {
+        k: v
+        for k, v in remaining.items()
+        if v > 0
+    }
 
-    # estimated common sheet target
-    target_sheets = ceil(total_qty / capacity)
+    if not active:
+        return {}
+
+    total_qty = sum(active.values())
+
+    # =====================================================
+    # INITIAL PROPORTIONAL UPS
+    # =====================================================
+
+    layout = {}
+
+    decimals = {}
+
+    for tag, qty in active.items():
+
+        ideal = (qty / total_qty) * capacity
+
+        base = int(ideal)
+
+        if base < 1:
+            base = 1
+
+        layout[tag] = base
+
+        decimals[tag] = ideal - int(ideal)
+
+    # =====================================================
+    # FIX OVERFLOW
+    # =====================================================
+
+    while sum(layout.values()) > capacity:
+
+        biggest = max(layout, key=layout.get)
+
+        if layout[biggest] > 1:
+            layout[biggest] -= 1
+        else:
+            break
+
+    # =====================================================
+    # FILL REMAINING USING DECIMAL PRIORITY
+    # =====================================================
+
+    while sum(layout.values()) < capacity:
+
+        best = max(decimals, key=decimals.get)
+
+        layout[best] += 1
+
+        decimals[best] = 0
+
+    return layout
+
+
+# =========================================================
+# SMART SHEET OPTIMIZER
+# =========================================================
+
+def optimize_sheets(layout, remaining):
+
+    candidate_sheets = []
+
+    for tag, ups in layout.items():
+
+        if ups > 0:
+
+            sheets = ceil(
+                remaining[tag] / ups
+            )
+
+            candidate_sheets.append(sheets)
+
+    # =====================================================
+    # SMART BALANCE
+    # =====================================================
+
+    # try lower balanced sheet count
+    target = min(candidate_sheets)
+
+    return max(1, target)
+
+
+# =========================================================
+# V5 OPTIMIZER
+# =========================================================
+
+def v5_optimizer(demand, capacity, max_plates):
 
     remaining = demand.copy()
 
     plates = []
 
-    for p in range(max_plates):
+    for i in range(max_plates):
 
         active = {
             k: v
@@ -69,71 +158,28 @@ def common_sheet_optimizer(demand, capacity, max_plates):
             break
 
         # =================================================
-        # IDEAL UPS CALCULATION
+        # BUILD SMART LAYOUT
         # =================================================
 
-        ideal = {}
-
-        for tag, qty in active.items():
-
-            ups = qty / target_sheets
-
-            ideal[tag] = ups
+        layout = build_balanced_layout(
+            active,
+            capacity
+        )
 
         # =================================================
-        # INITIAL INTEGER UPS
+        # SMART SHEET COUNT
         # =================================================
 
-        layout = {
-            k: max(1, round(v))
-            for k, v in ideal.items()
-        }
+        sheets = optimize_sheets(
+            layout,
+            remaining
+        )
 
-        # =================================================
-        # FIX TOTAL UPS
-        # =================================================
-
-        while sum(layout.values()) > capacity:
-
-            biggest = max(layout, key=layout.get)
-
-            if layout[biggest] > 1:
-                layout[biggest] -= 1
-            else:
-                break
-
-        while sum(layout.values()) < capacity:
-
-            # highest remaining qty gets extra UPS
-            biggest = max(active, key=active.get)
-
-            layout[biggest] += 1
-
-        # =================================================
-        # COMMON SHEET CALCULATION
-        # =================================================
-
-        possible_sheets = []
-
-        for tag, ups in layout.items():
-
-            if ups > 0:
-
-                sheets_needed = ceil(
-                    remaining[tag] / ups
-                )
-
-                possible_sheets.append(sheets_needed)
-
-        sheets = min(possible_sheets)
-
-        sheets = max(1, sheets)
+        produced = {}
 
         # =================================================
         # PRODUCE
         # =================================================
-
-        produced = {}
 
         for tag, ups in layout.items():
 
@@ -154,7 +200,7 @@ def common_sheet_optimizer(demand, capacity, max_plates):
         })
 
     # =====================================================
-    # AUTO OVERPRINT FIX
+    # AUTO REMAINING FIX
     # =====================================================
 
     if any(v > 0 for v in remaining.values()) and plates:
@@ -170,16 +216,16 @@ def common_sheet_optimizer(demand, capacity, max_plates):
                     last["layout"].get(tag, 1)
                 )
 
-                add_sheets = ceil(
+                extra_sheets = ceil(
                     remaining[tag] / ups
                 )
 
-                last["sheets"] += add_sheets
+                last["sheets"] += extra_sheets
 
                 last["produced"][tag] = (
                     last["produced"].get(tag, 0)
                     +
-                    add_sheets * ups
+                    (extra_sheets * ups)
                 )
 
                 remaining[tag] = 0
@@ -191,10 +237,10 @@ def common_sheet_optimizer(demand, capacity, max_plates):
 # UI
 # =========================================================
 
-st.title("🖨️ Pre-Press Planner V4")
+st.title("🖨️ Pre-Press Planner V5")
 
 st.caption(
-    "Industrial Common Sheet Optimizer • Low Waste • Smart UPS"
+    "Smart Balancing • Decimal Priority • Low Waste Optimization"
 )
 
 col1, col2, col3, col4 = st.columns(4)
@@ -251,6 +297,7 @@ for i in range(n):
     )
 
     tags.append(tag)
+
     qtys.append(qty)
 
 # =========================================================
@@ -273,7 +320,7 @@ demand = {
 # GENERATE
 # =========================================================
 
-if st.button("🚀 Generate Optimized Plan"):
+if st.button("🚀 Generate V5 Plan"):
 
     if not demand:
 
@@ -283,10 +330,10 @@ if st.button("🚀 Generate Optimized Plan"):
 
     progress = st.progress(
         0,
-        text="🔄 Optimizing..."
+        text="🔄 Smart Optimizing..."
     )
 
-    plates = common_sheet_optimizer(
+    plates = v5_optimizer(
         demand,
         capacity,
         max_plates
@@ -298,7 +345,7 @@ if st.button("🚀 Generate Optimized Plan"):
     )
 
     # =====================================================
-    # SUMMARY TABLE
+    # SUMMARY
     # =====================================================
 
     rows = []
@@ -337,7 +384,9 @@ if st.button("🚀 Generate Optimized Plan"):
         )
 
         row["Total Produced QTY"] = total_produced
+
         row["Excess"] = excess
+
         row["Excess %"] = excess_percent
 
         rows.append(row)
@@ -453,7 +502,7 @@ if st.button("🚀 Generate Optimized Plan"):
 
         df.to_excel(
             writer,
-            sheet_name="V4 Optimized Summary",
+            sheet_name="V5 Optimized Summary",
             index=False
         )
 
@@ -462,7 +511,7 @@ if st.button("🚀 Generate Optimized Plan"):
     st.download_button(
         "⬇️ Download Excel",
         data=bio,
-        file_name="v4_optimized_plan.xlsx",
+        file_name="v5_optimized_plan.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
@@ -471,5 +520,5 @@ if st.button("🚀 Generate Optimized Plan"):
 # =========================================================
 
 st.caption(
-    "🔥 Version 4 • Common Sheet Optimization • Industrial Low Waste Planning"
+    "🔥 Version 5 • Smart Decimal Balancing • Industrial Waste Optimization"
 )
