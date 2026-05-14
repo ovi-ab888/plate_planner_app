@@ -36,7 +36,7 @@ except ImportError:
     print("reportlab not installed")
 
 st.set_page_config(
-    page_title="10-in-1 Plate Ratio Comparator | Ovi",
+    page_title="\Plate Ratio",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -303,7 +303,7 @@ def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
         
         story = []
         
-        story.append(Paragraph("📊 Plate Ratio System - Production Report", title_style))
+        story.append(Paragraph("📊 Plate Ratio System - Ratio Report", title_style))
         story.append(Paragraph(f"Algorithm: {algo_name} | Waste: {waste_percent}% | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", subtitle_style))
         story.append(Spacer(1, 15))
         
@@ -943,8 +943,8 @@ def v10_optimizer(demand, capacity, max_plates, iterations=150):
 # ================================================================
 st.markdown("""
 <div class="main-header">
-    <h1>🔬 10-in-1 Plate Ratio Comparator</h1>
-    <p>V3 • V4 • V5 • V6 • V7 • V8 • V9 • V10 — Compare All | Pick the Best</p>
+    <h1>🔬 Plate Ratio System</h1>
+    <p>Compare All | Pick the Best</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -985,12 +985,12 @@ demand = {t: ceil(int(q) * (1 + addon / 100)) for t, q in zip(tags, qty) if q > 
 
 # Show PuLP warning if needed
 if not PULP_AVAILABLE:
-    st.markdown('<div class="warning">⚠️ PuLP library not installed. V8 (Integer Solver) will use V5 fallback. Run: pip install pulp</div>', unsafe_allow_html=True)
+    st.markdown('<div class="warning">⚠️ PuLP library not installed</div>', unsafe_allow_html=True)
 
 # Generate Button
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    generate_clicked = st.button("🚀 COMPARE ALL 10 ALGORITHMS", use_container_width=True)
+    generate_clicked = st.button("Plan Generated ", use_container_width=True)
 
 if generate_clicked:
     if not demand:
@@ -1064,7 +1064,7 @@ if generate_clicked:
     # Show Best Algorithm
     st.markdown(f"""
     <div class="best-algo" style="margin-bottom: 2rem;">
-        <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
+        <div class="metric-value">BEST ALGORITHM: {best_algo}</div>
         <div class="metric-label">Waste Percentage: {best_waste}%</div>
     </div>
     """, unsafe_allow_html=True)
@@ -1177,8 +1177,8 @@ if generate_clicked:
 st.markdown("---")
 st.markdown("""
 <div class="footer">
-    <p>🔬 10-in-1 Plate Ratio Comparator — V3 • V4 • V5 • V6 • V7 • V8 • V9 • V10</p>
+    <p>Plate Ratio System</p>
     <p style="color: #667eea;">✨ Design & Developed by <strong>Ovi</strong> ✨</p>
-    <p style="font-size:0.8rem;">V8 requires PuLP: pip install pulp | All 10 algorithms run simultaneously</p>
+    <p style="font-size:0.8rem;">Thank you for using Ovi's Plate Ratio System!</p>
 </div>
 """, unsafe_allow_html=True)
