@@ -1,5 +1,5 @@
-# app.py — V5 SMART BALANCING OPTIMIZER
-# Advanced Industrial Pre-Press Planning
+# app.py — VERSION 6
+# Advanced Industrial Optimizer (NO PASSWORD)
 
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -9,14 +9,13 @@ import pandas as pd
 from io import BytesIO
 from math import ceil
 import string
+import copy
 
 st.set_page_config(
-    page_title="Pre-Press Planner V5",
+    page_title="Pre-Press Planner V6",
     page_icon="🖨️",
     layout="wide"
 )
-
-
 
 # =========================================================
 # HELPERS
@@ -43,10 +42,10 @@ def plate_name(n):
 
 
 # =========================================================
-# SMART UPS DISTRIBUTION
+# SMART PROPORTIONAL UPS
 # =========================================================
 
-def build_balanced_layout(remaining, capacity):
+def proportional_layout(remaining, capacity):
 
     active = {
         k: v
@@ -59,17 +58,19 @@ def build_balanced_layout(remaining, capacity):
 
     total_qty = sum(active.values())
 
-    # =====================================================
-    # INITIAL PROPORTIONAL UPS
-    # =====================================================
-
     layout = {}
 
-    decimals = {}
+    decimal_map = {}
+
+    # =====================================================
+    # INITIAL UPS
+    # =====================================================
 
     for tag, qty in active.items():
 
-        ideal = (qty / total_qty) * capacity
+        ideal = (
+            qty / total_qty
+        ) * capacity
 
         base = int(ideal)
 
@@ -78,15 +79,18 @@ def build_balanced_layout(remaining, capacity):
 
         layout[tag] = base
 
-        decimals[tag] = ideal - int(ideal)
+        decimal_map[tag] = ideal - int(ideal)
 
     # =====================================================
-    # FIX OVERFLOW
+    # FIX OVER CAPACITY
     # =====================================================
 
     while sum(layout.values()) > capacity:
 
-        biggest = max(layout, key=layout.get)
+        biggest = max(
+            layout,
+            key=layout.get
+        )
 
         if layout[biggest] > 1:
             layout[biggest] -= 1
@@ -94,153 +98,249 @@ def build_balanced_layout(remaining, capacity):
             break
 
     # =====================================================
-    # FILL REMAINING USING DECIMAL PRIORITY
+    # FILL REMAINING UPS
     # =====================================================
 
     while sum(layout.values()) < capacity:
 
-        best = max(decimals, key=decimals.get)
+        best = max(
+            decimal_map,
+            key=decimal_map.get
+        )
 
         layout[best] += 1
 
-        decimals[best] = 0
+        decimal_map[best] = 0
 
     return layout
 
 
 # =========================================================
-# SMART SHEET OPTIMIZER
+# CALCULATE SCORE
 # =========================================================
 
-def optimize_sheets(layout, remaining):
+def calculate_score(summary_rows):
 
-    candidate_sheets = []
+    total_excess = sum(
+        row["Excess"]
+        for row in summary_rows
+    )
 
-    for tag, ups in layout.items():
+    total_produced = sum(
+        row["Total Produced QTY"]
+        for row in summary_rows
+    )
 
-        if ups > 0:
+    if total_produced == 0:
+        return 999999
 
-            sheets = ceil(
-                remaining[tag] / ups
-            )
+    waste_percent = (
+        total_excess / total_produced
+    ) * 100
 
-            candidate_sheets.append(sheets)
-
-    # =====================================================
-    # SMART BALANCE
-    # =====================================================
-
-    # try lower balanced sheet count
-    target = min(candidate_sheets)
-
-    return max(1, target)
+    return waste_percent
 
 
 # =========================================================
-# V5 OPTIMIZER
+# BUILD SUMMARY
 # =========================================================
 
-def v5_optimizer(demand, capacity, max_plates):
+def build_summary(
+    plates,
+    demand,
+    original_qty
+):
 
-    remaining = demand.copy()
+    rows = []
 
-    plates = []
+    for tag in demand.keys():
 
-    for i in range(max_plates):
-
-        active = {
-            k: v
-            for k, v in remaining.items()
-            if v > 0
+        row = {
+            "Tag": tag,
+            "Original QTY": original_qty[tag],
+            "Produced (+Add-on)": demand[tag]
         }
 
-        if not active:
-            break
+        total_produced = 0
 
-        # =================================================
-        # BUILD SMART LAYOUT
-        # =================================================
+        for p in plates:
 
-        layout = build_balanced_layout(
-            active,
-            capacity
-        )
+            ups = p["layout"].get(tag, 0)
 
-        # =================================================
-        # SMART SHEET COUNT
-        # =================================================
+            row[f"Plate {p['name']}"] = ups
 
-        sheets = optimize_sheets(
-            layout,
-            remaining
-        )
-
-        produced = {}
-
-        # =================================================
-        # PRODUCE
-        # =================================================
-
-        for tag, ups in layout.items():
-
-            qty = ups * sheets
-
-            produced[tag] = qty
-
-            remaining[tag] = max(
-                0,
-                remaining[tag] - qty
+            total_produced += (
+                ups * p["sheets"]
             )
 
-        plates.append({
-            "name": plate_name(len(plates) + 1),
-            "layout": layout,
-            "sheets": sheets,
-            "produced": produced
-        })
+        excess = total_produced - demand[tag]
+
+        excess_percent = (
+            round(
+                (excess / demand[tag]) * 100,
+                2
+            )
+            if demand[tag]
+            else 0
+        )
+
+        row["Total Produced QTY"] = total_produced
+        row["Excess"] = excess
+        row["Excess %"] = excess_percent
+
+        rows.append(row)
+
+    return rows
+
+
+# =========================================================
+# V6 OPTIMIZER
+# =========================================================
+
+def v6_optimizer(
+    demand,
+    capacity,
+    max_plates
+):
+
+    best_score = 999999
+
+    best_plates = None
 
     # =====================================================
-    # AUTO REMAINING FIX
+    # MULTIPLE ATTEMPTS
     # =====================================================
 
-    if any(v > 0 for v in remaining.values()) and plates:
+    for variation in range(15):
 
-        last = plates[-1]
+        remaining = copy.deepcopy(demand)
 
-        for tag in remaining:
+        plates = []
 
-            if remaining[tag] > 0:
+        for p in range(max_plates):
 
-                ups = max(
-                    1,
-                    last["layout"].get(tag, 1)
+            active = {
+                k: v
+                for k, v in remaining.items()
+                if v > 0
+            }
+
+            if not active:
+                break
+
+            layout = proportional_layout(
+                active,
+                capacity
+            )
+
+            # =============================================
+            # SHEET STRATEGY
+            # =============================================
+
+            possible = []
+
+            for tag, ups in layout.items():
+
+                if ups > 0:
+
+                    sheets = ceil(
+                        remaining[tag] / ups
+                    )
+
+                    possible.append(sheets)
+
+            if not possible:
+                break
+
+            # =============================================
+            # DIFFERENT BALANCE STRATEGY
+            # =============================================
+
+            possible = sorted(possible)
+
+            strategy_index = min(
+                variation % len(possible),
+                len(possible) - 1
+            )
+
+            sheets = possible[strategy_index]
+
+            sheets = max(1, sheets)
+
+            produced = {}
+
+            for tag, ups in layout.items():
+
+                qty = ups * sheets
+
+                produced[tag] = qty
+
+                remaining[tag] = max(
+                    0,
+                    remaining[tag] - qty
                 )
 
-                extra_sheets = ceil(
-                    remaining[tag] / ups
-                )
+            plates.append({
+                "name": plate_name(len(plates) + 1),
+                "layout": layout,
+                "sheets": sheets,
+                "produced": produced
+            })
 
-                last["sheets"] += extra_sheets
+        # =================================================
+        # AUTO FIX REMAINING
+        # =================================================
 
-                last["produced"][tag] = (
-                    last["produced"].get(tag, 0)
-                    +
-                    (extra_sheets * ups)
-                )
+        if any(v > 0 for v in remaining.values()) and plates:
 
-                remaining[tag] = 0
+            last = plates[-1]
 
-    return plates
+            for tag in remaining:
+
+                if remaining[tag] > 0:
+
+                    ups = max(
+                        1,
+                        last["layout"].get(tag, 1)
+                    )
+
+                    add_sheets = ceil(
+                        remaining[tag] / ups
+                    )
+
+                    last["sheets"] += add_sheets
+
+                    remaining[tag] = 0
+
+        # =================================================
+        # SCORE
+        # =================================================
+
+        summary_rows = build_summary(
+            plates,
+            demand,
+            original_qty
+        )
+
+        score = calculate_score(summary_rows)
+
+        if score < best_score:
+
+            best_score = score
+
+            best_plates = plates
+
+    return best_plates, best_score
 
 
 # =========================================================
 # UI
 # =========================================================
 
-st.title("🖨️ Pre-Press Planner V5")
+st.title("🖨️ Pre-Press Planner V6")
 
 st.caption(
-    "Smart Balancing • Decimal Priority • Low Waste Optimization"
+    "AI Style Multi-Variation Industrial Optimizer"
 )
 
 col1, col2, col3, col4 = st.columns(4)
@@ -297,11 +397,10 @@ for i in range(n):
     )
 
     tags.append(tag)
-
     qtys.append(qty)
 
 # =========================================================
-# DEMAND
+# DATA
 # =========================================================
 
 original_qty = {
@@ -320,7 +419,7 @@ demand = {
 # GENERATE
 # =========================================================
 
-if st.button("🚀 Generate V5 Plan"):
+if st.button("🚀 Generate V6 Plan"):
 
     if not demand:
 
@@ -330,10 +429,10 @@ if st.button("🚀 Generate V5 Plan"):
 
     progress = st.progress(
         0,
-        text="🔄 Smart Optimizing..."
+        text="🔄 Running Multi-Variation Optimization..."
     )
 
-    plates = v5_optimizer(
+    plates, best_score = v6_optimizer(
         demand,
         capacity,
         max_plates
@@ -348,48 +447,11 @@ if st.button("🚀 Generate V5 Plan"):
     # SUMMARY
     # =====================================================
 
-    rows = []
-
-    for tag in demand.keys():
-
-        row = {
-            "Tag": tag,
-            "Original QTY": original_qty[tag],
-            "Produced (+Add-on)": demand[tag]
-        }
-
-        total_produced = 0
-
-        for p in plates:
-
-            ups = p["layout"].get(tag, 0)
-
-            row[f"Plate {p['name']}"] = ups
-
-            produced_qty = (
-                ups * p["sheets"]
-            )
-
-            total_produced += produced_qty
-
-        excess = total_produced - demand[tag]
-
-        excess_percent = (
-            round(
-                (excess / demand[tag]) * 100,
-                2
-            )
-            if demand[tag]
-            else 0
-        )
-
-        row["Total Produced QTY"] = total_produced
-
-        row["Excess"] = excess
-
-        row["Excess %"] = excess_percent
-
-        rows.append(row)
+    rows = build_summary(
+        plates,
+        demand,
+        original_qty
+    )
 
     df = pd.DataFrame(rows)
 
@@ -443,6 +505,14 @@ if st.button("🚀 Generate V5 Plan"):
     st.dataframe(
         df,
         use_container_width=True
+    )
+
+    # =====================================================
+    # SCORE
+    # =====================================================
+
+    st.success(
+        f"🔥 Optimization Score: {round(best_score, 2)}% Waste"
     )
 
     # =====================================================
@@ -502,7 +572,7 @@ if st.button("🚀 Generate V5 Plan"):
 
         df.to_excel(
             writer,
-            sheet_name="V5 Optimized Summary",
+            sheet_name="V6 Optimized Summary",
             index=False
         )
 
@@ -511,7 +581,7 @@ if st.button("🚀 Generate V5 Plan"):
     st.download_button(
         "⬇️ Download Excel",
         data=bio,
-        file_name="v5_optimized_plan.xlsx",
+        file_name="v6_optimized_plan.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
@@ -520,5 +590,5 @@ if st.button("🚀 Generate V5 Plan"):
 # =========================================================
 
 st.caption(
-    "🔥 Version 5 • Smart Decimal Balancing • Industrial Waste Optimization"
+    "🔥 Version 6 • Multi-Variation AI Style Optimization"
 )
