@@ -1,5 +1,6 @@
-# app.py — VERSION 6
-# Advanced Industrial Optimizer (NO PASSWORD)
+# app.py — VERSION 7
+# Industrial AI Optimizer + Smart Plate Balancing
+# Streamlit App
 
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -7,12 +8,13 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 import streamlit as st
 import pandas as pd
 from io import BytesIO
-from math import ceil
+from math import ceil, floor
 import string
+import random
 import copy
 
 st.set_page_config(
-    page_title="Pre-Press Planner V6",
+    page_title="Pre-Press Planner V7",
     page_icon="🖨️",
     layout="wide"
 )
@@ -42,19 +44,10 @@ def plate_name(n):
 
 
 # =========================================================
-# SMART PROPORTIONAL UPS
+# RANDOMIZED SMART LAYOUT
 # =========================================================
 
-def proportional_layout(remaining, capacity):
-
-    active = {
-        k: v
-        for k, v in remaining.items()
-        if v > 0
-    }
-
-    if not active:
-        return {}
+def generate_layout(active, capacity):
 
     total_qty = sum(active.values())
 
@@ -63,7 +56,7 @@ def proportional_layout(remaining, capacity):
     decimal_map = {}
 
     # =====================================================
-    # INITIAL UPS
+    # IDEAL UPS
     # =====================================================
 
     for tag, qty in active.items():
@@ -72,73 +65,93 @@ def proportional_layout(remaining, capacity):
             qty / total_qty
         ) * capacity
 
-        base = int(ideal)
+        base = floor(ideal)
 
         if base < 1:
             base = 1
 
         layout[tag] = base
 
-        decimal_map[tag] = ideal - int(ideal)
+        decimal_map[tag] = ideal - floor(ideal)
 
     # =====================================================
-    # FIX OVER CAPACITY
+    # RANDOM ADJUSTMENT
     # =====================================================
+
+    random_tags = list(active.keys())
+
+    random.shuffle(random_tags)
 
     while sum(layout.values()) > capacity:
 
-        biggest = max(
-            layout,
-            key=layout.get
-        )
+        biggest = max(layout, key=layout.get)
 
         if layout[biggest] > 1:
             layout[biggest] -= 1
         else:
             break
 
-    # =====================================================
-    # FILL REMAINING UPS
-    # =====================================================
-
     while sum(layout.values()) < capacity:
 
-        best = max(
-            decimal_map,
-            key=decimal_map.get
-        )
+        best = max(decimal_map, key=decimal_map.get)
 
         layout[best] += 1
 
         decimal_map[best] = 0
 
+    # =====================================================
+    # RANDOM MICRO MUTATION
+    # =====================================================
+
+    if len(layout) >= 2:
+
+        for _ in range(2):
+
+            a = random.choice(random_tags)
+            b = random.choice(random_tags)
+
+            if a != b and layout[a] > 1:
+
+                layout[a] -= 1
+                layout[b] += 1
+
+                if sum(layout.values()) > capacity:
+                    layout[b] -= 1
+                    layout[a] += 1
+
     return layout
 
 
 # =========================================================
-# CALCULATE SCORE
+# SMART SHEET ENGINE
 # =========================================================
 
-def calculate_score(summary_rows):
+def choose_sheet_strategy(layout, remaining):
 
-    total_excess = sum(
-        row["Excess"]
-        for row in summary_rows
-    )
+    options = []
 
-    total_produced = sum(
-        row["Total Produced QTY"]
-        for row in summary_rows
-    )
+    for tag, ups in layout.items():
 
-    if total_produced == 0:
-        return 999999
+        if ups > 0:
 
-    waste_percent = (
-        total_excess / total_produced
-    ) * 100
+            s = ceil(
+                remaining[tag] / ups
+            )
 
-    return waste_percent
+            options.append(s)
+
+    options = sorted(list(set(options)))
+
+    if not options:
+        return 1
+
+    # =====================================================
+    # MULTI STRATEGY RANDOM PICK
+    # =====================================================
+
+    strategy = random.choice(options)
+
+    return max(1, strategy)
 
 
 # =========================================================
@@ -169,9 +182,11 @@ def build_summary(
 
             row[f"Plate {p['name']}"] = ups
 
-            total_produced += (
+            produced_qty = (
                 ups * p["sheets"]
             )
+
+            total_produced += produced_qty
 
         excess = total_produced - demand[tag]
 
@@ -194,13 +209,59 @@ def build_summary(
 
 
 # =========================================================
-# V6 OPTIMIZER
+# AI SCORE ENGINE
 # =========================================================
 
-def v6_optimizer(
+def calculate_score(rows):
+
+    total_excess = sum(
+        row["Excess"]
+        for row in rows
+    )
+
+    total_produced = sum(
+        row["Total Produced QTY"]
+        for row in rows
+    )
+
+    if total_produced == 0:
+        return 999999
+
+    waste_percent = (
+        total_excess / total_produced
+    ) * 100
+
+    # =====================================================
+    # BALANCE PENALTY
+    # =====================================================
+
+    excess_list = [
+        row["Excess"]
+        for row in rows
+    ]
+
+    balance_penalty = (
+        max(excess_list) - min(excess_list)
+    ) if excess_list else 0
+
+    final_score = (
+        waste_percent
+        +
+        (balance_penalty * 0.001)
+    )
+
+    return final_score
+
+
+# =========================================================
+# V7 OPTIMIZER
+# =========================================================
+
+def v7_optimizer(
     demand,
     capacity,
-    max_plates
+    max_plates,
+    iterations=200
 ):
 
     best_score = 999999
@@ -208,10 +269,10 @@ def v6_optimizer(
     best_plates = None
 
     # =====================================================
-    # MULTIPLE ATTEMPTS
+    # AI ITERATIONS
     # =====================================================
 
-    for variation in range(15):
+    for attempt in range(iterations):
 
         remaining = copy.deepcopy(demand)
 
@@ -228,44 +289,23 @@ def v6_optimizer(
             if not active:
                 break
 
-            layout = proportional_layout(
+            # =============================================
+            # AI LAYOUT
+            # =============================================
+
+            layout = generate_layout(
                 active,
                 capacity
             )
 
             # =============================================
-            # SHEET STRATEGY
+            # SMART SHEETS
             # =============================================
 
-            possible = []
-
-            for tag, ups in layout.items():
-
-                if ups > 0:
-
-                    sheets = ceil(
-                        remaining[tag] / ups
-                    )
-
-                    possible.append(sheets)
-
-            if not possible:
-                break
-
-            # =============================================
-            # DIFFERENT BALANCE STRATEGY
-            # =============================================
-
-            possible = sorted(possible)
-
-            strategy_index = min(
-                variation % len(possible),
-                len(possible) - 1
+            sheets = choose_sheet_strategy(
+                layout,
+                remaining
             )
-
-            sheets = possible[strategy_index]
-
-            sheets = max(1, sheets)
 
             produced = {}
 
@@ -304,11 +344,11 @@ def v6_optimizer(
                         last["layout"].get(tag, 1)
                     )
 
-                    add_sheets = ceil(
+                    extra = ceil(
                         remaining[tag] / ups
                     )
 
-                    last["sheets"] += add_sheets
+                    last["sheets"] += extra
 
                     remaining[tag] = 0
 
@@ -316,19 +356,19 @@ def v6_optimizer(
         # SCORE
         # =================================================
 
-        summary_rows = build_summary(
+        rows = build_summary(
             plates,
             demand,
             original_qty
         )
 
-        score = calculate_score(summary_rows)
+        score = calculate_score(rows)
 
         if score < best_score:
 
             best_score = score
 
-            best_plates = plates
+            best_plates = copy.deepcopy(plates)
 
     return best_plates, best_score
 
@@ -337,10 +377,10 @@ def v6_optimizer(
 # UI
 # =========================================================
 
-st.title("🖨️ Pre-Press Planner V6")
+st.title("🖨️ Pre-Press Planner V7")
 
 st.caption(
-    "AI Style Multi-Variation Industrial Optimizer"
+    "AI Industrial Optimizer • Smart Mutation • Waste Minimizer"
 )
 
 col1, col2, col3, col4 = st.columns(4)
@@ -397,6 +437,7 @@ for i in range(n):
     )
 
     tags.append(tag)
+
     qtys.append(qty)
 
 # =========================================================
@@ -419,7 +460,7 @@ demand = {
 # GENERATE
 # =========================================================
 
-if st.button("🚀 Generate V6 Plan"):
+if st.button("🚀 Generate V7 AI Plan"):
 
     if not demand:
 
@@ -429,18 +470,19 @@ if st.button("🚀 Generate V6 Plan"):
 
     progress = st.progress(
         0,
-        text="🔄 Running Multi-Variation Optimization..."
+        text="🤖 AI Optimizing..."
     )
 
-    plates, best_score = v6_optimizer(
+    plates, score = v7_optimizer(
         demand,
         capacity,
-        max_plates
+        max_plates,
+        iterations=300
     )
 
     progress.progress(
         100,
-        text="✅ Optimization Complete"
+        text="✅ AI Optimization Complete"
     )
 
     # =====================================================
@@ -507,12 +549,8 @@ if st.button("🚀 Generate V6 Plan"):
         use_container_width=True
     )
 
-    # =====================================================
-    # SCORE
-    # =====================================================
-
     st.success(
-        f"🔥 Optimization Score: {round(best_score, 2)}% Waste"
+        f"🔥 AI Optimization Score: {round(score, 3)}"
     )
 
     # =====================================================
@@ -572,7 +610,7 @@ if st.button("🚀 Generate V6 Plan"):
 
         df.to_excel(
             writer,
-            sheet_name="V6 Optimized Summary",
+            sheet_name="V7 AI Optimized Summary",
             index=False
         )
 
@@ -581,7 +619,7 @@ if st.button("🚀 Generate V6 Plan"):
     st.download_button(
         "⬇️ Download Excel",
         data=bio,
-        file_name="v6_optimized_plan.xlsx",
+        file_name="v7_ai_optimized_plan.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
@@ -590,5 +628,5 @@ if st.button("🚀 Generate V6 Plan"):
 # =========================================================
 
 st.caption(
-    "🔥 Version 6 • Multi-Variation AI Style Optimization"
+    "🔥 Version 7 • AI Mutation Engine • Industrial Optimization"
 )
