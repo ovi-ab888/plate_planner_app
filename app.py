@@ -36,7 +36,7 @@ except ImportError:
     print("reportlab not installed")
 
 st.set_page_config(
-    page_title="\Plate Ratio",
+    page_title="Plate Ratio System",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed"
