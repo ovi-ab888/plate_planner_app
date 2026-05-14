@@ -1099,16 +1099,31 @@ if generate_clicked:
     st.markdown(f"### 📋 Preview: {selected_algo}")
     st.dataframe(full_df, use_container_width=True)
     
+       # Plate Configuration Details (NO LAYOUT COLUMN)
     st.markdown("### 🧾 Plate Configuration Details")
     plate_rows = []
+    total_sheets_sum = 0
+    total_ups_sum = 0
+    
     for idx, p in enumerate(selected_plates, 1):
+        total_ups = sum(p["layout"].values())
         plate_rows.append({
             "SL": idx,
             "Plate ID": p["name"],
             "Sheets Required": p["sheets"],
-            "Total UPS": sum(p["layout"].values()),
-            "Layout": ", ".join([f"{k}:{v}" for k, v in p["layout"].items()])
+            "Total UPS": total_ups
         })
+        total_sheets_sum += p["sheets"]
+        total_ups_sum += total_ups
+    
+    # Add TOTAL row
+    plate_rows.append({
+        "SL": "📊",
+        "Plate ID": "TOTAL",
+        "Sheets Required": total_sheets_sum,
+        "Total UPS": total_ups_sum
+    })
+    
     plate_details_df = pd.DataFrame(plate_rows)
     st.dataframe(plate_details_df, use_container_width=True)
     
