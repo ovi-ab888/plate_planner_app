@@ -273,36 +273,30 @@ def build_full_summary(plates, demand, original_qty):
 # ================================================================
 
 def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
-    """Generate PDF report"""
+    """Generate PDF report without Layout column"""
+    if not REPORTLAB_AVAILABLE:
+        return None
+    
     try:
-        from reportlab.lib import colors
-        from reportlab.lib.pagesizes import A4, landscape
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.enums import TA_CENTER
-        
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
         styles = getSampleStyleSheet()
         
-        # Title style
         title_style = ParagraphStyle('CustomTitle', parent=styles['Heading1'], fontSize=14, alignment=TA_CENTER, textColor=colors.HexColor('#667eea'))
         subtitle_style = ParagraphStyle('CustomSubtitle', parent=styles['Normal'], fontSize=9, alignment=TA_CENTER, textColor=colors.grey)
         
         story = []
         
-        # Title
         story.append(Paragraph("📊 Plate Ratio System - Production Report", title_style))
         story.append(Paragraph(f"Algorithm: {algo_name} | Waste: {waste_percent}% | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", subtitle_style))
         story.append(Spacer(1, 15))
         
-        # Summary Table Header
+        # Summary Table
         summary_data = [["SL", "Tag", "Original", "With Add-on"]]
         for p in plates:
             summary_data[0].append(f"Plate {p['name']}")
         summary_data[0].extend(["Total Prod.", "Excess", "Excess %"])
         
-        # Data rows
         sl = 1
         for tag in demand.keys():
             row = [str(sl), tag, str(original_qty[tag]), str(demand[tag])]
@@ -331,7 +325,6 @@ def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
         total_row.extend([str(total_produced_sum), str(total_excess_sum), total_excess_percent])
         summary_data.append(total_row)
         
-        # Create table
         summary_table = Table(summary_data)
         summary_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
@@ -346,11 +339,10 @@ def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
         story.append(summary_table)
         story.append(Spacer(1, 15))
         
-        # Plate Information Table
-        plate_data = [["SL", "Plate ID", "Sheets", "Total UPS", "Layout"]]
+        # Plate Information Table ( WITHOUT LAYOUT COLUMN )
+        plate_data = [["SL", "Plate ID", "Sheets", "Total UPS"]]
         for idx, p in enumerate(plates, 1):
-            layout_str = ", ".join([f"{k}:{v}" for k, v in p["layout"].items()])
-            plate_data.append([str(idx), p["name"], str(p["sheets"]), str(sum(p["layout"].values())), layout_str])
+            plate_data.append([str(idx), p["name"], str(p["sheets"]), str(sum(p["layout"].values()))])
         
         plate_table = Table(plate_data)
         plate_table.setStyle(TableStyle([
@@ -359,7 +351,7 @@ def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
-            ('FONTSIZE', (0, 1), (-1, -1), 7),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
         ]))
         
         story.append(plate_table)
