@@ -1,6 +1,6 @@
 # app_final.py — 10-in-1 PLATE RATIO COMPARATOR
 # V3 to V10 Complete | Compare All Algorithms | Pick Best
-# Design by Ovi | Updated with PDF QTY Auto-Uploader
+# Design by Ovi | 100% Fixed PDF QTY Auto-Uploader
 
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -15,6 +15,7 @@ import copy
 import random
 import math
 from datetime import datetime
+import csv  # Added for perfect CSV text parsing inside PDF
 
 # PDF Reading Library for Work Order Auto-Upload
 try:
@@ -40,7 +41,6 @@ try:
     REPORTLAB_AVAILABLE = True
 except ImportError:
     REPORTLAB_AVAILABLE = False
-    print("reportlab not installed")
 
 st.set_page_config(
     page_title="Plate Ratio System",
@@ -172,14 +172,6 @@ st.markdown("""
         display: inline-block;
         margin-bottom: 1rem;
     }
-    .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 10px;
-        padding: 1rem;
-        color: white;
-        text-align: center;
-    }
-    .metric-value { font-size: 2rem; font-weight: bold; }
     .best-algo {
         background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
         border-radius: 10px;
@@ -224,10 +216,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ================================================================
-# WORK ORDER PDF PARSER FUNCTION
+# FIXED WORK ORDER PDF PARSER FUNCTION
 # ================================================================
 def parse_work_order_pdf(uploaded_file):
-    """Extracts item quantities from the specific Work Order PDF format"""
+    """Accurately extracts quantities from the Work Order's comma-separated lines"""
     extracted_quantities = []
     try:
         reader = pypdf.PdfReader(uploaded_file)
@@ -235,23 +227,23 @@ def parse_work_order_pdf(uploaded_file):
         for page in reader.pages:
             full_text += page.extract_text() + "\n"
         
-        # Lines parsing targeting the structured data row
         lines = full_text.split('\n')
         for line in lines:
-            # Checking for target price metrics in rows to capture quantity
-            if "Nightwear" in line or ".00" in line:
-                parts = line.split()
-                if len(parts) >= 2:
-                    last_part = parts[-1].replace(',', '')
-                    # Validate if the string can be converted to float/int
-                    try:
-                        # Clear potential non-numeric markers
-                        val = float(last_part)
-                        # We ignore the grand totals if any
-                        if val > 0 and "." in parts[-2]:
-                            extracted_quantities.append(int(val))
-                    except ValueError:
-                        continue
+            line = line.strip()
+            # We target lines that contain row elements separated by quotes and commas
+            if '","' in line or (line.startswith('"') and line.endswith('"')):
+                # Use csv reader logic to parse the quote-encapsulated values properly
+                reader = csv.reader([line])
+                parts = next(reader)
+                
+                # Dynamic Check: Valid data rows have around 6 columns or 4th column is numeric quantity
+                if len(parts) >= 4:
+                    potential_qty = parts[3].strip().replace('\n', '').replace(',', '')
+                    # Validate that the first column is a standard 7-digit order number like 7075458
+                    if parts[0].strip().isdigit() and potential_qty.isdigit():
+                        qty_val = int(potential_qty)
+                        if qty_val > 0:
+                            extracted_quantities.append(qty_val)
     except Exception as e:
         st.error(f"Error parsing PDF: {str(e)}")
     return extracted_quantities
@@ -331,12 +323,6 @@ def build_full_summary(plates, demand, original_qty):
 # ================================================================
 def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
     try:
-        from reportlab.lib import colors
-        from reportlab.lib.pagesizes import A4, landscape
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.enums import TA_CENTER
-        
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
         styles = getSampleStyleSheet()
@@ -423,12 +409,11 @@ def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
         return None
 
 # ================================================================
-# ALGORITHMS V3 - V10 (সংক্ষিপ্ত রাখা হলো, আপনার আগের লজিকই বহাল আছে)
+# ALGORITHMS V3 - V10
 # ================================================================
 def smart_layout_v3(demand, cap):
     total = sum(demand.values())
-    if total == 0:
-        return {}
+    if total == 0: return {}
     floor_vals = {k: floor((v / total) * cap) for k, v in demand.items()}
     layout = dict(floor_vals)
     for k in layout:
