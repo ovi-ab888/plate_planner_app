@@ -1,6 +1,6 @@
 # app_final.py — 10-in-1 PLATE RATIO COMPARATOR
 # V3 to V10 Complete | Compare All Algorithms | Pick Best
-# Design by Ovi | Fixed PDF Auto-Uploader
+# Design by Ovi | Fixed PDF Auto-Uploader with Clean Text Sanitization
 
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -15,7 +15,7 @@ import copy
 import random
 import math
 from datetime import datetime
-import csv  # Clean tokenization for CSV formatted lines inside PDF
+import csv
 
 # PDF Reading Library for Work Order Auto-Upload
 try:
@@ -225,10 +225,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ================================================================
-# FIXED PDF WORK ORDER EXTRACTOR FUNCTION
+# SANITIZED & ROBUST PDF WORK ORDER EXTRACTOR FUNCTION
 # ================================================================
 def parse_work_order_pdf(uploaded_file):
-    """Accurately extracts quantities from the specific PDF layout sequence"""
+    """Sanitizes line text strings and accurately extracts raw quantities from the PDF layout structures"""
     extracted_quantities = []
     try:
         reader = pypdf.PdfReader(uploaded_file)
@@ -239,21 +239,32 @@ def parse_work_order_pdf(uploaded_file):
         lines = full_text.split('\n')
         for line in lines:
             line = line.strip()
-            # Targets lines matching quote-separated table row structures
-            if '","' in line or (line.startswith('"') and line.endswith('"')):
-                csv_reader = csv.reader([line])
+            
+            # Skip header rows
+            if "SO NO." in line or "PRODUCT CODE" in line:
+                continue
+                
+            # If the row contains structured quotes, clean the internal carriage breaks
+            if '",' in line or ',"' in line or (line.startswith('"') and line.endswith('"')):
+                # Remove internal newlines that mess up parsing
+                sanitized_line = line.replace('\n', ' ')
+                
+                csv_reader = csv.reader([sanitized_line])
                 parts = next(csv_reader)
                 
+                # Clean each parsed item from remaining whitespaces or hidden breaks
+                parts = [p.strip() for p in parts]
+                
                 if len(parts) >= 4:
-                    # Based on your raw PDF text, the dynamic Quantity value is at column index 3 (4th slot)
-                    potential_qty = parts[3].strip().replace('\n', '').replace(',', '')
-                    # Validate that the row belongs to a valid SO Number prefix
-                    if parts[0].strip().isdigit() and potential_qty.isdigit():
+                    # Target index 3 (the 4th element), which contains the specific quantity string
+                    potential_qty = parts[3].replace(',', '').strip()
+                    # Validate that the SO Number prefix is present and the quantity is a valid integer
+                    if parts[0].replace(' ', '').isdigit() and potential_qty.isdigit():
                         qty_val = int(potential_qty)
                         if qty_val > 0:
                             extracted_quantities.append(qty_val)
     except Exception as e:
-        st.error(f"Error parsing PDF: {str(e)}")
+        st.error(f"Parsing error: {str(e)}")
     return extracted_quantities
 
 # ================================================================
