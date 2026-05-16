@@ -8,3 +8,4 @@ numpy
 reportlab
 PyPDF2
 pymupdf
+pypdf
