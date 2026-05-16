@@ -6,3 +6,4 @@ reportlab
 pulp
 numpy
 reportlab
+PyPDF2
