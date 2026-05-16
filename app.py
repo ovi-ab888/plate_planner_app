@@ -1,6 +1,6 @@
 # app_final.py — 10-in-1 PLATE RATIO COMPARATOR
 # V3 to V10 Complete | Compare All Algorithms | Pick Best
-# Design by Ovi | 100% Fixed PDF QTY Auto-Uploader
+# Design by Ovi | Fixed PDF Auto-Uploader
 
 import os
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -15,7 +15,7 @@ import copy
 import random
 import math
 from datetime import datetime
-import csv  # Added for perfect CSV text parsing inside PDF
+import csv  # Clean tokenization for CSV formatted lines inside PDF
 
 # PDF Reading Library for Work Order Auto-Upload
 try:
@@ -31,7 +31,7 @@ try:
 except ImportError:
     PULP_AVAILABLE = False
 
-# Try to import reportlab for PDF Export
+# Try to import reportlab for PDF
 try:
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4, landscape
@@ -41,6 +41,7 @@ try:
     REPORTLAB_AVAILABLE = True
 except ImportError:
     REPORTLAB_AVAILABLE = False
+    print("reportlab not installed")
 
 st.set_page_config(
     page_title="Plate Ratio System",
@@ -49,7 +50,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Initialize Session States
+# Initialize Session States for Keeping Data Alive Across Reruns
 if 'calculated' not in st.session_state:
     st.session_state['calculated'] = False
 if 'uploaded_qty' not in st.session_state:
@@ -172,6 +173,14 @@ st.markdown("""
         display: inline-block;
         margin-bottom: 1rem;
     }
+    .metric-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        padding: 1rem;
+        color: white;
+        text-align: center;
+    }
+    .metric-value { font-size: 2rem; font-weight: bold; }
     .best-algo {
         background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
         border-radius: 10px;
@@ -216,10 +225,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ================================================================
-# FIXED WORK ORDER PDF PARSER FUNCTION
+# FIXED PDF WORK ORDER EXTRACTOR FUNCTION
 # ================================================================
 def parse_work_order_pdf(uploaded_file):
-    """Accurately extracts quantities from the Work Order's comma-separated lines"""
+    """Accurately extracts quantities from the specific PDF layout sequence"""
     extracted_quantities = []
     try:
         reader = pypdf.PdfReader(uploaded_file)
@@ -230,16 +239,15 @@ def parse_work_order_pdf(uploaded_file):
         lines = full_text.split('\n')
         for line in lines:
             line = line.strip()
-            # We target lines that contain row elements separated by quotes and commas
+            # Targets lines matching quote-separated table row structures
             if '","' in line or (line.startswith('"') and line.endswith('"')):
-                # Use csv reader logic to parse the quote-encapsulated values properly
-                reader = csv.reader([line])
-                parts = next(reader)
+                csv_reader = csv.reader([line])
+                parts = next(csv_reader)
                 
-                # Dynamic Check: Valid data rows have around 6 columns or 4th column is numeric quantity
                 if len(parts) >= 4:
+                    # Based on your raw PDF text, the dynamic Quantity value is at column index 3 (4th slot)
                     potential_qty = parts[3].strip().replace('\n', '').replace(',', '')
-                    # Validate that the first column is a standard 7-digit order number like 7075458
+                    # Validate that the row belongs to a valid SO Number prefix
                     if parts[0].strip().isdigit() and potential_qty.isdigit():
                         qty_val = int(potential_qty)
                         if qty_val > 0:
@@ -319,10 +327,16 @@ def build_full_summary(plates, demand, original_qty):
     return df
 
 # ================================================================
-# PDF GENERATION FUNCTION (Export)
+# PDF GENERATION FUNCTION
 # ================================================================
 def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
     try:
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import A4, landscape
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.enums import TA_CENTER
+        
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
         styles = getSampleStyleSheet()
@@ -424,7 +438,7 @@ def smart_layout_v3(demand, cap):
         else: break
     remaining_cap = cap - sum(layout.values())
     while remaining_cap > 0:
-        remainders = {(k): ((v / total) * cap) - floor_vals[k] for k, v in demand.items()}
+        remainders = {k: ((v / total) * cap) - floor_vals[k] for k, v in demand.items()}
         best = max(remainders, key=remainders.get)
         layout[best] += 1
         remaining_cap -= 1
@@ -654,14 +668,14 @@ with col4:
     input_mode = st.radio("📥 QTY Input Mode", ["Manual Input", "Upload Work Order PDF"], horizontal=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Data Initialization
+# Master Data Store
 final_qty_dict = {}
 
-# ---------------- MODE 1: PDF UPLOAD ----------------
+# ---------------- MODE 1: PDF AUTO-UPLOAD ----------------
 if input_mode == "Upload Work Order PDF":
     st.markdown('<div class="card"><div class="card-title">📄 Upload Work Order File</div>', unsafe_allow_html=True)
     if not PYPDF_AVAILABLE:
-        st.error("⚠️ 'pypdf' library is missing! Please install it via: pip install pypdf")
+        st.error("⚠️ 'pypdf' library is missing! Run: pip install pypdf")
     
     uploaded_file = st.file_uploader("Upload your Work Order PDF", type=["pdf"], label_visibility="collapsed")
     
@@ -674,7 +688,7 @@ if input_mode == "Upload Work Order PDF":
             st.error("❌ No items could be read. Ensure the format matches the sample Work Order.")
             st.session_state['uploaded_qty'] = {}
             
-    # Display and allow edits of uploaded items
+    # Display & Edit Panel for PDF Extracted Items
     if st.session_state['uploaded_qty']:
         st.markdown("#### Preview & Tweak Extracted Quantities:")
         for item_name, q_val in st.session_state['uploaded_qty'].items():
@@ -700,14 +714,14 @@ else:
             final_qty_dict[item_name] = q_val
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Data Preparation
+# Data Mapping
 original_qty = {t: int(q) for t, q in final_qty_dict.items() if q > 0}
 demand = {t: ceil(int(q) * (1 + addon / 100)) for t, q in final_qty_dict.items() if q > 0}
 
 if not PULP_AVAILABLE:
     st.markdown('<div class="warning">⚠️ PuLP library not installed</div>', unsafe_allow_html=True)
 
-# Generate Button
+# Process Trigger
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     generate_clicked = st.button("Plan Generated ", use_container_width=True)
@@ -743,7 +757,6 @@ if generate_clicked:
         best_algo = comparison_df.iloc[0]["Algorithm"]
         best_waste = comparison_df.iloc[0]["Waste %"]
         
-        # Store in session state
         st.session_state['demand'] = demand
         st.session_state['original_qty'] = original_qty
         st.session_state['comparison_df'] = comparison_df
@@ -752,7 +765,7 @@ if generate_clicked:
         st.session_state['results'] = results
         st.session_state['calculated'] = True
 
-# Show Results Panel
+# Metrics Rendering
 if st.session_state['calculated']:
     comparison_df = st.session_state['comparison_df']
     results = st.session_state['results']
