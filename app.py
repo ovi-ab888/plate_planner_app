@@ -206,6 +206,10 @@ st.markdown("""
 
 def extract_qty_from_pdf(uploaded_pdf):
 
+    import fitz
+    import re
+    import pandas as pd
+
     doc = fitz.open(
         stream=uploaded_pdf.read(),
         filetype="pdf"
@@ -218,43 +222,56 @@ def extract_qty_from_pdf(uploaded_pdf):
         full_text += page.get_text()
 
     # ============================================================
-    # REGEX PATTERN
+    # DEBUG (OPTIONAL)
     # ============================================================
 
-    pattern = r'([A-Za-z0-9\\-\\/]+)\\s+(\\d{2,})'
+    # st.text(full_text)
+
+    # ============================================================
+    # YOUR PDF STRUCTURE
+    # ============================================================
+    #
+    # Example:
+    #
+    # 1-1½; YRS N/A 12 Nightwear 320.00
+    #
+    # PRIMARY_SIZE = 1-1½; YRS
+    # QTY = 320.00
+    #
+    # ============================================================
+
+    pattern = r'([0-9A-Za-z½;\\-\\s]+YRS)\\s+N/A\\s+\\d+\\s+Nightwear\\s+(\\d+\\.\\d+)'
 
     matches = re.findall(
         pattern,
         full_text
     )
 
+    # ============================================================
+    # BUILD DATA
+    # ============================================================
+
     data = []
 
-    for tag, qty in matches:
+    for size, qty in matches:
 
         try:
 
-            qty = int(qty)
+            qty = int(float(qty))
 
-            if qty > 0:
-
-                data.append({
-                    "Tag": tag.strip(),
-                    "Qty": qty
-                })
+            data.append({
+                "Tag": size.strip(),
+                "Qty": qty
+            })
 
         except:
             pass
 
+    # ============================================================
+    # DATAFRAME
+    # ============================================================
+
     df = pd.DataFrame(data)
-
-    if not df.empty:
-
-        df = (
-            df.groupby("Tag")["Qty"]
-            .sum()
-            .reset_index()
-        )
 
     return df
 
