@@ -1,4 +1,4 @@
-# app_final.py — 10-in-1 PLATE RATIO COMPARATOR
+# app.py — 10-in-1 PLATE RATIO COMPARATOR WITH DYNAMIC PDF PARSER
 # V3 to V10 Complete | Compare All Algorithms | Pick Best
 # Design by Ovi
 
@@ -14,6 +14,7 @@ import string
 import copy
 import random
 import math
+import re
 import csv
 import pypdf
 from datetime import datetime
@@ -286,16 +287,10 @@ def build_full_summary(plates, demand, original_qty):
     return df
 
 # ================================================================
-# PDF GENERATION FUNCTION
+# PDF REPORT GENERATION
 # ================================================================
 def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
     try:
-        from reportlab.lib import colors
-        from reportlab.lib.pagesizes import A4, landscape
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.enums import TA_CENTER
-        
         buffer = BytesIO()
         doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
         styles = getSampleStyleSheet()
@@ -304,7 +299,6 @@ def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
         subtitle_style = ParagraphStyle('CustomSubtitle', parent=styles['Normal'], fontSize=9, alignment=TA_CENTER, textColor=colors.grey)
         
         story = []
-        
         story.append(Paragraph("📊 Plate Ratio System - Ratio Report", title_style))
         story.append(Paragraph(f"Algorithm: {algo_name} | Waste: {waste_percent}% | Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", subtitle_style))
         story.append(Spacer(1, 15))
@@ -383,7 +377,7 @@ def generate_pdf_report(plates, demand, original_qty, algo_name, waste_percent):
         return None
 
 # ================================================================
-# ALGORITHMS V3 TO V10 (Unchanged for calculation stability)
+# ALGORITHMS V3 TO V10
 # ================================================================
 def smart_layout_v3(demand, cap):
     total = sum(demand.values())
@@ -841,7 +835,7 @@ def v10_optimizer(demand, capacity, max_plates, iterations=100):
     return plates
 
 # ================================================================
-# UI - MAIN APP
+# STREAMLIT UI - MAIN VIEW
 # ================================================================
 st.markdown("""
 <div class="main-header">
@@ -854,17 +848,13 @@ st.markdown("""
 st.markdown('<div class="card"><div class="card-title">⚙️ Production Configuration</div>', unsafe_allow_html=True)
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    # We will compute the dynamic default items if PDF mode is active
-    st.write("") # Placeholder row
+    input_mode = st.radio("📊 QTY Input Mode", ["Manual Input", "Upload Work Order PDF"], horizontal=False)
 with col2:
     cap = st.number_input("📀 Plate Capacity", 1, 200, 10)
 with col3:
     maxp = st.number_input("🎨 Max Plates", 1, 30, 3)
 with col4:
     addon = st.number_input("📈 Add-on %", 0.0, 50.0, 0.0, step=0.5)
-
-# Input Mode Switcher
-input_mode = st.radio("📊 QTY Input Mode", ["Manual Input", "Upload Work Order PDF"], horizontal=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 tags = []
@@ -899,42 +889,43 @@ else:
             lines = full_text.split('\n')
             pdf_items = []
             
-            for line in lines:
+            # 3-Line Loop Structure for Montrims PDF Table Parser
+            for idx, line in enumerate(lines):
                 line = line.strip()
-                if "SO NO." in line or "PRODUCT CODE" in line or not line:
-                    continue
-                
-                # Handle raw CSV/quoted lines with multiline text segments converted into single lines
-                if 'Layout' in line or 'Invoice' in line or 'Page' in line:
-                    continue
+                # Check if it's the starting row of an item table line (e.g. 7075458)
+                if line.isdigit() and len(line) >= 6:
+                    so_no = line
                     
-                if '",' in line or ',"' in line or (line.startswith('"') and line.endswith('"')):
-                    sanitized_line = line.replace('\n', ' ')
-                    csv_reader = csv.reader([sanitized_line])
-                    parts = next(csv_reader)
-                    parts = [p.strip() for p in parts]
-                    
-                    if len(parts) >= 6 and parts[0].replace(' ', '').isdigit():
-                        # Extracting unique Identifier name based on Primary Size and Description
-                        size_desc = parts[2].replace('\n', ' ').strip()
-                        size_extracted = size_desc.split(';')[0].strip() if ';' in size_desc else "Size"
+                    # Look ahead 2 lines to extract size and quantity fields
+                    if idx + 2 < len(lines):
+                        data_line = lines[idx + 2].strip()
+                        parts = data_line.split()
                         
-                        # Fallback unique name
-                        unique_item_id = f"SO {parts[0]} ({size_extracted})"
-                        item_qty = float(parts[5].strip())
-                        
-                        pdf_items.append((unique_item_id, item_qty))
+                        if len(parts) >= 5:
+                            # The last element is the exact quantity (e.g., 320.00)
+                            qty_str = parts[-2] if parts[-1] == "PCs" else parts[-1]
+                            
+                            try:
+                                item_qty = float(qty_str)
+                                
+                                # Safely grab size patterns like 1-1½; YRS, 1½-2; YRS, etc.
+                                size_match = re.search(r"(\d+[^;\s]*;\s*YRS)", data_line)
+                                size_info = size_match.group(1) if size_match else "Size"
+                                
+                                unique_item_id = f"SO {so_no} ({size_info})"
+                                pdf_items.append((unique_item_id, item_qty))
+                            except ValueError:
+                                continue
             
             if pdf_items:
                 st.success(f"✅ সফলভাবে {len(pdf_items)} টি আইটেম রিড করা হয়েছে!")
+                st.markdown("<br>", unsafe_allow_html=True)
                 
-                # Render detected item fields
                 for idx, (item_name, item_qty) in enumerate(pdf_items):
                     col1, col2 = st.columns([2, 1])
                     with col1:
                         st.markdown(f"<div class='tag-display' title='{item_name}'>{item_name}</div>", unsafe_allow_html=True)
                     with col2:
-                        # Auto populate parsed value
                         q = st.number_input(f"QTY {idx}", 0, 100000, int(item_qty), key=f"pdf_qty_{idx}", label_visibility="collapsed")
                     tags.append(item_name)
                     qty.append(q)
@@ -948,14 +939,13 @@ else:
 original_qty = {t: int(q) for t, q in zip(tags, qty) if q > 0}
 demand = {t: ceil(int(q) * (1 + addon / 100)) for t, q in zip(tags, qty) if q > 0}
 
-# Show PuLP warning if needed
 if not PULP_AVAILABLE:
-    st.markdown('<div class="warning">⚠️ PuLP library not installed</div>', unsafe_allow_html=True)
+    st.markdown('<div class="warning">⚠️ PuLP library not installed. V8 will fall back to V5.</div>', unsafe_allow_html=True)
 
 # Generate Button
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    generate_clicked = st.button("Plan Generated ", use_container_width=True)
+    generate_clicked = st.button("Plan Generated 🚀", use_container_width=True)
 
 if generate_clicked:
     if not demand:
@@ -964,7 +954,6 @@ if generate_clicked:
     
     with st.spinner("🔄 Running 10 algorithms simultaneously..."):
         results = {}
-        
         results["V3 - Plate Ratio System"] = v3_optimizer(demand, cap, maxp)
         results["V4 - Common Sheet Optimizer"] = v4_optimizer(demand, cap, maxp)
         results["V5 - Smart Decimal Balancing"] = v5_optimizer(demand, cap, maxp)
