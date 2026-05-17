@@ -1726,111 +1726,7 @@ except:
     ORTOOLS_AVAILABLE = False
 
 
-# ================================================================
-# V14 - OR-TOOLS EXACT SOLVER
-# ================================================================
-def v14_optimizer(demand: dict, capacity: int, max_plates: int):
-    """
-    V14 - Global Exact Integer Optimization using Google OR-Tools
-    """
 
-    if not ORTOOLS_AVAILABLE:
-        return v13_optimizer(demand, capacity, max_plates)
-
-    tags = list(demand.keys())
-    total_tags = len(tags)
-
-    model = cp_model.CpModel()
-
-    # Variables
-    ups = {}
-    sheets = {}
-
-    MAX_SHEETS = max(demand.values()) if demand else 1000
-
-    for p in range(max_plates):
-        sheets[p] = model.NewIntVar(1, MAX_SHEETS, f"sheets_{p}")
-
-        for t in tags:
-            ups[(p, t)] = model.NewIntVar(0, capacity, f"ups_{p}_{t}")
-
-    # Plate capacity constraint
-    for p in range(max_plates):
-        model.Add(sum(ups[(p, t)] for t in tags) <= capacity)
-
-    # Production constraints
-    produced_vars = {}
-
-    for t in tags:
-        produced = []
-
-        for p in range(max_plates):
-            prod = model.NewIntVar(0, 99999999, f"prod_{p}_{t}")
-
-            model.AddMultiplicationEquality(
-                prod,
-                [ups[(p, t)], sheets[p]]
-            )
-
-            produced.append(prod)
-
-        total_prod = model.NewIntVar(0, 999999999, f"total_prod_{t}")
-
-        model.Add(total_prod == sum(produced))
-        model.Add(total_prod >= demand[t])
-
-        produced_vars[t] = total_prod
-
-    # Waste
-    excess_vars = []
-
-    for t in tags:
-        excess = model.NewIntVar(0, 99999999, f"excess_{t}")
-        model.Add(excess == produced_vars[t] - demand[t])
-        excess_vars.append(excess)
-
-    total_waste = model.NewIntVar(0, 999999999, "total_waste")
-    model.Add(total_waste == sum(excess_vars))
-
-    # Minimize waste + sheets
-    total_sheet_var = model.NewIntVar(0, 999999999, "total_sheet_var")
-    model.Add(total_sheet_var == sum(sheets[p] for p in range(max_plates)))
-
-    model.Minimize(total_waste * 1000 + total_sheet_var)
-
-    # Solve
-    solver = cp_model.CpSolver()
-
-    solver.parameters.max_time_in_seconds = 30
-    solver.parameters.num_search_workers = 8
-
-    status = solver.Solve(model)
-
-    if status not in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
-        return v13_optimizer(demand, capacity, max_plates)
-
-    plates = []
-
-    for p in range(max_plates):
-
-        layout = {}
-
-        for t in tags:
-            val = solver.Value(ups[(p, t)])
-
-            if val > 0:
-                layout[t] = val
-
-        if layout:
-            sheet_count = solver.Value(sheets[p])
-
-            plates.append({
-                "name": plate_name(len(plates) + 1),
-                "layout": layout,
-                "sheets": sheet_count
-            })
-
-    return plates
 
 
 # ================================================================
@@ -2131,7 +2027,6 @@ if generate_clicked:
             "V11 - Genetic Algorithm": lambda: v11_optimizer(demand, cap, maxp, population_size=30, generations=50),
             "V12 - Column Generation": lambda: v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
             "V13 - Hybrid Master": lambda: v13_optimizer(demand, cap, maxp),
-            "V14 - ORTools Exact Solver": lambda: v14_optimizer(demand, cap, maxp),
             "V15 - DP Repair Engine": lambda: v15_optimizer(demand, cap, maxp),
             "V16 - Plate Merge Optimizer": lambda: v16_optimizer(demand, cap, maxp),
             "V17 - AI Evolution Engine": lambda: v17_optimizer(demand, cap, maxp),
