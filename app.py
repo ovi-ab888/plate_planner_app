@@ -2223,25 +2223,7 @@ if 'results' in st.session_state and st.session_state['results']:
             waste = calculate_waste_percent(selected_plates, st.session_state['demand'])
             st.success(f"**Waste: {waste}%** | Plates: {len(selected_plates)} | Total Sheets: {total_sheets}")
 
-            st.markdown("### 📥 Download This Report")
-            dc1, dc2 = st.columns(2)
-            with dc1:
-                bio = BytesIO()
-                with pd.ExcelWriter(bio, engine="openpyxl") as writer:
-                    full_df.to_excel(writer, "Summary", index=False)
-                    plate_df.to_excel(writer, "Plate Details", index=False)
-                bio.seek(0)
-                st.download_button("📊 Excel Download", bio, 
-                                 f"{selected_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
-                                 use_container_width=True)
-            with dc2:
-                if REPORTLAB_AVAILABLE:
-                    pdf_buffer = generate_pdf_report(selected_plates, st.session_state['demand'], 
-                                                   st.session_state['original_qty'], selected_algo, waste)
-                    if pdf_buffer:
-                        st.download_button("📄 PDF Download", pdf_buffer, 
-                                         f"{selected_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-                                         mime="application/pdf", use_container_width=True)
+
         else:
             st.error(f"❌ {selected_algo} এর রিপোর্ট পাওয়া যায়নি।")
 else:
