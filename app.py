@@ -1740,7 +1740,7 @@ if generate_clicked:
         st.stop()
 
     with st.spinner("🔄 Running 13 algorithms simultaneously... This may take a moment..."):
-    results = {
+        results = {
         "V1 - Plate Ratio System": v1_optimizer(demand, cap, maxp),
         "V2 - Common Sheet Optimizer": v2_optimizer(demand, cap, maxp),
         "V3 - Smart Decimal Balancing": v3_optimizer(demand, cap, maxp),
