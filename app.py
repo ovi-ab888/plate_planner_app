@@ -1910,7 +1910,7 @@ if generate_clicked:
         st.session_state['best_waste'] = best_waste
         st.session_state['results'] = results
 
-  st.markdown(f"""
+    st.markdown(f"""
     <div class="best-algo" style="margin-bottom: 2rem;">
         <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
         <div class="metric-label">Waste Percentage: {best_waste}%</div>
