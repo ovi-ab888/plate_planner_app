@@ -1638,27 +1638,7 @@ demand = {t: ceil(int(q) * (1 + addon / 100)) for t, q in zip(tags, qty) if q > 
 if not PULP_AVAILABLE:
     st.markdown('<div class="warning">⚠️ PuLP library not installed. Some advanced features disabled.</div>', unsafe_allow_html=True)
 
-# Algorithm Info
-with st.expander("ℹ️ About Algorithms"):
-    st.markdown("""
-    | Version | Algorithm | Description | Best For |
-    |---------|-----------|-------------|----------|
-    | V3 | Plate Ratio System | Basic proportional distribution | Small datasets |
-    | V4 | Common Sheet Optimizer | Sheet-based optimization | Medium datasets |
-    | V5 | Smart Decimal Balancing | Decimal-based balancing | General purpose |
-    | V6 | Multi-Variation Optimizer | 15 variations testing | Finding good baseline |
-    | V7 | AI Mutation Engine | Random mutations | Exploration |
-    | V8 | Integer Solver | Exact LP solution | Optimal solutions (small) |
-    | V9 | Simulated Annealing | Temperature-based search | Large datasets |
-    | V10 | MCTS Tree Search | Monte Carlo tree search | Complex patterns |
-    | V11 | Hybrid Ratio & Sheet Repair | Best of both worlds | **Recommended** |
-    | V12 | Priority-Based | Weighted by priority | When some items are urgent |
-    | V13 | Dynamic Capacity | Multiple plate sizes | Different plate sizes |
-    | V14 | Exhaustive Search | Brute force | Small datasets (n≤5) |
-    | V15 | Genetic Algorithm | Evolution-based | Large complex datasets |
-    | V16 | Column Generation | Advanced pattern gen | Very large datasets |
-    | V17 | Hybrid Master | Combines all optimizers | **Best Overall** |
-    """)
+
 
 # Generate Button
 col1, col2, col3 = st.columns([1, 2, 1])
