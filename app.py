@@ -1673,6 +1673,173 @@ def v13_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
     return best_plates if best_plates else v3_optimizer(demand, capacity, max_plates)
 
 
+# ====================== V14 - ADVANCED COLUMN GENERATION ======================
+def generate_knapsack_pattern(remaining: dict, capacity: int) -> dict:
+    """Knapsack Subproblem for Column Generation"""
+    if not PULP_AVAILABLE:
+        return {}
+    
+    try:
+        prob = LpProblem("Pattern_Generation", LpMinimize)
+        ups = {tag: LpVariable(f"ups_{tag}", lowBound=0, upBound=min(30, remaining[tag]), cat=LpInteger) 
+               for tag in remaining}
+        
+        # Objective: Maximize coverage of remaining demand
+        prob += lpSum(-remaining[tag] * ups[tag] for tag in remaining)
+        prob += lpSum(ups[tag] for tag in remaining) <= capacity
+        
+        status = prob.solve(PULP_CBC_CMD(msg=0, timeLimit=4))
+        
+        if status == 1:
+            pattern = {tag: int(value(ups[tag])) for tag in remaining if value(ups[tag]) > 0.1}
+            return pattern
+        return {}
+    except:
+        return {}
+
+
+def v14_column_generation(demand: dict, capacity: int, max_plates: int, iterations: int = 35) -> list:
+    """V14 - Advanced Column Generation"""
+    remaining = demand.copy()
+    plates = []
+    
+    for p in range(max_plates):
+        active = {k: v for k, v in remaining.items() if v > 0}
+        if not active:
+            break
+            
+        best_pattern = None
+        best_score = -float('inf')
+        
+        for _ in range(iterations):
+            pattern = generate_knapsack_pattern(active, capacity)
+            if not pattern or sum(pattern.values()) == 0:
+                continue
+                
+            score = sum(pattern.get(tag, 0) * min(remaining[tag], 100) for tag in pattern)
+            if score > best_score:
+                best_score = score
+                best_pattern = pattern.copy()
+        
+        # Fallback
+        if not best_pattern:
+            total = sum(active.values())
+            best_pattern = {tag: max(1, int((qty / total) * capacity * 0.85)) for tag, qty in active.items()}
+            while sum(best_pattern.values()) > capacity and any(v > 1 for v in best_pattern.values()):
+                max_tag = max(best_pattern, key=best_pattern.get)
+                best_pattern[max_tag] -= 1
+        
+        # Calculate optimal sheets
+        sheets = max(1, max([ceil(remaining[tag] / ups) for tag, ups in best_pattern.items() if ups > 0]))
+        
+        plates.append({
+            "name": plate_name(len(plates) + 1),
+            "layout": best_pattern,
+            "sheets": sheets
+        })
+        
+        for tag, ups in best_pattern.items():
+            remaining[tag] = max(0, remaining[tag] - ups * sheets)
+    
+    # Final adjustment
+    if any(v > 0 for v in remaining.values()) and plates:
+        last = plates[-1]
+        for tag in [t for t in remaining if remaining[t] > 0]:
+            ups = max(1, last["layout"].get(tag, 1))
+            last["sheets"] += ceil(remaining[tag] / ups)
+            remaining[tag] = 0
+    
+    return plates
+
+
+
+# ====================== V15 - ENHANCED HYBRID GA + LOCAL SEARCH ======================
+def v15_hybrid_ga(demand: dict, capacity: int, max_plates: int, 
+                  population_size=60, generations=80, mutation_rate=0.15) -> list:
+    """V15 - Advanced Hybrid Genetic Algorithm with Local Search"""
+    
+    def create_random_individual():
+        remaining = demand.copy()
+        plates = []
+        for _ in range(max_plates):
+            active = {k: v for k, v in remaining.items() if v > 0}
+            if not active:
+                break
+            total = sum(active.values())
+            layout = {tag: max(1, int((qty / total) * capacity * random.uniform(0.7, 1.3))) 
+                     for tag, qty in active.items()}
+            
+            # Fix capacity
+            while sum(layout.values()) > capacity:
+                if len(layout) > 1:
+                    max_tag = max(layout, key=layout.get)
+                    layout[max_tag] -= 1
+            while sum(layout.values()) < capacity and len(layout) > 0:
+                tag = random.choice(list(layout.keys()))
+                layout[tag] += 1
+            
+            sheets = max(1, max([ceil(remaining.get(tag, 1) / ups) for tag, ups in layout.items() if ups > 0]))
+            
+            plates.append({"layout": layout.copy(), "sheets": sheets})
+            
+            for tag, ups in layout.items():
+                remaining[tag] = max(0, remaining[tag] - ups * sheets)
+        
+        return plates
+
+    def local_search(individual):
+        """Improve solution with local search"""
+        improved = copy.deepcopy(individual)
+        for plate in improved:
+            layout = plate["layout"]
+            if len(layout) < 2:
+                continue
+            for _ in range(8):  # Try 8 improvements
+                tags = list(layout.keys())
+                a, b = random.sample(tags, 2)
+                if layout[a] > 1:
+                    layout[a] -= 1
+                    layout[b] += 1
+                    # Recalculate sheets
+                    new_sheets = max(1, max([ceil(demand.get(t, 1) / layout[t]) for t in layout if layout[t] > 0]))
+                    plate["sheets"] = new_sheets
+        return improved
+
+    # Initialize population
+    population = [create_random_individual() for _ in range(population_size)]
+    
+    for gen in range(generations):
+        # Evaluate fitness
+        fitness = [(calculate_waste_percent(ind, demand), ind) for ind in population]
+        fitness.sort(key=lambda x: x[0])
+        
+        # Elite selection
+        new_population = [ind for _, ind in fitness[:max(5, population_size//8)]]
+        
+        # Crossover + Mutation
+        while len(new_population) < population_size:
+            parent1 = random.choice(fitness[:population_size//3])[1]
+            parent2 = random.choice(fitness[:population_size//3])[1]
+            
+            # Simple crossover
+            split = random.randint(1, max(1, min(len(parent1), len(parent2))-1))
+            child = parent1[:split] + parent2[split:]
+            
+            # Mutation
+            if random.random() < mutation_rate:
+                child = local_search(child)  # Local Search after mutation
+            
+            new_population.append(child)
+        
+        population = new_population[:population_size]
+    
+    # Return best individual
+    best = min(population, key=lambda x: calculate_waste_percent(x, demand))
+    return best
+
+
+
+
 # ================================================================
 # MAIN UI
 # ================================================================
@@ -1753,7 +1920,9 @@ if generate_clicked:
         "V10 - Exhaustive Search": v10_optimizer(demand, cap, maxp),
         "V11 - Genetic Algorithm": v11_optimizer(demand, cap, maxp, population_size=50, generations=100),
         "V12 - Column Generation": v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
-        "V13 - Hybrid Master": v13_optimizer(demand, cap, maxp)
+        "V13 - Hybrid Master": v13_optimizer(demand, cap, maxp),
+        "V14 - Column Generation": v14_column_generation(demand, cap, maxp, iterations=40),
+        "V15 - Hybrid GA + Local Search": v15_hybrid_ga(demand, cap, maxp)
     }
         comparison_data = []
         for algo_name, plates in results.items():
