@@ -1409,7 +1409,7 @@ if generate_clicked:
             "V8 - MCTS Tree Search": (v8_optimizer, (demand, cap, maxp, 30)),
             "V9 - Hybrid Ratio & Sheet Repair": (v9_optimizer, (demand, cap, maxp, 30)),
             "V10 - Exhaustive Search": (v10_optimizer, (demand, cap, maxp)),
-            "V11 - Genetic Algorithm": (v11_optimizer, (demand, cap, maxp, 50, 100)),
+            "V11 - Genetic Algorithm": (v11_optimizer, (demand, cap, maxp, 20, 30, 0.1, 3)),
             "V12 - Column Generation": (v12_optimizer, (demand, cap, maxp)) if PULP_AVAILABLE else (v3_optimizer, (demand, cap, maxp)),
             "V13 - Hybrid Master": (v13_optimizer, (demand, cap, maxp)),
         }
