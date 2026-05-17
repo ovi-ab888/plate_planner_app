@@ -1855,8 +1855,6 @@ with col4:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-
-
 # Tag Quantity Section
 st.markdown('<div class="card"><div class="card-title">📦 Item Quantity Details</div>', unsafe_allow_html=True)
 
@@ -1882,8 +1880,6 @@ demand = {t: ceil(int(q) * (1 + addon / 100)) for t, q in zip(tags, qty) if q > 
 
 if not PULP_AVAILABLE:
     st.markdown('<div class="warning">⚠️ PuLP library not installed. Some advanced features disabled.</div>', unsafe_allow_html=True)
-
-
 
 # Generate Button
 col1, col2, col3 = st.columns([1, 2, 1])
@@ -1950,22 +1946,11 @@ if generate_clicked:
     <div class="best-algo" style="margin-bottom: 2rem;">
         <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
         <div class="metric-label">Waste Percentage: {best_waste}%</div>
-        <div class="metric-label">✨ Total Algorithms Tested: 15 ✨</div>
+        <div class="metric-label">✨ Total Algorithms Tested: 13 ✨</div>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown("## 📊 Algorithm Comparison (Sorted by Waste %)")
-    
-    # Color coding for better visualization
-    def color_by_waste(val):
-        if isinstance(val, (int, float)):
-            if val < 10:
-                return 'background-color: #2e7d32; color: white'
-            elif val < 20:
-                return 'background-color: #ed6c02; color: white'
-            else:
-                return 'background-color: #d32f2f; color: white'
-        return ''
     
     styled_df = comparison_df.style.apply(
         lambda row: ['background-color: #2e7d32; color: white'] * len(row) if row["Algorithm"] == best_algo else [''] * len(row),
@@ -1974,13 +1959,28 @@ if generate_clicked:
     
     st.dataframe(styled_df, use_container_width=True)
 
-
-
-
-
-
-
-        for idx, p in enumerate(selected_plates, 1):
+    # ================================================================
+    # শুধু BEST ALGORITHM এর রিপোর্ট এবং ডাউনলোড
+    # ================================================================
+    st.markdown("---")
+    st.markdown("## 📋 Best Algorithm Report")
+    
+    best_plates = results[best_algo]
+    best_algo_clean = best_algo.replace(" ", "_").replace("-", "_")
+    
+    if best_plates:
+        # Full Summary Table
+        full_df = build_full_summary(best_plates, demand, original_qty)
+        st.markdown(f"### 📊 Production Summary - {best_algo}")
+        st.dataframe(full_df, use_container_width=True)
+        
+        # Plate Details
+        st.markdown("### 🧾 Plate Configuration Details")
+        plate_rows = []
+        total_sheets_sum = 0
+        total_ups_sum = 0
+        
+        for idx, p in enumerate(best_plates, 1):
             total_ups = sum(p["layout"].values())
             plate_rows.append({
                 "SL": idx,
@@ -1990,61 +1990,62 @@ if generate_clicked:
             })
             total_sheets_sum += p["sheets"]
             total_ups_sum += total_ups
-
+        
         plate_rows.append({
             "SL": "📊",
             "Plate ID": "TOTAL",
             "Sheets Required": total_sheets_sum,
             "Total UPS": total_ups_sum
         })
-
+        
         plate_details_df = pd.DataFrame(plate_rows)
         st.dataframe(plate_details_df, use_container_width=True)
-
+        
+        # Download Section
         st.markdown("### 📥 Download Report")
         col1, col2 = st.columns(2)
-
+        
         with col1:
             bio_excel = BytesIO()
             with pd.ExcelWriter(bio_excel, engine="openpyxl") as writer:
                 full_df.to_excel(writer, sheet_name="Production Summary", index=False)
                 plate_details_df.to_excel(writer, sheet_name="Plate Details", index=False)
                 comparison_df.to_excel(writer, sheet_name="Algorithm Comparison", index=False)
-
+            
             bio_excel.seek(0)
             st.download_button(
                 "📊 Download Excel Report",
                 data=bio_excel,
-                file_name=f"{algo_name_clean}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                file_name=f"{best_algo_clean}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 use_container_width=True
             )
-
+        
         with col2:
             if REPORTLAB_AVAILABLE:
                 pdf_buffer = generate_pdf_report(
-                    selected_plates, demand, original_qty,
-                    selected_algo, calculate_waste_percent(selected_plates, demand)
+                    best_plates, demand, original_qty,
+                    best_algo, calculate_waste_percent(best_plates, demand)
                 )
                 if pdf_buffer:
                     st.download_button(
                         "📄 Download PDF Report",
                         data=pdf_buffer,
-                        file_name=f"{algo_name_clean}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                        file_name=f"{best_algo_clean}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                         mime="application/pdf",
                         use_container_width=True
                     )
             else:
                 st.warning("⚠️ PDF download not available. Install reportlab: pip install reportlab")
     else:
-        st.error(f"❌ {selected_algo} failed to generate a valid plan. Please try another algorithm.")
+        st.error(f"❌ {best_algo} failed to generate a valid plan.")
 
 # Footer
 st.markdown("---")
 st.markdown("""
 <div class="footer">
     <p>Plate Ratio System - Complete Edition</p>
-    <p>🔬 15 Advanced Algorithms | Hybrid Master Optimizer V17</p>
+    <p>🔬 13 Advanced Algorithms | Hybrid Master Optimizer V17</p>
     <p style="color: #667eea;">✨ Design & Developed by <strong>Ovi</strong> ✨</p>
 </div>
 """, unsafe_allow_html=True)
