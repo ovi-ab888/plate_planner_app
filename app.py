@@ -425,6 +425,88 @@ def generate_pdf_report(plates: list, demand: dict, original_qty: dict, algo_nam
 
 
 # ================================================================
+# FORCE PLATE USAGE - ENSURE MAX PLATES ARE USED
+# ================================================================
+def force_plate_usage(plates: list, demand: dict, capacity: int, max_plates: int) -> list:
+    """Ensure exactly max_plates are used - reduces waste"""
+    
+    if len(plates) >= max_plates:
+        return plates
+    
+    # Calculate remaining demand
+    remaining_demand = demand.copy()
+    for tag in demand:
+        produced = sum(p["layout"].get(tag, 0) * p["sheets"] for p in plates)
+        remaining_demand[tag] = max(0, demand[tag] - produced)
+    
+    # Add extra plates until we reach max_plates
+    while len(plates) < max_plates:
+        # If no remaining demand, add a balanced dummy plate
+        if sum(remaining_demand.values()) == 0:
+            # Create a balanced layout
+            layout = {tag: max(1, capacity // len(demand)) for tag in demand.keys()}
+            
+            # Adjust to exact capacity
+            while sum(layout.values()) > capacity:
+                biggest = max(layout, key=layout.get)
+                if layout[biggest] > 1:
+                    layout[biggest] -= 1
+                else:
+                    break
+            
+            while sum(layout.values()) < capacity:
+                biggest = max(demand, key=lambda t: demand.get(t, 0))
+                layout[biggest] = layout.get(biggest, 0) + 1
+            
+            plates.append({
+                "name": plate_name(len(plates) + 1),
+                "layout": layout,
+                "sheets": 1
+            })
+        else:
+            # Distribute remaining demand
+            total_remaining = sum(remaining_demand.values())
+            layout = {}
+            
+            for tag, qty in remaining_demand.items():
+                if qty > 0:
+                    layout[tag] = max(1, floor((qty / total_remaining) * capacity))
+            
+            # Adjust to exact capacity
+            while sum(layout.values()) > capacity:
+                biggest = max(layout, key=layout.get)
+                if layout[biggest] > 1:
+                    layout[biggest] -= 1
+                else:
+                    break
+            
+            while sum(layout.values()) < capacity:
+                if remaining_demand:
+                    biggest = max(remaining_demand, key=remaining_demand.get)
+                else:
+                    biggest = list(demand.keys())[0]
+                layout[biggest] = layout.get(biggest, 0) + 1
+            
+            # Calculate sheets needed
+            if sum(remaining_demand.values()) > 0:
+                sheets = max(1, max(ceil(remaining_demand[tag] / layout.get(tag, 1)) for tag in remaining_demand if layout.get(tag, 0) > 0))
+            else:
+                sheets = 1
+            
+            plates.append({
+                "name": plate_name(len(plates) + 1),
+                "layout": layout,
+                "sheets": sheets
+            })
+            
+            # Update remaining demand
+            for tag, ups in layout.items():
+                remaining_demand[tag] = max(0, remaining_demand.get(tag, 0) - (ups * sheets))
+    
+    return plates
+
+
+# ================================================================
 # V1 - Plate Ratio System (CORRECTED)
 # ================================================================
 def smart_layout_v1(demand: dict, cap: int) -> dict:
@@ -491,6 +573,7 @@ def v1_optimizer(demand: dict, cap: int, max_plates: int) -> list:
                     if produced >= required:
                         break
     
+  plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
@@ -544,6 +627,7 @@ def v2_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
                     if produced >= required:
                         break
     
+   plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
@@ -613,6 +697,7 @@ def v3_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
                     if produced >= required:
                         break
     
+ plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
@@ -697,6 +782,7 @@ def v4_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
             best_score = waste_percent
             best_plates = plates
     
+  plates = force_plate_usage(plates, demand, capacity, max_plates)
     return best_plates
 
 
@@ -789,6 +875,7 @@ def v5_optimizer(demand: dict, capacity: int, max_plates: int, iterations: int =
             best_score = waste_percent
             best_plates = copy.deepcopy(plates)
     
+  plates = force_plate_usage(plates, demand, capacity, max_plates)
     return best_plates
 
 
@@ -856,6 +943,7 @@ def v6_optimizer(demand: dict, capacity: int, max_plates: int) -> list | None:
                     if produced >= required:
                         break
     
+ plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates if plates else v3_optimizer(demand, capacity, max_plates)
 
 
@@ -945,6 +1033,7 @@ def v7_optimizer(demand: dict, capacity: int, max_plates: int, iterations: int =
                     if produced >= required:
                         break
     
+  plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
@@ -1059,6 +1148,7 @@ def v8_optimizer(demand: dict, capacity: int, max_plates: int, iterations: int =
                     if produced >= required:
                         break
     
+   plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
@@ -1136,6 +1226,7 @@ def v9_optimizer(demand: dict, capacity: int, max_plates: int, repair_iterations
                     if produced >= required:
                         break
     
+plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
@@ -1217,6 +1308,7 @@ def v10_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
             best_waste = waste
             best_plates = plates
     
+  plates = force_plate_usage(plates, demand, capacity, max_plates)
     return best_plates if best_plates else v3_optimizer(demand, capacity, max_plates)
 
 
@@ -1440,6 +1532,7 @@ def v12_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
                     if produced >= required:
                         break
     
+   plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
