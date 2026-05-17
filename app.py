@@ -2075,7 +2075,7 @@ if generate_clicked:
         st.error("⚠️ Please enter at least one item with quantity greater than 0")
         st.stop()
 
- with st.spinner("🔄 Running 18 algorithms simultaneously... This may take a moment..."):
+with st.spinner("🔄 Running 18 algorithms simultaneously... This may take a moment..."):
 
     results = {
         "V1 - Plate Ratio System": v1_optimizer(demand, cap, maxp),
@@ -2101,6 +2101,8 @@ if generate_clicked:
         "V17 - AI Evolution Engine": v17_optimizer(demand, cap, maxp),
         "V18 - Global Multi-Plate Optimizer": v18_optimizer(demand, cap, maxp),
     }
+
+     
     comparison_data = []
 
     for algo_name, plates in results.items():
