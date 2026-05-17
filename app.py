@@ -47,15 +47,10 @@ st.set_page_config(
 
 
 # ================================================================
-# PASSWORD CHECK SYSTEM - MODERN VERSION
+# PASSWORD CHECK SYSTEM - SIMPLE FIXED VERSION
 # ================================================================
 def check_password():
-    """Modern password check with better UI"""
-    
-    # 🔥 এই লাইনটি যোগ করুন - সেশন রিসেট করার জন্য
-    if "force_logout" in st.query_params:
-        st.session_state["password_correct"] = False
-        st.query_params.clear()
+    """Password check that actually works"""
     
     expected = None
     try:
@@ -67,27 +62,53 @@ def check_password():
         expected = os.environ.get("PEPCO_APP_PASSWORD")
 
     if expected is None:
-        st.error("⚠️ App password not configured. Please contact administrator.")
-        return False
+        st.error("⚠️ App password not configured.")
+        return True  # True মানে পাসওয়ার্ড ছাড়া ঢুকতে দেবে (ডেভেলপমেন্টের জন্য)
+        # return False  # প্রোডাকশনের জন্য False দিন
 
     def _password_entered():
-        if st.session_state.get("password") == expected:
-            st.session_state["password_correct"] = True
-            st.session_state["auth_success"] = True
-            try:
-                del st.session_state["password"]
-            except Exception:
-                pass
+        if st.session_state.get("password_input") == expected:
+            st.session_state["authenticated"] = True
         else:
-            st.session_state["password_correct"] = False
-            st.session_state["auth_success"] = False
+            st.session_state["authenticated"] = False
 
-    # 🔥 এই অংশটুকু চেক করুন
-    if st.session_state.get("password_correct", None) is True:
+    # চেক করুন আগে থেকেই authenticated কিনা
+    if st.session_state.get("authenticated", False):
         return True
 
-    # ... বাকি কোড আগের মতো থাকবে
+    # UI দেখান
+    st.markdown("""
+    <style>
+        .stApp { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); }
+        .auth-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 2rem;
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            text-align: center;
+        }
+    </style>
+    <div class="auth-container">
+        <h2 style="color:white;">🔐 Access Required</h2>
+        <p style="color:rgba(255,255,255,0.7);">Enter password to continue</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.text_input("", type="password", key="password_input", 
+                     on_change=_password_entered,
+                     placeholder="Enter password",
+                     label_visibility="collapsed")
+    
+    if st.session_state.get("authenticated") is False:
+        st.error("❌ Wrong password")
+    
+    return st.session_state.get("authenticated", False)
 
+    
     # Modern Password UI
     st.markdown("""
     <style>
