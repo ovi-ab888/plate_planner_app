@@ -47,10 +47,10 @@ st.set_page_config(
 
 
 # ================================================================
-# PASSWORD CHECK SYSTEM
+# PASSWORD CHECK SYSTEM - MODERN VERSION
 # ================================================================
 def check_password():
-    """Check if user has entered correct password"""
+    """Modern password check with better UI"""
     expected = None
     try:
         expected = st.secrets.get("app_password", None)
@@ -61,51 +61,131 @@ def check_password():
         expected = os.environ.get("PEPCO_APP_PASSWORD")
 
     if expected is None:
-        st.error("App password not configured.")
+        st.error("⚠️ App password not configured. Please contact administrator.")
         return False
 
     def _password_entered():
         if st.session_state.get("password") == expected:
             st.session_state["password_correct"] = True
+            st.session_state["auth_success"] = True
             try:
                 del st.session_state["password"]
             except Exception:
                 pass
         else:
             st.session_state["password_correct"] = False
+            st.session_state["auth_success"] = False
 
     if st.session_state.get("password_correct", None) is True:
         return True
 
+    # Modern Password UI
     st.markdown("""
     <style>
-        .stApp { background: black !important; }
-        .main > div { background: transparent !important; padding: 0 !important; }
-        .block-container { padding: 0rem !important; max-width: 52% !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .stApp {
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+        }
+        
+        .main-header {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 0px;
+            margin: 0;
+            text-align: center;
+        }
+        
+        .main-header h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .main-header p {
+            color: rgba(255,255,255,0.7);
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .designer-name {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 600;
+        }
+        
+        .password-container {
+            max-width: 480px;
+            margin: 80px auto 0 auto;
+            padding: 3rem 2rem;
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+        
+        .password-container h2 {
+            color: white;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .password-container p {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+        
+        .lock-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
         .stTextInput input {
             background: rgba(255,255,255,0.1) !important;
-            border: 2px solid #333 !important;
-            border-radius: 10px !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            border-radius: 12px !important;
             color: white !important;
             text-align: center !important;
+            font-size: 1rem !important;
+            padding: 0.75rem !important;
+            transition: all 0.3s ease !important;
         }
-        .main-header {
+        
+        .stTextInput input:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 2px rgba(102,126,234,0.3) !important;
+            background: rgba(255,255,255,0.15) !important;
+        }
+        
+        .stButton > button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem;
-            border-radius: 15px;
-            margin: 1rem 1rem 0rem 1rem;
-            text-align: center;
+            color: white;
+            border: none;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            border-radius: 12px;
+            width: 100%;
+            transition: all 0.3s ease;
         }
-        .main-header h1 { color: white; font-size: 2.5rem; }
-        .designer-name { color: #ffd700; }
-        .password-container {
-            max-width: 450px;
-            margin: 60px auto 0 auto;
-            padding: 2.5rem;
-            background: rgba(0, 0, 0, 0.85);
-            border-radius: 20px;
-            text-align: center;
+        
+        .stButton > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102,126,234,0.3);
         }
+        
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
         footer {visibility: hidden;}
@@ -115,55 +195,93 @@ def check_password():
     st.markdown("""
     <div class="main-header">
         <h1>📊 Plate Ratio System</h1>
-        <p>Compare All | Pick Best</p>
+        <p>Advanced Production Planning & Optimization</p>
         <p class="designer-name">✨ Design by Ovi ✨</p>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown(
-        '<div style="height: 40px;"></div><div class="password-container">'
-        '<h2>🔐 Access Code</h2><p>Enter your access code to continue</p></div>',
+        '<div class="password-container">'
+        '<div class="lock-icon">🔐</div>'
+        '<h2>Welcome Back</h2>'
+        '<p>Enter your access code to continue</p>'
+        '</div>',
         unsafe_allow_html=True
     )
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.text_input("Password", type="password", key="password",
-                      on_change=_password_entered, label_visibility="collapsed")
+        st.text_input("", type="password", key="password", 
+                      on_change=_password_entered, 
+                      placeholder="Enter your password",
+                      label_visibility="collapsed")
 
     if st.session_state.get("password_correct") is False:
-        st.error("❌ Incorrect password. Contact Mr. Ovi.")
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.error("❌ Incorrect password. Access denied.")
 
     return False
 
 
-if not check_password():
-    st.stop()
-
-
 # ================================================================
-# CSS FOR MAIN APP
+# MODERN CSS FOR MAIN APP
 # ================================================================
 st.markdown("""
 <style>
-    .stApp { background: black !important; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    * {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    .stApp {
+        background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #24243e 100%);
+    }
+    
+    /* Modern Header */
     .main-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem;
-        border-radius: 15px;
+        background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding: 2rem 2rem;
         margin-bottom: 2rem;
         text-align: center;
+        border-radius: 0;
     }
-    .main-header h1 { color: white; font-size: 2.5rem; }
+    
+    .main-header h1 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .main-header p {
+        color: rgba(255,255,255,0.7);
+        margin-top: 0.5rem;
+    }
+    
+    /* Modern Cards */
     .card {
-        background: #1a1a1a;
-        border-radius: 12px;
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
         padding: 1.5rem;
         margin-bottom: 1.5rem;
-        border: 1px solid #333;
+        border: 1px solid rgba(255,255,255,0.1);
+        transition: all 0.3s ease;
     }
+    
+    .card:hover {
+        border-color: rgba(102,126,234,0.5);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    
     .card-title {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
         font-weight: 600;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         -webkit-background-clip: text;
@@ -171,65 +289,186 @@ st.markdown("""
         border-bottom: 2px solid #667eea;
         display: inline-block;
         margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
     }
+    
+    /* Modern Metrics */
     .metric-card {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.2) 100%);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
         padding: 1rem;
         color: white;
         text-align: center;
+        border: 1px solid rgba(255,255,255,0.1);
     }
-    .metric-value { font-size: 2rem; font-weight: bold; }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    .metric-label {
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.7);
+        margin-top: 0.5rem;
+    }
+    
+    /* Best Algorithm Banner */
     .best-algo {
         background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
-        border-radius: 10px;
-        padding: 1rem;
+        border-radius: 20px;
+        padding: 1.5rem;
         color: white;
         text-align: center;
-        border: 2px solid gold;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,176,155,0.3);
+        margin-bottom: 2rem;
     }
+    
+    .best-algo .metric-value {
+        -webkit-text-fill-color: white;
+        font-size: 1.5rem;
+    }
+    
+    /* Modern Buttons */
     .stButton > button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
         padding: 0.75rem 2rem;
         font-weight: 600;
-        border-radius: 8px;
+        border-radius: 12px;
         width: 100%;
+        transition: all 0.3s ease;
+        font-size: 1rem;
     }
-    .footer {
-        text-align: center;
-        padding: 2rem;
-        background: #1a1a1a;
-        border-radius: 15px;
-        margin-top: 2rem;
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(102,126,234,0.4);
     }
+    
+    /* Modern Inputs */
+    .stNumberInput input, .stTextInput input {
+        background: rgba(255,255,255,0.08) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        border-radius: 12px !important;
+        color: white !important;
+        padding: 0.5rem 1rem !important;
+    }
+    
+    .stNumberInput input:focus, .stTextInput input:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 2px rgba(102,126,234,0.2) !important;
+        background: rgba(255,255,255,0.12) !important;
+    }
+    
+    /* Modern Dataframe */
+    .stDataFrame {
+        background: rgba(255,255,255,0.05);
+        border-radius: 16px;
+        padding: 0.5rem;
+    }
+    
+    .stDataFrame table {
+        border-radius: 12px;
+    }
+    
+    /* Tag Display */
     .tag-display {
-        background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+        background: linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.2) 100%);
         padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #667eea;
+        border-radius: 12px;
+        border: 1px solid rgba(102,126,234,0.3);
         color: #667eea;
-        font-weight: bold;
+        font-weight: 600;
         text-align: center;
+        font-size: 0.9rem;
     }
+    
+    /* Warning & Info */
     .warning {
-        background: #332700;
-        padding: 10px;
-        border-radius: 8px;
+        background: rgba(255,193,7,0.1);
+        padding: 12px;
+        border-radius: 12px;
         border-left: 4px solid #ffc107;
         color: #ffc107;
+        margin: 1rem 0;
     }
+    
     .info {
-        background: #001f3f;
-        padding: 10px;
-        border-radius: 8px;
+        background: rgba(23,162,184,0.1);
+        padding: 12px;
+        border-radius: 12px;
         border-left: 4px solid #17a2b8;
         color: #17a2b8;
     }
+    
+    /* Footer */
+    .footer {
+        text-align: center;
+        padding: 2rem;
+        background: rgba(255,255,255,0.03);
+        border-radius: 20px;
+        margin-top: 3rem;
+        border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    .footer p {
+        color: rgba(255,255,255,0.5);
+        font-size: 0.85rem;
+    }
+    
+    /* Radio Buttons */
+    .stRadio > div {
+        gap: 1rem;
+    }
+    
+    .stRadio label {
+        background: rgba(255,255,255,0.05);
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .stRadio label:hover {
+        background: rgba(102,126,234,0.2);
+        border-color: #667eea;
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        background: rgba(255,255,255,0.05);
+        border-radius: 12px;
+        color: white;
+    }
+    
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(255,255,255,0.05);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: #667eea;
+    }
 </style>
 """, unsafe_allow_html=True)
-
 
 # ================================================================
 # HELPER FUNCTIONS
@@ -1585,10 +1824,12 @@ def v17_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
 # ================================================================
 # MAIN UI
 # ================================================================
+
 st.markdown("""
 <div class="main-header">
-    <h1>🔬 Plate Ratio System - Complete Edition</h1>
-    <p>15 Advanced Algorithms | Compare All | Pick the Best</p>
+    <h1>🎯 Plate Ratio System</h1>
+    <p>Advanced Production Planning & Optimization Platform</p>
+    <p style="font-size: 0.85rem; opacity: 0.6;">15+ Algorithms | Real-time Comparison | Smart Optimization</p>
 </div>
 """, unsafe_allow_html=True)
 
