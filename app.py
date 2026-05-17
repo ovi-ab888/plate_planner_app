@@ -1393,64 +1393,66 @@ if generate_clicked:
         st.error("⚠️ Please enter at least one item with quantity greater than 0")
         st.stop()
 
-import concurrent.futures
+    import concurrent.futures
 
-with st.spinner("🔄 Running 18 algorithms simultaneously... This may take a moment..."):
-    
-    # Define all algorithm functions with their arguments
-    algorithm_tasks = {
-        "V1 - Plate Ratio System": (v1_optimizer, (demand, cap, maxp)),
-        "V2 - Common Sheet Optimizer": (v2_optimizer, (demand, cap, maxp)),
-        "V3 - Smart Decimal Balancing": (v3_optimizer, (demand, cap, maxp)),
-        "V4 - Multi-Variation Optimizer": (v4_optimizer, (demand, cap, maxp)),
-        "V5 - AI Mutation Engine": (v5_optimizer, (demand, cap, maxp, 100)),
-        "V6 - Integer Solver": (v6_optimizer, (demand, cap, maxp)) if PULP_AVAILABLE else (v3_optimizer, (demand, cap, maxp)),
-        "V7 - Simulated Annealing": (v7_optimizer, (demand, cap, maxp, 200)),
-        "V8 - MCTS Tree Search": (v8_optimizer, (demand, cap, maxp, 100)),
-        "V9 - Hybrid Ratio & Sheet Repair": (v9_optimizer, (demand, cap, maxp, 100)),
-        "V10 - Exhaustive Search": (v10_optimizer, (demand, cap, maxp)),
-        "V11 - Genetic Algorithm": (v11_optimizer, (demand, cap, maxp, 50, 100, 0.1, 5)),
-        "V12 - Column Generation": (v12_optimizer, (demand, cap, maxp)) if PULP_AVAILABLE else (v3_optimizer, (demand, cap, maxp)),
-        "V13 - Hybrid Master": (v13_optimizer, (demand, cap, maxp)),
-    }
-    
-    # Add OR-Tools algorithms if available
-    if ORTOOLS_AVAILABLE:
-        algorithm_tasks["V14 - ORTools Exact Solver"] = (v14_optimizer, (demand, cap, maxp))
-        algorithm_tasks["V15 - DP Repair Engine"] = (v15_optimizer, (demand, cap, maxp))
-        algorithm_tasks["V16 - Plate Merge Optimizer"] = (v16_optimizer, (demand, cap, maxp))
-        algorithm_tasks["V17 - AI Evolution Engine"] = (v17_optimizer, (demand, cap, maxp))
-        algorithm_tasks["V18 - Global Multi-Plate Optimizer"] = (v18_optimizer, (demand, cap, maxp))
-    else:
-        # Fallback to V13 if OR-Tools not available
-        for v in ["V14", "V15", "V16", "V17", "V18"]:
-            algorithm_tasks[f"{v} - (OR-Tools Fallback)"] = (v13_optimizer, (demand, cap, maxp))
-    
-    # Run algorithms in parallel
-    results = {}
-    
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-        future_to_algo = {
-            executor.submit(func, *args): algo_name 
-            for algo_name, (func, args) in algorithm_tasks.items()
+    with st.spinner("🔄 Running 18 algorithms simultaneously... This may take a moment..."):
+        
+        # Define all algorithm functions with their arguments
+        algorithm_tasks = {
+            "V1 - Plate Ratio System": (v1_optimizer, (demand, cap, maxp)),
+            "V2 - Common Sheet Optimizer": (v2_optimizer, (demand, cap, maxp)),
+            "V3 - Smart Decimal Balancing": (v3_optimizer, (demand, cap, maxp)),
+            "V4 - Multi-Variation Optimizer": (v4_optimizer, (demand, cap, maxp)),
+            "V5 - AI Mutation Engine": (v5_optimizer, (demand, cap, maxp, 100)),
+            "V6 - Integer Solver": (v6_optimizer, (demand, cap, maxp)) if PULP_AVAILABLE else (v3_optimizer, (demand, cap, maxp)),
+            "V7 - Simulated Annealing": (v7_optimizer, (demand, cap, maxp, 200)),
+            "V8 - MCTS Tree Search": (v8_optimizer, (demand, cap, maxp, 100)),
+            "V9 - Hybrid Ratio & Sheet Repair": (v9_optimizer, (demand, cap, maxp, 100)),
+            "V10 - Exhaustive Search": (v10_optimizer, (demand, cap, maxp)),
+            "V11 - Genetic Algorithm": (v11_optimizer, (demand, cap, maxp, 50, 100, 0.1, 5)),
+            "V12 - Column Generation": (v12_optimizer, (demand, cap, maxp)) if PULP_AVAILABLE else (v3_optimizer, (demand, cap, maxp)),
+            "V13 - Hybrid Master": (v13_optimizer, (demand, cap, maxp)),
         }
         
-        progress_bar = st.progress(0)
-        completed = 0
-        total = len(future_to_algo)
+        # Add OR-Tools algorithms if available
+        if ORTOOLS_AVAILABLE:
+            algorithm_tasks["V14 - ORTools Exact Solver"] = (v14_optimizer, (demand, cap, maxp))
+            algorithm_tasks["V15 - DP Repair Engine"] = (v15_optimizer, (demand, cap, maxp))
+            algorithm_tasks["V16 - Plate Merge Optimizer"] = (v16_optimizer, (demand, cap, maxp))
+            algorithm_tasks["V17 - AI Evolution Engine"] = (v17_optimizer, (demand, cap, maxp))
+            algorithm_tasks["V18 - Global Multi-Plate Optimizer"] = (v18_optimizer, (demand, cap, maxp))
+        else:
+            # Fallback to V13 if OR-Tools not available
+            for v in ["V14", "V15", "V16", "V17", "V18"]:
+                algorithm_tasks[f"{v} - (OR-Tools Fallback)"] = (v13_optimizer, (demand, cap, maxp))
         
-        for future in concurrent.futures.as_completed(future_to_algo):
-            algo_name = future_to_algo[future]
-            try:
-                results[algo_name] = future.result()
-            except Exception as e:
-                st.warning(f"⚠️ {algo_name} failed: {str(e)}")
-                results[algo_name] = v3_optimizer(demand, cap, maxp)
+        # Run algorithms in parallel
+        results = {}
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            future_to_algo = {
+                executor.submit(func, *args): algo_name 
+                for algo_name, (func, args) in algorithm_tasks.items()
+            }
             
-            completed += 1
-            progress_bar.progress(completed / total)
-    
-    progress_bar.empty()
+            progress_bar = st.progress(0)
+            completed = 0
+            total = len(future_to_algo)
+            
+            for future in concurrent.futures.as_completed(future_to_algo):
+                algo_name = future_to_algo[future]
+                try:
+                    results[algo_name] = future.result()
+                except Exception as e:
+                    st.warning(f"⚠️ {algo_name} failed: {str(e)}")
+                    results[algo_name] = v3_optimizer(demand, cap, maxp)
+                
+                completed += 1
+                progress_bar.progress(completed / total)
+        
+        progress_bar.empty()
+        
+        # ✅ এই অংশগুলো spinner এর ভিতরে থাকবে (সঠিক ইন্ডেন্টেশন)
         comparison_data = []
         for algo_name, plates in results.items():
             if plates:
@@ -1473,7 +1475,19 @@ with st.spinner("🔄 Running 18 algorithms simultaneously... This may take a mo
         comparison_df = pd.DataFrame(comparison_data).sort_values("Waste %")
         best_algo = comparison_df.iloc[0]["Algorithm"]
         best_waste = comparison_df.iloc[0]["Waste %"]
+        
+        # Store results in session state
+        for algo_name, plates in results.items():
+            st.session_state[f'plates_{algo_name.replace(" ", "_")}'] = plates
 
+        st.session_state['demand'] = demand
+        st.session_state['original_qty'] = original_qty
+        st.session_state['comparison_df'] = comparison_df
+        st.session_state['best_algo'] = best_algo
+        st.session_state['best_waste'] = best_waste
+        st.session_state['results'] = results
+
+    # ✅ এই অংশগুলো spinner এর বাইরে থাকবে
     st.markdown(f"""
     <div class="best-algo" style="margin-bottom: 2rem;">
         <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
@@ -1483,10 +1497,12 @@ with st.spinner("🔄 Running 18 algorithms simultaneously... This may take a mo
     """, unsafe_allow_html=True)
 
     st.markdown("## 📊 Algorithm Comparison (Sorted by Waste %)")
+    
     styled_df = comparison_df.style.apply(
         lambda row: ['background-color: #2e7d32; color: white'] * len(row) if row["Algorithm"] == best_algo else [''] * len(row),
         axis=1
     ).format({"Waste %": "{:.2f}%"})
+    
     st.dataframe(styled_df, use_container_width=True)
 
     # Best Algorithm Report
