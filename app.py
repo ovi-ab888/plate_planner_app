@@ -46,7 +46,9 @@ st.set_page_config(
 )
 
 
-# PASSWORD CHECK SYSTEM - শুধু CSS অংশ Replace করুন
+# ================================================================
+# PASSWORD CHECK SYSTEM
+# ================================================================
 def check_password():
     """Check if user has entered correct password"""
     expected = None
@@ -75,127 +77,35 @@ def check_password():
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # 🔥 শুধুমাত্র এই CSS টা নতুন করে দিন
     st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .stApp {
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important;
-        }
-        
-        .main > div {
-            background: transparent !important;
-            padding: 0 !important;
-        }
-        
-        .block-container {
-            padding: 0rem !important;
-            max-width: 55% !important;
-        }
-        
-        /* Password Input Styling */
+        .stApp { background: black !important; }
+        .main > div { background: transparent !important; padding: 0 !important; }
+        .block-container { padding: 0rem !important; max-width: 52% !important; }
         .stTextInput input {
-            background: rgba(255,255,255,0.08) !important;
-            border: 1px solid rgba(255,255,255,0.2) !important;
-            border-radius: 14px !important;
+            background: rgba(255,255,255,0.1) !important;
+            border: 2px solid #333 !important;
+            border-radius: 10px !important;
             color: white !important;
             text-align: center !important;
-            font-size: 1rem !important;
-            padding: 0.75rem !important;
-            transition: all 0.3s ease !important;
         }
-        
-        .stTextInput input:focus {
-            border-color: #667eea !important;
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
-            background: rgba(255,255,255,0.12) !important;
-        }
-        
-        /* Main Header */
         .main-header {
-            background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%);
-            backdrop-filter: blur(10px);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 2rem;
-            border-radius: 20px;
+            border-radius: 15px;
             margin: 1rem 1rem 0rem 1rem;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
         }
-        
-        .main-header h1 {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 0;
-        }
-        
-        .main-header p {
-            color: rgba(255,255,255,0.7);
-            margin-top: 0.5rem;
-        }
-        
-        .designer-name {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 600;
-        }
-        
-        /* Password Container */
+        .main-header h1 { color: white; font-size: 2.5rem; }
+        .designer-name { color: #ffd700; }
         .password-container {
             max-width: 450px;
             margin: 60px auto 0 auto;
             padding: 2.5rem;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
         }
-        
-        .password-container h2 {
-            color: white;
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .password-container p {
-            color: rgba(255,255,255,0.6);
-            margin-bottom: 1.5rem;
-        }
-        
-        /* Button Styling */
-        .stButton > button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 0.5rem 1.5rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-        
-        .stButton > button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102,126,234,0.3);
-        }
-        
-        /* Error Message */
-        .stAlert {
-            background: rgba(220,53,69,0.1);
-            border: 1px solid rgba(220,53,69,0.3);
-            border-radius: 12px;
-            color: #ff6b6b;
-        }
-        
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
         footer {visibility: hidden;}
@@ -205,13 +115,13 @@ def check_password():
     st.markdown("""
     <div class="main-header">
         <h1>📊 Plate Ratio System</h1>
-        <p>Advanced Production Planning & Optimization</p>
+        <p>Compare All | Pick Best</p>
         <p class="designer-name">✨ Design by Ovi ✨</p>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown(
-        '<div style="height: 20px;"></div><div class="password-container">'
+        '<div style="height: 40px;"></div><div class="password-container">'
         '<h2>🔐 Access Code</h2><p>Enter your access code to continue</p></div>',
         unsafe_allow_html=True
     )
@@ -225,6 +135,11 @@ def check_password():
         st.error("❌ Incorrect password. Contact Mr. Ovi.")
 
     return False
+
+
+if not check_password():
+    st.stop()
+
 
 # ================================================================
 # MODERN CSS FOR MAIN APP
