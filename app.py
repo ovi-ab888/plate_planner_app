@@ -2040,7 +2040,7 @@ if generate_clicked:
                 else:
                     results[algo_name] = func()
             except Exception as e:
-                st.warning(f"{algo_name} এ সমস্যা হয়েছে। V3 ব্যবহার করা হচ্ছে।")
+
                 results[algo_name] = v3_optimizer(demand, cap, maxp)
 
         # Ensure all have results
