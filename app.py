@@ -1921,9 +1921,11 @@ if generate_clicked:
         "V11 - Genetic Algorithm": v11_optimizer(demand, cap, maxp, population_size=50, generations=100),
         "V12 - Column Generation": v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
         "V13 - Hybrid Master": v13_optimizer(demand, cap, maxp),
-        "V14 - Column Generation": v14_column_generation(demand, cap, maxp, iterations=40),
-        "V15 - Hybrid GA + Local Search": v15_hybrid_ga(demand, cap, maxp)
-    }
+        "V14 - Column Generation": v14_column_generation(demand, cap, maxp, iterations=30),
+        "V15 - Hybrid GA + Local Search": v15_hybrid_ga(demand, cap, maxp, 
+                                                    population_size=80, 
+                                                    generations=100),
+}
         comparison_data = []
         for algo_name, plates in results.items():
             if plates:
