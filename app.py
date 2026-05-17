@@ -1821,6 +1821,7 @@ with col4:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Tag Quantity Section
+# Tag Quantity Section
 st.markdown('<div class="card"><div class="card-title">📦 Item Quantity Details</div>', unsafe_allow_html=True)
 
 tags = []
@@ -1829,12 +1830,18 @@ qty = []
 for i in range(n):
     col1, col2 = st.columns([1, 2])
     with col1:
-        item_name = f"Item {i + 1}"
-        st.markdown(f"<div class='tag-display'>{item_name}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='tag-display'>Item {i + 1}</div>", unsafe_allow_html=True)
     with col2:
-        q = st.number_input(f"Quantity for {item_name}", 0, 100000, step=10,
-                            key=f"qty_{i}", label_visibility="collapsed")
-    tags.append(item_name)
+        q = st.number_input(
+            f"Quantity for Item {i+1}", 
+            min_value=0, 
+            max_value=1000000,      # ← এখানে বাড়ানো হয়েছে (১০ লক্ষ)
+            value=1000, 
+            step=10, 
+            key=f"qty_{i}", 
+            label_visibility="collapsed"
+        )
+    tags.append(f"Item {i + 1}")
     qty.append(q)
 
 st.markdown('</div>', unsafe_allow_html=True)
