@@ -1755,39 +1755,50 @@ if generate_clicked:
         "V12 - Column Generation": v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
         "V13 - Hybrid Master": v13_optimizer(demand, cap, maxp)
     }
-        comparison_data = []
-        for algo_name, plates in results.items():
-            if plates:
-                comparison_data.append({
-                    "Algorithm": algo_name,
-                    "Waste %": calculate_waste_percent(plates, demand),
-                    "Total Plates": len(plates),
-                    "Total Sheets": sum(p["sheets"] for p in plates),
-                    "Status": "✅ Success"
-                })
-            else:
-                comparison_data.append({
-                    "Algorithm": algo_name,
-                    "Waste %": 100,
-                    "Total Plates": 0,
-                    "Total Sheets": 0,
-                    "Status": "❌ Failed"
-                })
 
-        comparison_df = pd.DataFrame(comparison_data).sort_values("Waste %")
-        best_algo = comparison_df.iloc[0]["Algorithm"]
-        best_waste = comparison_df.iloc[0]["Waste %"]
-        
-        # Store results in session state
-        for algo_name, plates in results.items():
-            st.session_state[f'plates_{algo_name.replace(" ", "_")}'] = plates
+    comparison_data = []
 
-        st.session_state['demand'] = demand
-        st.session_state['original_qty'] = original_qty
-        st.session_state['comparison_df'] = comparison_df
-        st.session_state['best_algo'] = best_algo
-        st.session_state['best_waste'] = best_waste
-        st.session_state['results'] = results
+    for algo_name, plates in results.items():
+        if plates:
+            comparison_data.append({
+                "Algorithm": algo_name,
+                "Waste %": calculate_waste_percent(plates, demand),
+                "Total Plates": len(plates),
+                "Total Sheets": sum(p["sheets"] for p in plates),
+                "Status": "✅ Success"
+            })
+        else:
+            comparison_data.append({
+                "Algorithm": algo_name,
+                "Waste %": 100,
+                "Total Plates": 0,
+                "Total Sheets": 0,
+                "Status": "❌ Failed"
+            })
+
+    comparison_df = pd.DataFrame(comparison_data).sort_values("Waste %")
+
+    best_algo = comparison_df.iloc[0]["Algorithm"]
+    best_waste = comparison_df.iloc[0]["Waste %"]
+
+    # Store results in session state
+    for algo_name, plates in results.items():
+        safe_key = (
+            algo_name
+            .replace(" ", "_")
+            .replace("-", "_")
+            .replace("/", "_")
+            .replace("&", "and")
+        )
+
+        st.session_state[f'plates_{safe_key}'] = plates
+
+    st.session_state['demand'] = demand
+    st.session_state['original_qty'] = original_qty
+    st.session_state['comparison_df'] = comparison_df
+    st.session_state['best_algo'] = best_algo
+    st.session_state['best_waste'] = best_waste
+    st.session_state['results'] = results
 
     st.markdown(f"""
     <div class="best-algo" style="margin-bottom: 2rem;">
