@@ -573,7 +573,7 @@ def v1_optimizer(demand: dict, cap: int, max_plates: int) -> list:
                     if produced >= required:
                         break
     
-  plates = force_plate_usage(plates, demand, capacity, max_plates)
+        plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
@@ -626,8 +626,7 @@ def v2_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
                     produced += p["layout"][tag] * add_sheets
                     if produced >= required:
                         break
-    
-   plates = force_plate_usage(plates, demand, capacity, max_plates)
+    plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
@@ -697,7 +696,7 @@ def v3_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
                     if produced >= required:
                         break
     
- plates = force_plate_usage(plates, demand, capacity, max_plates)
+        plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
@@ -782,7 +781,7 @@ def v4_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
             best_score = waste_percent
             best_plates = plates
     
-  plates = force_plate_usage(plates, demand, capacity, max_plates)
+    plates = force_plate_usage(plates, demand, capacity, max_plates)
     return best_plates
 
 
@@ -875,7 +874,7 @@ def v5_optimizer(demand: dict, capacity: int, max_plates: int, iterations: int =
             best_score = waste_percent
             best_plates = copy.deepcopy(plates)
     
-  plates = force_plate_usage(plates, demand, capacity, max_plates)
+    plates = force_plate_usage(plates, demand, capacity, max_plates)
     return best_plates
 
 
@@ -943,7 +942,7 @@ def v6_optimizer(demand: dict, capacity: int, max_plates: int) -> list | None:
                     if produced >= required:
                         break
     
- plates = force_plate_usage(plates, demand, capacity, max_plates)
+    plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates if plates else v3_optimizer(demand, capacity, max_plates)
 
 
@@ -1033,7 +1032,7 @@ def v7_optimizer(demand: dict, capacity: int, max_plates: int, iterations: int =
                     if produced >= required:
                         break
     
-  plates = force_plate_usage(plates, demand, capacity, max_plates)
+    plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
@@ -1148,7 +1147,7 @@ def v8_optimizer(demand: dict, capacity: int, max_plates: int, iterations: int =
                     if produced >= required:
                         break
     
-   plates = force_plate_usage(plates, demand, capacity, max_plates)
+    plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
@@ -1226,7 +1225,7 @@ def v9_optimizer(demand: dict, capacity: int, max_plates: int, repair_iterations
                     if produced >= required:
                         break
     
-plates = force_plate_usage(plates, demand, capacity, max_plates)
+    plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
@@ -1308,7 +1307,7 @@ def v10_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
             best_waste = waste
             best_plates = plates
     
-  plates = force_plate_usage(plates, demand, capacity, max_plates)
+    plates = force_plate_usage(plates, demand, capacity, max_plates)
     return best_plates if best_plates else v3_optimizer(demand, capacity, max_plates)
 
 
@@ -1532,7 +1531,7 @@ def v12_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
                     if produced >= required:
                         break
     
-   plates = force_plate_usage(plates, demand, capacity, max_plates)
+    plates = force_plate_usage(plates, demand, capacity, max_plates)
     return plates
 
 
