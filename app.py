@@ -1892,21 +1892,21 @@ if generate_clicked:
         st.stop()
 
     with st.spinner("🔄 Running 15 algorithms simultaneously... This may take a moment..."):
-        results = {
-            "V3 - Plate Ratio System": v3_optimizer(demand, cap, maxp),
-            "V4 - Common Sheet Optimizer": v4_optimizer(demand, cap, maxp),
-            "V5 - Smart Decimal Balancing": v5_optimizer(demand, cap, maxp),
-            "V6 - Multi-Variation Optimizer": v6_optimizer(demand, cap, maxp),
-            "V7 - AI Mutation Engine": v7_optimizer(demand, cap, maxp, iterations=100),
-            "V8 - Integer Solver": v8_optimizer(demand, cap, maxp) if v8_optimizer(demand, cap, maxp) else v5_optimizer(demand, cap, maxp),
-            "V9 - Simulated Annealing": v9_optimizer(demand, cap, maxp, iterations=200),
-            "V10 - MCTS Tree Search": v10_optimizer(demand, cap, maxp, iterations=100),
-            "V11 - Hybrid Ratio & Sheet Repair": v11_optimizer(demand, cap, maxp, repair_iterations=100),
-            "V14 - Exhaustive Search": v14_optimizer(demand, cap, maxp),
-            "V15 - Genetic Algorithm": v15_optimizer(demand, cap, maxp, population_size=50, generations=100),
-            "V16 - Column Generation": v16_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v5_optimizer(demand, cap, maxp),
-            "V17 - Hybrid Master": v17_optimizer(demand, cap, maxp)
-        }
+results = {
+    "V1 - Plate Ratio System": v3_optimizer(demand, cap, maxp),
+    "V2 - Common Sheet Optimizer": v4_optimizer(demand, cap, maxp),
+    "V3 - Smart Decimal Balancing": v5_optimizer(demand, cap, maxp),
+    "V4 - Multi-Variation Optimizer": v6_optimizer(demand, cap, maxp),
+    "V5 - AI Mutation Engine": v7_optimizer(demand, cap, maxp, iterations=100),
+    "V6 - Integer Solver": v8_optimizer(demand, cap, maxp) if v8_optimizer(demand, cap, maxp) else v5_optimizer(demand, cap, maxp),
+    "V7 - Simulated Annealing": v9_optimizer(demand, cap, maxp, iterations=200),
+    "V8 - MCTS Tree Search": v10_optimizer(demand, cap, maxp, iterations=100),
+    "V9 - Hybrid Ratio & Sheet Repair": v11_optimizer(demand, cap, maxp, repair_iterations=100),
+    "V10 - Exhaustive Search": v14_optimizer(demand, cap, maxp),
+    "V11 - Genetic Algorithm": v15_optimizer(demand, cap, maxp, population_size=50, generations=100),
+    "V12 - Column Generation": v16_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v5_optimizer(demand, cap, maxp),
+    "V13 - Hybrid Master": v17_optimizer(demand, cap, maxp)
+}
         
         comparison_data = []
         for algo_name, plates in results.items():
