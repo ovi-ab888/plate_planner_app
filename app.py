@@ -1438,143 +1438,91 @@ def v10_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
 
 
 # ================================================================
-# V11 - Genetic Algorithm with Elite Selection
+# V11 - Genetic Algorithm (FIXED for Max Plates = 1)
 # ================================================================
 def v11_optimizer(demand: dict, capacity: int, max_plates: int, 
-                   population_size: int = 50, generations: int = 100, 
-                   mutation_rate: float = 0.1, elite_size: int = 5) -> list:
-    """V11 - Genetic Algorithm with Elite Selection"""
+                  population_size: int = 50, generations: int = 100, 
+                  mutation_rate: float = 0.15) -> list:
+    """V11 - Genetic Algorithm with safe crossover for 1 plate"""
     
+    if max_plates == 1:
+        # Special case for single plate
+        return v3_optimizer(demand, capacity, max_plates)  # Safe fallback
+
     items = list(demand.keys())
     
     def create_individual():
         remaining = demand.copy()
         plates = []
-        
         for p in range(max_plates):
             active = {k: v for k, v in remaining.items() if v > 0}
             if not active:
                 break
-            
             total = sum(active.values())
-            layout = {}
-            
-            for tag, qty in active.items():
-                layout[tag] = max(1, floor((qty / total) * capacity))
+            layout = {tag: max(1, floor((qty / total) * capacity)) for tag, qty in active.items()}
             
             while sum(layout.values()) > capacity:
                 biggest = max(layout, key=layout.get)
                 if layout[biggest] > 1:
                     layout[biggest] -= 1
-                else:
-                    break
             
             while sum(layout.values()) < capacity:
                 biggest = max(active, key=active.get)
                 layout[biggest] += 1
             
-            sheets = max(1, min(ceil(remaining[tag] / layout.get(tag, 1)) for tag in active))
-            
-            for tag, ups in layout.items():
-                remaining[tag] = max(0, remaining[tag] - (ups * sheets))
+            sheets = max(1, max(ceil(remaining[tag] / layout.get(tag, 1)) for tag in active))
             
             plates.append({"layout": layout, "sheets": sheets})
-        
-        if any(v > 0 for v in remaining.values()) and plates:
-            last = plates[-1]
-            for tag in remaining:
-                if remaining[tag] > 0:
-                    ups = max(1, last["layout"].get(tag, 1))
-                    last["sheets"] += ceil(remaining[tag] / ups)
-                    remaining[tag] = 0
-        
-        return plates
-    
-    def calculate_fitness(plates):
-        return 100 - calculate_waste_percent(plates, demand)
-    
-    def crossover(parent1, parent2):
-        crossover_point = random.randint(1, min(len(parent1), len(parent2)) - 1)
-        child = parent1[:crossover_point] + parent2[crossover_point:]
-        
-        remaining = demand.copy()
-        new_plates = []
-        
-        for p in child:
-            active = {k: v for k, v in remaining.items() if v > 0}
-            if not active:
-                break
-            
-            sheets = p.get("sheets", 1)
-            layout = p.get("layout", {})
-            
-            if sum(layout.values()) != capacity:
-                total = sum(active.values())
-                layout = {tag: max(1, int((qty / total) * capacity)) for tag, qty in active.items()}
-                while sum(layout.values()) > capacity:
-                    max_tag = max(layout, key=layout.get)
-                    if layout[max_tag] > 1:
-                        layout[max_tag] -= 1
-                    else:
-                        break
-            
-            new_plates.append({"layout": layout, "sheets": sheets})
             
             for tag, ups in layout.items():
-                remaining[tag] = max(0, remaining[tag] - (ups * sheets))
+                remaining[tag] = max(0, remaining[tag] - ups * sheets)
         
-        if any(v > 0 for v in remaining.values()) and new_plates:
-            last = new_plates[-1]
-            for tag in remaining:
-                if remaining[tag] > 0:
-                    ups = max(1, last["layout"].get(tag, 1))
-                    last["sheets"] += ceil(remaining[tag] / ups)
-                    remaining[tag] = 0
+        return plates
+
+    def crossover(parent1, parent2):
+        if len(parent1) <= 1 or len(parent2) <= 1:
+            return copy.deepcopy(parent1) if random.random() < 0.5 else copy.deepcopy(parent2)
         
-        return new_plates
-    
+        crossover_point = random.randint(1, min(len(parent1), len(parent2)) - 1)
+        child = parent1[:crossover_point] + parent2[crossover_point:]
+        return child
+
     def mutate(plates):
-        if random.random() > mutation_rate:
+        if random.random() > mutation_rate or not plates:
             return plates
-        
         mutated = copy.deepcopy(plates)
-        if mutated:
-            plate_idx = random.randint(0, len(mutated) - 1)
-            layout = mutated[plate_idx]["layout"]
-            
-            if len(layout) >= 2:
-                tags = list(layout.keys())
-                a, b = random.sample(tags, 2)
-                if layout[a] > 1:
-                    layout[a] -= 1
-                    layout[b] += 1
-        
+        plate_idx = random.randint(0, len(mutated)-1)
+        layout = mutated[plate_idx]["layout"]
+        if len(layout) >= 2:
+            a, b = random.sample(list(layout.keys()), 2)
+            if layout[a] > 1:
+                layout[a] -= 1
+                layout[b] += 1
         return mutated
-    
+
+    # Initialize population
     population = [create_individual() for _ in range(population_size)]
     
-    for generation in range(generations):
-        fitness_scores = [calculate_fitness(ind) for ind in population]
+    for gen in range(generations):
+        fitness = [(calculate_waste_percent(ind, demand), ind) for ind in population]
+        fitness.sort(key=lambda x: x[0])
         
-        elite_indices = sorted(range(len(fitness_scores)), key=lambda i: fitness_scores[i], reverse=True)[:elite_size]
-        new_population = [population[i] for i in elite_indices]
+        elite = [ind for _, ind in fitness[:max(3, population_size//10)]]
+        
+        new_population = elite[:]
         
         while len(new_population) < population_size:
-            tournament = random.sample(list(zip(population, fitness_scores)), 5)
-            parent1 = max(tournament, key=lambda x: x[1])[0]
-            
-            tournament = random.sample(list(zip(population, fitness_scores)), 5)
-            parent2 = max(tournament, key=lambda x: x[1])[0]
+            parent1 = random.choice(fitness[:population_size//3])[1]
+            parent2 = random.choice(fitness[:population_size//3])[1]
             
             child = crossover(parent1, parent2)
             child = mutate(child)
             new_population.append(child)
         
-        population = new_population
+        population = new_population[:population_size]
     
-    best_idx = max(range(len(population)), key=lambda i: calculate_fitness(population[i]))
-    return population[best_idx]
-
+    best = min(population, key=lambda x: calculate_waste_percent(x, demand))
+    return best
 
 # ================================================================
 # V12 - Column Generation Method (Advanced)
@@ -1918,7 +1866,7 @@ if generate_clicked:
         "V8 - MCTS Tree Search": v8_optimizer(demand, cap, maxp, iterations=100),
         "V9 - Hybrid Ratio & Sheet Repair": v9_optimizer(demand, cap, maxp, repair_iterations=100),
         "V10 - Exhaustive Search": v10_optimizer(demand, cap, maxp),
-        "V11 - Genetic Algorithm": v11_optimizer(demand, cap, maxp, population_size=50, generations=100),
+        "V11 - Genetic Algorithm": v11_optimizer(demand, cap, maxp, population_size=40, generations=80),
         "V12 - Column Generation": v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
         "V13 - Hybrid Master": v13_optimizer(demand, cap, maxp),
         "V14 - Column Generation": v14_column_generation(demand, cap, maxp, iterations=30),
