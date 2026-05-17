@@ -1739,24 +1739,22 @@ if generate_clicked:
         st.error("⚠️ Please enter at least one item with quantity greater than 0")
         st.stop()
 
-    with st.spinner("🔄 Running 15 algorithms simultaneously... This may take a moment..."):
-results = {
-    "V1 - Plate Ratio System": v1_optimizer(demand, cap, maxp),
-    "V2 - Common Sheet Optimizer": v2_optimizer(demand, cap, maxp),
-    "V3 - Smart Decimal Balancing": v3_optimizer(demand, cap, maxp),
-    "V4 - Multi-Variation Optimizer": v4_optimizer(demand, cap, maxp),
-    "V5 - AI Mutation Engine": v5_optimizer(demand, cap, maxp, iterations=100),
-    "V6 - Integer Solver": v6_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
-    "V7 - Simulated Annealing": v7_optimizer(demand, cap, maxp, iterations=200),
-    "V8 - MCTS Tree Search": v8_optimizer(demand, cap, maxp, iterations=100),
-    "V9 - Hybrid Ratio & Sheet Repair": v9_optimizer(demand, cap, maxp, repair_iterations=100),
-    "V10 - Exhaustive Search": v10_optimizer(demand, cap, maxp),
-    "V11 - Genetic Algorithm": v11_optimizer(demand, cap, maxp, population_size=50, generations=100),
-    "V12 - Column Generation": v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
-    "V13 - Hybrid Master": v13_optimizer(demand, cap, maxp)
-}
-
-
+  with st.spinner("🔄 Running 13 algorithms simultaneously... This may take a moment..."):
+    results = {
+        "V1 - Plate Ratio System": v1_optimizer(demand, cap, maxp),
+        "V2 - Common Sheet Optimizer": v2_optimizer(demand, cap, maxp),
+        "V3 - Smart Decimal Balancing": v3_optimizer(demand, cap, maxp),
+        "V4 - Multi-Variation Optimizer": v4_optimizer(demand, cap, maxp),
+        "V5 - AI Mutation Engine": v5_optimizer(demand, cap, maxp, iterations=100),
+        "V6 - Integer Solver": v6_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
+        "V7 - Simulated Annealing": v7_optimizer(demand, cap, maxp, iterations=200),
+        "V8 - MCTS Tree Search": v8_optimizer(demand, cap, maxp, iterations=100),
+        "V9 - Hybrid Ratio & Sheet Repair": v9_optimizer(demand, cap, maxp, repair_iterations=100),
+        "V10 - Exhaustive Search": v10_optimizer(demand, cap, maxp),
+        "V11 - Genetic Algorithm": v11_optimizer(demand, cap, maxp, population_size=50, generations=100),
+        "V12 - Column Generation": v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
+        "V13 - Hybrid Master": v13_optimizer(demand, cap, maxp)
+    }
         comparison_data = []
         for algo_name, plates in results.items():
             if plates:
