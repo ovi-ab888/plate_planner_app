@@ -1210,8 +1210,7 @@ if not PULP_AVAILABLE:
 # Generate Button
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-   # 18 → 13 এ পরিবর্তন করুন
-generate_clicked = st.button("🚀 Generate Plans (13 Algorithms)", use_container_width=True)
+    generate_clicked = st.button("🚀 Generate Plans (13 Algorithms)", use_container_width=True)
 
 if generate_clicked:
     if not demand:
@@ -1221,6 +1220,7 @@ if generate_clicked:
     import concurrent.futures
 
     with st.spinner("🔄 Running 13 algorithms simultaneously... This may take a moment..."):
+        # ✅ এখানে ইন্ডেন্টেশন সঠিক হতে হবে (4 spaces or 1 tab)
         
         # Define all algorithm functions with their arguments
         algorithm_tasks = {
@@ -1228,18 +1228,16 @@ if generate_clicked:
             "V2 - Common Sheet Optimizer": (v2_optimizer, (demand, cap, maxp)),
             "V3 - Smart Decimal Balancing": (v3_optimizer, (demand, cap, maxp)),
             "V4 - Multi-Variation Optimizer": (v4_optimizer, (demand, cap, maxp)),
-            "V5 - AI Mutation Engine": (v5_optimizer, (demand, cap, maxp, 30)),
+            "V5 - AI Mutation Engine": (v5_optimizer, (demand, cap, maxp, 100)),
             "V6 - Integer Solver": (v6_optimizer, (demand, cap, maxp)) if PULP_AVAILABLE else (v3_optimizer, (demand, cap, maxp)),
-            "V7 - Simulated Annealing": (v7_optimizer, (demand, cap, maxp, 50)),
-            "V8 - MCTS Tree Search": (v8_optimizer, (demand, cap, maxp, 30)),
-            "V9 - Hybrid Ratio & Sheet Repair": (v9_optimizer, (demand, cap, maxp, 30)),
+            "V7 - Simulated Annealing": (v7_optimizer, (demand, cap, maxp, 200)),
+            "V8 - MCTS Tree Search": (v8_optimizer, (demand, cap, maxp, 100)),
+            "V9 - Hybrid Ratio & Sheet Repair": (v9_optimizer, (demand, cap, maxp, 100)),
             "V10 - Exhaustive Search": (v10_optimizer, (demand, cap, maxp)),
-            "V11 - Genetic Algorithm": (v11_optimizer, (demand, cap, maxp, 20, 30, 0.1, 3)),
+            "V11 - Genetic Algorithm": (v11_optimizer, (demand, cap, maxp, 50, 100, 0.1, 5)),
             "V12 - Column Generation": (v12_optimizer, (demand, cap, maxp)) if PULP_AVAILABLE else (v3_optimizer, (demand, cap, maxp)),
             "V13 - Hybrid Master": (v13_optimizer, (demand, cap, maxp)),
         }
-        
-
         
         # Run algorithms in parallel
         results = {}
@@ -1302,7 +1300,7 @@ if generate_clicked:
         st.session_state['best_waste'] = best_waste
         st.session_state['results'] = results
 
-    # ✅ এই অংশগুলো spinner এর বাইরে থাকবে
+    # ✅ এই অংশগুলো spinner এর বাইরে থাকবে (কোনো ইন্ডেন্টেশন নেই)
     st.markdown(f"""
     <div class="best-algo" style="margin-bottom: 2rem;">
         <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
