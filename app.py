@@ -206,6 +206,7 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
     
+    # 🔥 এই অংশটা যোগ করতে ভুলবেন না!
     st.markdown(
         '<div style="height: 20px;"></div><div class="password-container">'
         '<h2>🔐 Access Code</h2><p>Enter your access code to continue</p></div>',
@@ -473,24 +474,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
 # ================================================================
 # HELPER FUNCTIONS
 # ================================================================
-def normalize_layout(layout, capacity):
-    total = sum(layout.values())
-    while total < capacity:
-        biggest = max(layout, key=layout.get)
-        layout[biggest] += 1
-        total = sum(layout.values())
-    while total > capacity:
-        biggest = max(layout, key=layout.get)
-        if layout[biggest] > 1:
-            layout[biggest] -= 1
-        total = sum(layout.values())
-    return layout
-
-
 def plate_name(n: int) -> str:
     """Convert number to Excel-style column name"""
     n -= 1
@@ -691,6 +677,28 @@ def generate_pdf_report(plates: list, demand: dict, original_qty: dict,
 
     except Exception as e:
         return None
+
+def normalize_layout(layout, capacity):
+
+    total = sum(layout.values())
+
+    while total < capacity:
+
+        biggest = max(layout, key=layout.get)
+        layout[biggest] += 1
+
+        total = sum(layout.values())
+
+    while total > capacity:
+
+        biggest = max(layout, key=layout.get)
+
+        if layout[biggest] > 1:
+            layout[biggest] -= 1
+
+        total = sum(layout.values())
+
+    return layout
 
 
 # ================================================================
@@ -1821,6 +1829,7 @@ def v18_optimizer(demand: dict, capacity: int, max_plates: int):
 # ================================================================
 # MAIN UI
 # ================================================================
+
 st.markdown("""
 <div class="main-header">
     <h1>🎯 Plate Ratio System</h1>
@@ -1832,141 +1841,198 @@ st.markdown("""
 # Configuration Panel
 st.markdown('<div class="card"><div class="card-title">⚙️ Production Configuration</div>', unsafe_allow_html=True)
 col1, col2, col3, col4 = st.columns(4)
+
 with col1:
     n = st.number_input("🏷️ Number of Items", 1, 500, 1)
+
 with col2:
-    cap = st.number_input("📀 Plate Capacity", 1, 100, 8)
+    cap = st.number_input("📀 Plate Capacity", 1, 200, 10)
+
 with col3:
-    maxp = st.number_input("📋 Max Plates Limit", 1, 20, 3)
+    maxp = st.number_input("🎨 Max Plates", 1, 30, 3)
+
 with col4:
-    addon_pct = st.number_input("📈 Add-on Allowance (%)", 0.0, 100.0, 0.0, step=0.5)
+    addon = st.number_input("📈 Add-on %", 0.0, 50.0, 0.0, step=0.5)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Items Input Table
-st.markdown('<div class="card"><div class="card-title">📝 Enter Item Details</div>', unsafe_allow_html=True)
-input_data = []
-for i in range(int(n)):
-    c1, c2 = st.columns(2)
-    with c1:
-        tag_val = st.text_input(f"Tag Code #{i+1}", f"T{i+1}", key=f"tag_{i}")
-    with c2:
-        qty_val = st.number_input(f"Required Quantity for {tag_val}", 0, 9999999, 1000, key=f"qty_{i}")
-    input_data.append((tag_val, qty_val))
+# Tag Quantity Section
+st.markdown('<div class="card"><div class="card-title">📦 Item Quantity Details</div>', unsafe_allow_html=True)
+
+tags = []
+qty = []
+
+for i in range(n):
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        item_name = f"Item {i + 1}"
+        st.markdown(f"<div class='tag-display'>{item_name}</div>", unsafe_allow_html=True)
+    with col2:
+        q = st.number_input(f"Quantity for {item_name}", 0, 100000, step=10,
+                            key=f"qty_{i}", label_visibility="collapsed")
+    tags.append(item_name)
+    qty.append(q)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Process Demand Inputs
-original_qty = {}
-demand = {}
-for tag, qty in input_data:
-    if tag.strip() and qty > 0:
-        original_qty[tag.strip()] = qty
-        demand[tag.strip()] = int(ceil(qty * (1 + addon_pct / 100.0)))
+# Data Preparation
+original_qty = {t: int(q) for t, q in zip(tags, qty) if q > 0}
+demand = {t: ceil(int(q) * (1 + addon / 100)) for t, q in zip(tags, qty) if q > 0}
 
-# Execution Trigger
-generate_clicked = st.button("🚀 Generate Plans (18 Algorithms)", use_container_width=True)
+if not PULP_AVAILABLE:
+    st.markdown('<div class="warning">⚠️ PuLP library not installed. Some advanced features disabled.</div>', unsafe_allow_html=True)
+
+# Generate Button
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    generate_clicked = st.button("🚀 Generate Plans (15 Algorithms)", use_container_width=True)
 
 if generate_clicked:
     if not demand:
         st.error("⚠️ Please enter at least one item with quantity greater than 0")
         st.stop()
 
-    with st.spinner("🔄 Running 18 algorithms simultaneously... This may take a moment..."):
-        results = {
-            "V1 - Plate Ratio System": v1_optimizer(demand, cap, maxp),
-            "V2 - Common Sheet Optimizer": v2_optimizer(demand, cap, maxp),
-            "V3 - Smart Decimal Balancing": v3_optimizer(demand, cap, maxp),
-            "V4 - Multi-Variation Optimizer": v4_optimizer(demand, cap, maxp),
-            "V5 - AI Mutation Engine": v5_optimizer(demand, cap, maxp, iterations=100),
-            "V6 - Integer Solver": v6_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
-            "V7 - Simulated Annealing": v7_optimizer(demand, cap, maxp, iterations=200),
-            "V8 - MCTS Tree Search": v8_optimizer(demand, cap, maxp, iterations=100),
-            "V9 - Hybrid Ratio & Sheet Repair": v9_optimizer(demand, cap, maxp, repair_iterations=100),
-            "V10 - Exhaustive Search": v10_optimizer(demand, cap, maxp),
-            "V11 - Genetic Algorithm": v11_optimizer(demand, cap, maxp, population_size=50, generations=100),
-            "V12 - Column Generation": v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
-            "V13 - Hybrid Master": v13_optimizer(demand, cap, maxp),
-            "V14 - ORTools Exact Solver": v14_optimizer(demand, cap, maxp),
-            "V15 - DP Repair Engine": v15_optimizer(demand, cap, maxp),
-            "V16 - Plate Merge Optimizer": v16_optimizer(demand, cap, maxp),
-            "V17 - AI Evolution Engine": v17_optimizer(demand, cap, maxp),
-            "V18 - Global Multi-Plate Master": v18_optimizer(demand, cap, maxp)
-        }
+with st.spinner("🔄 Running 18 algorithms simultaneously... This may take a moment..."):
+    results = {
+        "V1 - Plate Ratio System": v1_optimizer(demand, cap, maxp),
+        "V2 - Common Sheet Optimizer": v2_optimizer(demand, cap, maxp),
+        "V3 - Smart Decimal Balancing": v3_optimizer(demand, cap, maxp),
+        "V4 - Multi-Variation Optimizer": v4_optimizer(demand, cap, maxp),
+        "V5 - AI Mutation Engine": v5_optimizer(demand, cap, maxp, iterations=100),
+        "V6 - Integer Solver": v6_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
+        "V7 - Simulated Annealing": v7_optimizer(demand, cap, maxp, iterations=200),
+        "V8 - MCTS Tree Search": v8_optimizer(demand, cap, maxp, iterations=100),
+        "V9 - Hybrid Ratio & Sheet Repair": v9_optimizer(demand, cap, maxp, repair_iterations=100),
+        "V10 - Exhaustive Search": v10_optimizer(demand, cap, maxp),
+        "V11 - Genetic Algorithm": v11_optimizer(demand, cap, maxp, population_size=50, generations=100),
+        "V12 - Column Generation": v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
+        "V13 - Hybrid Master": v13_optimizer(demand, cap, maxp),
+        
+        "V14 - ORTools Exact Solver": v14_optimizer(demand, cap, maxp),
 
-    # Compare Metrics
-    comparison_rows = []
-    best_algo = None
-    best_waste = float('inf')
+        "V15 - DP Repair Engine": v15_optimizer(demand, cap, maxp),
 
-    for name, plates in results.items():
+        "V16 - Plate Merge Optimizer": v16_optimizer(demand, cap, maxp),
+
+        "V17 - AI Evolution Engine": v17_optimizer(demand, cap, maxp),
+
+        "V18 - Global Multi-Plate Optimizer": v18_optimizer(demand, cap, maxp)
+    }
+
+    comparison_data = []
+
+    for algo_name, plates in results.items():
         if plates:
-            w_pct = calculate_waste_percent(plates, demand)
-            total_sheets = sum(p["sheets"] for p in plates)
-            comparison_rows.append({
-                "Algorithm Name": name,
-                "Waste Percentage": f"{w_pct}%",
-                "Total Plates Used": len(plates),
-                "Total Run Sheets": total_sheets,
+            comparison_data.append({
+                "Algorithm": algo_name,
+                "Waste %": calculate_waste_percent(plates, demand),
+                "Total Plates": len(plates),
+                "Total Sheets": sum(p["sheets"] for p in plates),
                 "Status": "✅ Success"
             })
-            if w_pct < best_waste:
-                best_waste = w_pct
-                best_algo = name
         else:
-            comparison_rows.append({
-                "Algorithm Name": name,
-                "Waste Percentage": "N/A",
-                "Total Plates Used": 0,
-                "Total Run Sheets": 0,
+            comparison_data.append({
+                "Algorithm": algo_name,
+                "Waste %": 100,
+                "Total Plates": 0,
+                "Total Sheets": 0,
                 "Status": "❌ Failed"
             })
 
-    # Render Leaderboard
-    st.markdown("## 🏆 Engine Leaderboard (Comparison)")
-    comp_df = pd.DataFrame(comparison_rows)
-    st.dataframe(comp_df, use_container_width=True)
+    comparison_df = pd.DataFrame(comparison_data).sort_values("Waste %")
 
-    # Render Best Results Report
-    if best_algo:
-        st.markdown("---")
-        st.markdown("## 📋 Best Algorithm Report")
-        
-        st.markdown(f"""
-        <div class="best-algo">
-            <div class="metric-value">🥇 {best_algo} Chosen as Best Solution</div>
-            <p style="margin: 5px 0 0 0; opacity:0.9;">Lowest Overproduction & Waste Optimization Verified</p>
-        </div>
-        """, unsafe_allow_html=True)
+    best_algo = comparison_df.iloc[0]["Algorithm"]
+    best_waste = comparison_df.iloc[0]["Waste %"]
 
-        best_plates = results[best_algo]
-        best_algo_clean = best_algo.replace(" ", "_").replace("-", "_")
-        
-        # Summary Tables
+    # Store results in session state
+    for algo_name, plates in results.items():
+        safe_key = (
+            algo_name
+            .replace(" ", "_")
+            .replace("-", "_")
+            .replace("/", "_")
+            .replace("&", "and")
+        )
+
+        st.session_state[f'plates_{safe_key}'] = plates
+
+    st.session_state['demand'] = demand
+    st.session_state['original_qty'] = original_qty
+    st.session_state['comparison_df'] = comparison_df
+    st.session_state['best_algo'] = best_algo
+    st.session_state['best_waste'] = best_waste
+    st.session_state['results'] = results
+
+    st.markdown(f"""
+    <div class="best-algo" style="margin-bottom: 2rem;">
+        <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
+        <div class="metric-label">Waste Percentage: {best_waste}%</div>
+        <div class="metric-label">✨ Total Algorithms Tested: 13 ✨</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("## 📊 Algorithm Comparison (Sorted by Waste %)")
+    
+    styled_df = comparison_df.style.apply(
+        lambda row: ['background-color: #2e7d32; color: white'] * len(row) if row["Algorithm"] == best_algo else [''] * len(row),
+        axis=1
+    ).format({"Waste %": "{:.2f}%"})
+    
+    st.dataframe(styled_df, use_container_width=True)
+
+    # ================================================================
+    # শুধু BEST ALGORITHM এর রিপোর্ট এবং ডাউনলোড
+    # ================================================================
+    st.markdown("---")
+    st.markdown("## 📋 Best Algorithm Report")
+    
+    best_plates = results[best_algo]
+    best_algo_clean = best_algo.replace(" ", "_").replace("-", "_")
+    
+    if best_plates:
+        # Full Summary Table
         full_df = build_full_summary(best_plates, demand, original_qty)
         st.markdown(f"### 📊 Production Summary - {best_algo}")
         st.dataframe(full_df, use_container_width=True)
-
+        
+        # Plate Details
         st.markdown("### 🧾 Plate Configuration Details")
         plate_rows = []
+        total_sheets_sum = 0
+        total_ups_sum = 0
+        
         for idx, p in enumerate(best_plates, 1):
-            total_ups_current = sum(p["layout"].values())
+            total_ups = sum(p["layout"].values())
             plate_rows.append({
                 "SL": idx,
                 "Plate ID": p["name"],
                 "Sheets Required": p["sheets"],
-                "Total UPS": total_ups_current,
-                "Layout Ratio Map": str(p["layout"])
+                "Total UPS": total_ups
             })
-        st.dataframe(pd.DataFrame(plate_rows), use_container_width=True)
-
-        # Download Buttons Section
-        st.markdown("### 💾 Export Reports")
+            total_sheets_sum += p["sheets"]
+            total_ups_sum += total_ups
+        
+        plate_rows.append({
+            "SL": "📊",
+            "Plate ID": "TOTAL",
+            "Sheets Required": total_sheets_sum,
+            "Total UPS": total_ups_sum
+        })
+        
+        plate_details_df = pd.DataFrame(plate_rows)
+        st.dataframe(plate_details_df, use_container_width=True)
+        
+        # Download Section
+        st.markdown("### 📥 Download Report")
         col1, col2 = st.columns(2)
         
         with col1:
             bio_excel = BytesIO()
-            with pd.ExcelWriter(bio_excel, engine='openpyxl') as writer:
-                full_df.to_excel(writer, sheet_name="Summary", index=False)
-                pd.DataFrame(plate_rows).to_excel(writer, sheet_name="Plates", index=False)
+            with pd.ExcelWriter(bio_excel, engine="openpyxl") as writer:
+                full_df.to_excel(writer, sheet_name="Production Summary", index=False)
+                plate_details_df.to_excel(writer, sheet_name="Plate Details", index=False)
+                comparison_df.to_excel(writer, sheet_name="Algorithm Comparison", index=False)
+            
             bio_excel.seek(0)
             st.download_button(
                 "📊 Download Excel Report",
@@ -1993,14 +2059,14 @@ if generate_clicked:
             else:
                 st.warning("⚠️ PDF download not available. Install reportlab: pip install reportlab")
     else:
-        st.error(f"❌ Core optimization failed to generate a valid plan.")
+        st.error(f"❌ {best_algo} failed to generate a valid plan.")
 
 # Footer
-st.markdown("-----")
+st.markdown("---")
 st.markdown("""
 <div class="footer">
     <p>Plate Ratio System - Complete Edition</p>
-    <p>🔬 18 Advanced Algorithms | Hybrid Master Optimizer V18</p>
+    <p>🔬 13 Advanced Algorithms | Hybrid Master Optimizer V17</p>
     <p style="color: #667eea;">✨ Design & Developed by <strong>Ovi</strong> ✨</p>
 </div>
 """, unsafe_allow_html=True)
