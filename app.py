@@ -742,7 +742,11 @@ def v1_optimizer(demand: dict, cap: int, max_plates: int) -> list:
         layout = smart_layout_v1(remaining, cap)
         if not layout:
             break
-        layout = normalize_layout(layout, cap)
+        
+        # Production Rule Norm
+        if sum(layout.values()) == cap:
+            layout = normalize_layout(layout, cap)
+            
         possible = [ceil(remaining[k] / v) for k, v in layout.items() if v > 0]
         sheets = max(1, min(possible))
 
@@ -792,7 +796,10 @@ def v2_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
             biggest = max(active, key=active.get)
             layout[biggest] += 1
             
-        layout = normalize_layout(layout, capacity)
+        # Production Rule Norm
+        if sum(layout.values()) == capacity:
+            layout = normalize_layout(layout, capacity)
+            
         possible_sheets = [ceil(remaining[tag] / layout[tag]) for tag in layout if layout[tag] > 0]
         sheets = max(1, min(possible_sheets))
 
@@ -859,7 +866,11 @@ def v3_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
             break
 
         layout = build_balanced_layout_v3(active, capacity)
-        layout = normalize_layout(layout, capacity)
+        
+        # Production Rule Norm
+        if sum(layout.values()) == capacity:
+            layout = normalize_layout(layout, capacity)
+            
         candidate_sheets = [ceil(remaining[tag] / layout[tag]) for tag in layout if layout[tag] > 0]
         sheets = max(1, min(candidate_sheets))
 
@@ -930,7 +941,11 @@ def v4_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
                 break
 
             layout = proportional_layout_v4(active, capacity)
-            layout = normalize_layout(layout, capacity)
+            
+            # Production Rule Norm
+            if sum(layout.values()) == capacity:
+                layout = normalize_layout(layout, capacity)
+                
             possible = [ceil(remaining[tag] / layout[tag]) for tag in layout if layout[tag] > 0]
 
             if not possible:
@@ -1022,7 +1037,11 @@ def v5_optimizer(demand: dict, capacity: int, max_plates: int, iterations: int =
                 break
 
             layout = generate_layout_v5(active, capacity)
-            layout = normalize_layout(layout, capacity)
+            
+            # Production Rule Norm
+            if sum(layout.values()) == capacity:
+                layout = normalize_layout(layout, capacity)
+                
             options = [ceil(remaining[tag] / layout[tag]) for tag in layout if layout[tag] > 0]
 
             if not options:
@@ -1074,10 +1093,8 @@ def v6_optimizer(demand: dict, capacity: int, max_plates: int) -> list | None:
             ups = {t: LpVariable(f"UPS_{t}", lowBound=1, cat="Integer") for t in active_tags}
             sheets = LpVariable("Sheets", lowBound=1, cat="Integer")
             
-            # Constraint: Sum of ups must be <= capacity (normalized later)
             model += lpSum(ups.values()) <= capacity
             
-            # Minimize absolute differences / overproduction
             excess = {t: LpVariable(f"Exc_{t}", lowBound=0) for t in active_tags}
             for t in active_tags:
                 model += ups[t] * sheets - remaining[t] <= excess[t]
@@ -1086,7 +1103,11 @@ def v6_optimizer(demand: dict, capacity: int, max_plates: int) -> list | None:
             
             if model.solve():
                 layout = {t: int(value(ups[t])) for t in active_tags}
-                layout = normalize_layout(layout, capacity)
+                
+                # Production Rule Norm
+                if sum(layout.values()) == capacity:
+                    layout = normalize_layout(layout, capacity)
+                    
                 sheet_count = int(value(sheets))
                 
                 plates.append({
@@ -1121,12 +1142,17 @@ def v7_optimizer(demand: dict, capacity: int, max_plates: int, iterations: int =
             if new_layout[a] > 1:
                 new_layout[a] -= 1
                 new_layout[b] += 1
-        return normalize_layout(new_layout, capacity)
+        # Production Rule Norm inside local function
+        if sum(new_layout.values()) == capacity:
+            new_layout = normalize_layout(new_layout, capacity)
+        return new_layout
 
     def initial_layout(active: dict, capacity: int) -> dict:
         total = sum(active.values())
         layout = {tag: max(1, int((qty / total) * capacity)) for tag, qty in active.items()}
-        return normalize_layout(layout, capacity)
+        if sum(layout.values()) == capacity:
+            layout = normalize_layout(layout, capacity)
+        return layout
 
     remaining = demand.copy()
     plates = []
@@ -1217,7 +1243,9 @@ def v8_optimizer(demand: dict, capacity: int, max_plates: int, iterations: int =
     def initial_layout(active: dict, capacity: int) -> dict:
         total = sum(active.values())
         layout = {tag: max(1, int((qty / total) * capacity)) for tag, qty in active.items()}
-        return normalize_layout(layout, capacity)
+        if sum(layout.values()) == capacity:
+            layout = normalize_layout(layout, capacity)
+        return layout
 
     remaining = demand.copy()
     plates = []
@@ -1244,7 +1272,8 @@ def v8_optimizer(demand: dict, capacity: int, max_plates: int, iterations: int =
                     a, b = move
                     new_layout[a] -= 1
                     new_layout[b] += 1
-                    new_layout = normalize_layout(new_layout, capacity)
+                    if sum(new_layout.values()) == capacity:
+                        new_layout = normalize_layout(new_layout, capacity)
                     if new_layout not in existing_moves:
                         child = MCTSNodeV8(new_layout, node.remaining, capacity, node)
                         node.children.append(child)
@@ -1293,7 +1322,11 @@ def v9_optimizer(demand: dict, capacity: int, max_plates: int, repair_iterations
 
         total_active = sum(active.values())
         layout = {t: max(1, round((v / total_active) * capacity)) for t, v in active.items()}
-        layout = normalize_layout(layout, capacity)
+        
+        # Production Rule Norm
+        if sum(layout.values()) == capacity:
+            layout = normalize_layout(layout, capacity)
+            
         sheets = max(1, min(ceil(active[t] / layout[t]) for t in layout if layout[t] > 0))
         best_layout = layout.copy()
         best_sheets = sheets
@@ -1306,7 +1339,11 @@ def v9_optimizer(demand: dict, capacity: int, max_plates: int, repair_iterations
                 if candidate_layout[a] > 1:
                     candidate_layout[a] -= 1
                     candidate_layout[b] += 1
-            candidate_layout = normalize_layout(candidate_layout, capacity)
+            
+            # Production Rule Norm inside iteration
+            if sum(candidate_layout.values()) == capacity:
+                candidate_layout = normalize_layout(candidate_layout, capacity)
+                
             candidate_sheets = max(1, min(ceil(active[t] / candidate_layout[t]) for t in candidate_layout if candidate_layout[t] > 0))
             cand_waste = sum(max(0, candidate_layout[t] * candidate_sheets - active.get(t, 0)) for t in candidate_layout)
             best_waste = sum(max(0, best_layout[t] * best_sheets - active.get(t, 0)) for t in best_layout)
@@ -1370,7 +1407,11 @@ def v10_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
             active = {k: v for k, v in remaining.items() if v > 0}
             if not active:
                 break
-            layout = normalize_layout(layout, capacity)
+            
+            # Production Rule Norm
+            if sum(layout.values()) == capacity:
+                layout = normalize_layout(layout, capacity)
+                
             sheets = max(1, min(ceil(remaining[tag] / layout.get(tag, 1)) for tag in active))
             plates.append({
                 "name": plate_name(len(plates) + 1),
@@ -1412,7 +1453,8 @@ def v11_optimizer(demand: dict, capacity: int, max_plates: int, population_size:
                 break
             total = sum(active.values())
             layout = {tag: max(1, floor((qty / total) * capacity)) for tag, qty in active.items()}
-            layout = normalize_layout(layout, capacity)
+            if sum(layout.values()) == capacity:
+                layout = normalize_layout(layout, capacity)
             sheets = max(1, min(ceil(remaining[tag] / layout[tag]) for tag in layout))
             plates.append({"layout": layout, "sheets": sheets})
             for tag, ups in layout.items():
@@ -1429,7 +1471,8 @@ def v11_optimizer(demand: dict, capacity: int, max_plates: int, population_size:
             layout = {}
             for tag in items:
                 layout[tag] = random.choice([p1["layout"].get(tag, 1), p2["layout"].get(tag, 1)])
-            layout = normalize_layout(layout, capacity)
+            if sum(layout.values()) == capacity:
+                layout = normalize_layout(layout, capacity)
             child.append({"layout": layout, "sheets": sheets})
         return child
 
@@ -1446,7 +1489,9 @@ def v11_optimizer(demand: dict, capacity: int, max_plates: int, population_size:
                 if layout[a] > 1:
                     layout[a] -= 1
                     layout[b] += 1
-            mutated[plate_idx]["layout"] = normalize_layout(layout, capacity)
+            if sum(layout.values()) == capacity:
+                layout = normalize_layout(layout, capacity)
+            mutated[plate_idx]["layout"] = layout
         return mutated
 
     population = [create_individual() for _ in range(population_size)]
@@ -1492,7 +1537,11 @@ def v12_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
             break
         total = sum(active.values())
         pattern = {tag: max(1, int((qty / total) * capacity)) for tag, qty in active.items()}
-        pattern = normalize_layout(pattern, capacity)
+        
+        # Production Rule Norm
+        if sum(pattern.values()) == capacity:
+            pattern = normalize_layout(pattern, capacity)
+            
         sheets = max(1, min(ceil(remaining[tag] / pattern.get(tag, 1)) for tag in active))
         
         plates.append({
@@ -1610,7 +1659,9 @@ def v14_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
             if val > 0:
                 layout[t] = val
         if layout:
-            layout = normalize_layout(layout, capacity)
+            # Production Rule Norm
+            if sum(layout.values()) == capacity:
+                layout = normalize_layout(layout, capacity)
             sheet_count = solver.Value(sheets[p])
             plates.append({
                 "name": plate_name(len(plates) + 1),
@@ -1642,7 +1693,10 @@ def v15_optimizer(demand: dict, capacity: int, max_plates: int):
             if plate["layout"][a] > 1:
                 plate["layout"][a] -= 1
                 plate["layout"][b] += 1
-            plate["layout"] = normalize_layout(plate["layout"], capacity)
+            
+            # Production Rule Norm
+            if sum(plate["layout"].values()) == capacity:
+                plate["layout"] = normalize_layout(plate["layout"], capacity)
 
         waste = calculate_waste_percent(trial, demand)
         if waste < best_waste:
@@ -1674,7 +1728,10 @@ def v16_optimizer(demand: dict, capacity: int, max_plates: int):
         for t in all_tags:
             merged_layout[t] = p1["layout"].get(t, 0) + p2["layout"].get(t, 0)
             
-        merged_layout = normalize_layout(merged_layout, capacity)
+        # Production Rule Norm
+        if sum(merged_layout.values()) == capacity:
+            merged_layout = normalize_layout(merged_layout, capacity)
+            
         trial[i]["layout"] = merged_layout
         trial[i]["sheets"] = max(p1["sheets"], p2["sheets"])
         trial.pop(i+1)
@@ -1726,7 +1783,9 @@ def v17_optimizer(demand: dict, capacity: int, max_plates: int, generations: int
                     if plate["layout"][a] > 1:
                         plate["layout"][a] -= 1
                         plate["layout"][b] += 1
-                plate["layout"] = normalize_layout(plate["layout"], capacity)
+                # Production Rule Norm
+                if sum(plate["layout"].values()) == capacity:
+                    plate["layout"] = normalize_layout(plate["layout"], capacity)
             new_population.append(parent)
         population = new_population
 
