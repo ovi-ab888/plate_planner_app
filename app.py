@@ -47,11 +47,12 @@ st.set_page_config(
 
 
 # ================================================================
-# PASSWORD CHECK SYSTEM - SIMPLE FIXED VERSION
+# PASSWORD CHECK SYSTEM - FORCED VERSION
 # ================================================================
 def check_password():
-    """Password check that actually works"""
+    """Password check that ALWAYS asks for password"""
     
+    # Get password from secrets or env
     expected = None
     try:
         expected = st.secrets.get("app_password", None)
@@ -61,198 +62,124 @@ def check_password():
     if expected is None:
         expected = os.environ.get("PEPCO_APP_PASSWORD")
 
+    # For testing only - remove this in production
     if expected is None:
-        st.error("⚠️ App password not configured.")
-        return True  # True মানে পাসওয়ার্ড ছাড়া ঢুকতে দেবে (ডেভেলপমেন্টের জন্য)
-        # return False  # প্রোডাকশনের জন্য False দিন
+        expected = "admin123"  # Default password for testing
+        st.warning("⚠️ Using default password: admin123")
 
-    def _password_entered():
-        if st.session_state.get("password_input") == expected:
+    # Initialize session state if not exists
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+    
+    if "auth_attempt" not in st.session_state:
+        st.session_state["auth_attempt"] = False
+
+    def verify_password():
+        if st.session_state.get("pass_input", "") == expected:
             st.session_state["authenticated"] = True
+            st.session_state["auth_attempt"] = True
         else:
             st.session_state["authenticated"] = False
+            st.session_state["auth_attempt"] = True
 
-    # চেক করুন আগে থেকেই authenticated কিনা
-    if st.session_state.get("authenticated", False):
+    # If already authenticated, return True
+    if st.session_state["authenticated"]:
         return True
 
-    # UI দেখান
+    # Show password UI
     st.markdown("""
     <style>
-        .stApp { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); }
-        .auth-container {
-            max-width: 400px;
-            margin: 100px auto;
-            padding: 2rem;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            text-align: center;
-        }
-    </style>
-    <div class="auth-container">
-        <h2 style="color:white;">🔐 Access Required</h2>
-        <p style="color:rgba(255,255,255,0.7);">Enter password to continue</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([1,2,1])
-    with col2:
-        st.text_input("", type="password", key="password_input", 
-                     on_change=_password_entered,
-                     placeholder="Enter password",
-                     label_visibility="collapsed")
-    
-    if st.session_state.get("authenticated") is False:
-        st.error("❌ Wrong password")
-    
-    return st.session_state.get("authenticated", False)
-
-    
-    # Modern Password UI
-    st.markdown("""
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .stApp {
+        .stApp { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important; }
+        .auth-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        
-        .main-header {
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding: 2rem;
-            border-radius: 0px;
-            margin: 0;
+        .auth-card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 28px;
+            padding: 3rem 2.5rem;
             text-align: center;
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            min-width: 380px;
         }
-        
-        .main-header h1 {
+        .auth-card h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-size: 3rem;
-            font-weight: 700;
-            margin: 0;
         }
-        
-        .main-header p {
-            color: rgba(255,255,255,0.7);
-            font-size: 1rem;
-            margin-top: 0.5rem;
-        }
-        
-        .designer-name {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 600;
-        }
-        
-        .password-container {
-            max-width: 480px;
-            margin: 80px auto 0 auto;
-            padding: 3rem 2rem;
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-        }
-        
-        .password-container h2 {
-            color: white;
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-        }
-        
-        .password-container p {
-            color: rgba(255,255,255,0.6);
-            font-size: 0.9rem;
-            margin-bottom: 2rem;
-        }
-        
-        .lock-icon {
+        .auth-card .lock {
             font-size: 3rem;
             margin-bottom: 1rem;
         }
-        
+        .auth-card p {
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 2rem;
+        }
         .stTextInput input {
             background: rgba(255,255,255,0.1) !important;
             border: 1px solid rgba(255,255,255,0.2) !important;
-            border-radius: 12px !important;
+            border-radius: 14px !important;
             color: white !important;
             text-align: center !important;
-            font-size: 1rem !important;
             padding: 0.75rem !important;
-            transition: all 0.3s ease !important;
+            font-size: 1rem !important;
         }
-        
-        .stTextInput input:focus {
-            border-color: #667eea !important;
-            box-shadow: 0 0 0 2px rgba(102,126,234,0.3) !important;
-            background: rgba(255,255,255,0.15) !important;
-        }
-        
-        .stButton > button {
+        .stButton button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 0.75rem 2rem;
+            border-radius: 14px;
+            padding: 0.75rem;
             font-weight: 600;
-            border-radius: 12px;
             width: 100%;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
         }
-        
-        .stButton > button:hover {
+        .stButton button:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px rgba(102,126,234,0.3);
         }
-        
-        #MainMenu {visibility: hidden;}
-        header {visibility: hidden;}
-        footer {visibility: hidden;}
     </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-    <div class="main-header">
-        <h1>📊 Plate Ratio System</h1>
-        <p>Advanced Production Planning & Optimization</p>
-        <p class="designer-name">✨ Design by Ovi ✨</p>
+    
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="lock">🔐</div>
+            <h1>Plate Ratio System</h1>
+            <p>Enter access code to continue</p>
+        </div>
     </div>
     """, unsafe_allow_html=True)
-
-    st.markdown(
-        '<div class="password-container">'
-        '<div class="lock-icon">🔐</div>'
-        '<h2>Welcome Back</h2>'
-        '<p>Enter your access code to continue</p>'
-        '</div>',
-        unsafe_allow_html=True
-    )
-
+    
+    # Center the input
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.text_input("", type="password", key="password", 
-                      on_change=_password_entered, 
-                      placeholder="Enter your password",
-                      label_visibility="collapsed")
-
-    if st.session_state.get("password_correct") is False:
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
+        st.text_input("", type="password", key="pass_input", 
+                     on_change=verify_password,
+                     placeholder="Enter password",
+                     label_visibility="collapsed")
+        
+        if st.session_state["auth_attempt"] and not st.session_state["authenticated"]:
             st.error("❌ Incorrect password. Access denied.")
-
-    return False
-
+        
+        # Show default password hint (remove in production)
+        st.caption("🔑 Default: admin123")
+    
+    # Stop execution if not authenticated
+    if not st.session_state["authenticated"]:
+        st.stop()
+    
+    return True
 
 # ================================================================
 # MODERN CSS FOR MAIN APP
