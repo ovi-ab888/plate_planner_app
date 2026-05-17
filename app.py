@@ -210,7 +210,7 @@ def check_password():
         <p class="designer-name">✨ Design by Ovi ✨</p>
     </div>
     """, unsafe_allow_html=True)
-    )
+    
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
