@@ -799,7 +799,7 @@ def v2_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
         while sum(layout.values()) < capacity:
             biggest = max(active, key=active.get)
             layout[biggest] += 1
-      layout = normalize_layout(layout, capacity)
+     
         possible_sheets = [ceil(remaining[tag] / layout[tag]) for tag in layout if layout[tag] > 0]
         sheets = max(1, min(possible_sheets))
 
