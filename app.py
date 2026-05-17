@@ -1910,7 +1910,7 @@ if generate_clicked:
         st.session_state['best_waste'] = best_waste
         st.session_state['results'] = results
 
-    st.markdown(f"""
+  st.markdown(f"""
     <div class="best-algo" style="margin-bottom: 2rem;">
         <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
         <div class="metric-label">Waste Percentage: {best_waste}%</div>
@@ -1938,70 +1938,36 @@ if generate_clicked:
     
     if best_plates:
         # Full Summary Table
-def build_full_summary(plates: list, demand: dict, original_qty: dict) -> pd.DataFrame:
-    """Build complete summary DataFrame - FIXED & SAFE VERSION"""
-    if not plates or not demand:
-        return pd.DataFrame()
-
-    rows = []
-    sl = 1
-
-    for tag in demand.keys():
-        row = {
-            "SL": sl,
-            "Tag": tag,
-            "Original QTY": original_qty.get(tag, 0),
-            "Produced (+Add-on)": demand[tag]
-        }
-
-        total_produced = 0
+        full_df = build_full_summary(best_plates, demand, original_qty)
+        st.markdown(f"### 📊 Production Summary - {best_algo}")
+        st.dataframe(full_df, use_container_width=True)
         
-        # Safe plate name handling
-        for p in plates:
-            # প্লেটের নাম সেফলি নেওয়া
-            plate_name_str = p.get('name', f"Plate {plates.index(p) + 1}")
-            ups = p.get("layout", {}).get(tag, 0)
-            
-            row[f"Plate {plate_name_str}"] = ups
-            total_produced += ups * p.get("sheets", 0)
-
-        excess = total_produced - demand[tag]
-        excess_percent = round((excess / demand[tag]) * 100, 2) if demand[tag] > 0 else 0.0
-
-        row["Total Produced QTY"] = total_produced
-        row["Excess"] = excess
-        row["Excess %"] = f"{excess_percent}%"
+        # Plate Details
+        st.markdown("### 🧾 Plate Configuration Details")
+        plate_rows = []
+        total_sheets_sum = 0
+        total_ups_sum = 0
         
-        rows.append(row)
-        sl += 1
-
-    # ==================== TOTAL ROW ====================
-    df = pd.DataFrame(rows)
-    
-    total_row = {
-        "SL": "📊",
-        "Tag": "TOTAL",
-        "Original QTY": df["Original QTY"].sum(),
-        "Produced (+Add-on)": df["Produced (+Add-on)"].sum(),
-        "Total Produced QTY": df["Total Produced QTY"].sum(),
-        "Excess": df["Excess"].sum(),
-    }
-
-    # সব Plate কলামের টোটাল যোগ করা
-    for col in df.columns:
-        if col.startswith("Plate "):
-            total_row[col] = df[col].sum()
-
-    # Total Excess %
-    total_produced_all = total_row["Produced (+Add-on)"]
-    if total_produced_all > 0:
-        total_row["Excess %"] = f"{round((total_row['Excess'] / total_produced_all) * 100, 2)}%"
-    else:
-        total_row["Excess %"] = "0%"
-
-    # Final DataFrame
-    df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
-    return df
+        for idx, p in enumerate(best_plates, 1):
+            total_ups = sum(p["layout"].values())
+            plate_rows.append({
+                "SL": idx,
+                "Plate ID": p["name"],
+                "Sheets Required": p["sheets"],
+                "Total UPS": total_ups
+            })
+            total_sheets_sum += p["sheets"]
+            total_ups_sum += total_ups
+        
+        plate_rows.append({
+            "SL": "📊",
+            "Plate ID": "TOTAL",
+            "Sheets Required": total_sheets_sum,
+            "Total UPS": total_ups_sum
+        })
+        
+        plate_details_df = pd.DataFrame(plate_rows)
+        st.dataframe(plate_details_df, use_container_width=True)
         
         # Download Section
         st.markdown("### 📥 Download Report")
