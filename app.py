@@ -47,12 +47,10 @@ st.set_page_config(
 
 
 # ================================================================
-# PASSWORD CHECK SYSTEM - FORCED VERSION
+# PASSWORD CHECK SYSTEM
 # ================================================================
 def check_password():
-    """Password check that ALWAYS asks for password"""
-    
-    # Get password from secrets or env
+    """Check if user has entered correct password"""
     expected = None
     try:
         expected = st.secrets.get("app_password", None)
@@ -62,124 +60,85 @@ def check_password():
     if expected is None:
         expected = os.environ.get("PEPCO_APP_PASSWORD")
 
-    # For testing only - remove this in production
     if expected is None:
-        expected = "admin123"  # Default password for testing
-        st.warning("⚠️ Using default password: admin123")
+        st.error("App password not configured.")
+        return False
 
-    # Initialize session state if not exists
-    if "authenticated" not in st.session_state:
-        st.session_state["authenticated"] = False
-    
-    if "auth_attempt" not in st.session_state:
-        st.session_state["auth_attempt"] = False
-
-    def verify_password():
-        if st.session_state.get("pass_input", "") == expected:
-            st.session_state["authenticated"] = True
-            st.session_state["auth_attempt"] = True
+    def _password_entered():
+        if st.session_state.get("password") == expected:
+            st.session_state["password_correct"] = True
+            try:
+                del st.session_state["password"]
+            except Exception:
+                pass
         else:
-            st.session_state["authenticated"] = False
-            st.session_state["auth_attempt"] = True
+            st.session_state["password_correct"] = False
 
-    # If already authenticated, return True
-    if st.session_state["authenticated"]:
+    if st.session_state.get("password_correct", None) is True:
         return True
 
-    # Show password UI
     st.markdown("""
     <style>
-        .stApp { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important; }
-        .auth-wrapper {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .auth-card {
-            background: rgba(255,255,255,0.08);
-            backdrop-filter: blur(20px);
-            border-radius: 28px;
-            padding: 3rem 2.5rem;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.15);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            min-width: 380px;
-        }
-        .auth-card h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .auth-card .lock {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        .auth-card p {
-            color: rgba(255,255,255,0.6);
-            margin-bottom: 2rem;
-        }
+        .stApp { background: black !important; }
+        .main > div { background: transparent !important; padding: 0 !important; }
+        .block-container { padding: 0rem !important; max-width: 52% !important; }
         .stTextInput input {
             background: rgba(255,255,255,0.1) !important;
-            border: 1px solid rgba(255,255,255,0.2) !important;
-            border-radius: 14px !important;
+            border: 2px solid #333 !important;
+            border-radius: 10px !important;
             color: white !important;
             text-align: center !important;
-            padding: 0.75rem !important;
-            font-size: 1rem !important;
         }
-        .stButton button {
+        .main-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 14px;
-            padding: 0.75rem;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s;
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 1rem 1rem 0rem 1rem;
+            text-align: center;
         }
-        .stButton button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102,126,234,0.3);
+        .main-header h1 { color: white; font-size: 2.5rem; }
+        .designer-name { color: #ffd700; }
+        .password-container {
+            max-width: 450px;
+            margin: 60px auto 0 auto;
+            padding: 2.5rem;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 20px;
+            text-align: center;
         }
+        #MainMenu {visibility: hidden;}
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
     </style>
-    
-    <div class="auth-wrapper">
-        <div class="auth-card">
-            <div class="lock">🔐</div>
-            <h1>Plate Ratio System</h1>
-            <p>Enter access code to continue</p>
-        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="main-header">
+        <h1>📊 Plate Ratio System</h1>
+        <p>Compare All | Pick Best</p>
+        <p class="designer-name">✨ Design by Ovi ✨</p>
     </div>
     """, unsafe_allow_html=True)
-    
-    # Center the input
+
+    st.markdown(
+        '<div style="height: 40px;"></div><div class="password-container">'
+        '<h2>🔐 Access Code</h2><p>Enter your access code to continue</p></div>',
+        unsafe_allow_html=True
+    )
+
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.text_input("", type="password", key="pass_input", 
-                     on_change=verify_password,
-                     placeholder="Enter password",
-                     label_visibility="collapsed")
-        
-        if st.session_state["auth_attempt"] and not st.session_state["authenticated"]:
-            st.error("❌ Incorrect password. Access denied.")
-        
-        # Show default password hint (remove in production)
-        st.caption("🔑 Default: admin123")
-    
-    # Stop execution if not authenticated
-    if not st.session_state["authenticated"]:
-        st.stop()
-    
-    return True
+        st.text_input("Password", type="password", key="password",
+                      on_change=_password_entered, label_visibility="collapsed")
+
+    if st.session_state.get("password_correct") is False:
+        st.error("❌ Incorrect password. Contact Mr. Ovi.")
+
+    return False
+
+
+if not check_password():
+    st.stop()
 
 # ================================================================
 # MODERN CSS FOR MAIN APP
