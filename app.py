@@ -1974,23 +1974,9 @@ if generate_clicked:
     
     st.dataframe(styled_df, use_container_width=True)
 
-    st.markdown("---")
-    st.markdown("## 📥 Select Plan to Export")
 
-    selected_algo = st.radio(
-        "Choose which algorithm's detailed report to download:",
-        options=comparison_df["Algorithm"].tolist(),
-        index=0,
-        horizontal=True
-    )
 
-    selected_plates = results[selected_algo]
-    algo_name_clean = selected_algo.replace(" ", "_").replace("-", "_")
 
-    if selected_plates:
-        full_df = build_full_summary(selected_plates, demand, original_qty)
-        st.markdown(f"### 📋 Preview: {selected_algo}")
-        st.dataframe(full_df, use_container_width=True)
 
         st.markdown("### 🧾 Plate Configuration Details")
         plate_rows = []
