@@ -77,7 +77,7 @@ def check_password():
     if st.session_state.get("password_correct", None) is True:
         return True
 
-   st.markdown("""
+    st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
@@ -99,7 +99,6 @@ def check_password():
             max-width: 55% !important;
         }
         
-        /* Password Input Styling */
         .stTextInput input {
             background: rgba(255,255,255,0.08) !important;
             border: 1px solid rgba(255,255,255,0.2) !important;
@@ -117,7 +116,6 @@ def check_password():
             background: rgba(255,255,255,0.12) !important;
         }
         
-        /* Main Header */
         .main-header {
             background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%);
             backdrop-filter: blur(10px);
@@ -149,7 +147,6 @@ def check_password():
             font-weight: 600;
         }
         
-        /* Password Container */
         .password-container {
             max-width: 450px;
             margin: 60px auto 0 auto;
@@ -173,7 +170,6 @@ def check_password():
             margin-bottom: 1.5rem;
         }
         
-        /* Button Styling */
         .stButton > button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -189,7 +185,6 @@ def check_password():
             box-shadow: 0 10px 20px rgba(102,126,234,0.3);
         }
         
-        /* Error Message */
         .stAlert {
             background: rgba(220,53,69,0.1);
             border: 1px solid rgba(220,53,69,0.3);
@@ -211,6 +206,12 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
     
+    # 🔥 এই অংশটা যোগ করতে ভুলবেন না!
+    st.markdown(
+        '<div style="height: 20px;"></div><div class="password-container">'
+        '<h2>🔐 Access Code</h2><p>Enter your access code to continue</p></div>',
+        unsafe_allow_html=True
+    )
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
