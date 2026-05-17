@@ -1674,6 +1674,341 @@ def v13_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
 
 
 # ================================================================
+# INSTALL REQUIREMENT
+# pip install ortools
+# ================================================================
+
+# ================================================================
+# IMPORT
+# ================================================================
+try:
+    from ortools.sat.python import cp_model
+    ORTOOLS_AVAILABLE = True
+except:
+    ORTOOLS_AVAILABLE = False
+
+
+# ================================================================
+# V14 - OR-TOOLS EXACT SOLVER
+# ================================================================
+def v14_optimizer(demand: dict, capacity: int, max_plates: int):
+    """
+    V14 - Global Exact Integer Optimization using Google OR-Tools
+    """
+
+    if not ORTOOLS_AVAILABLE:
+        return v13_optimizer(demand, capacity, max_plates)
+
+    tags = list(demand.keys())
+    total_tags = len(tags)
+
+    model = cp_model.CpModel()
+
+    # Variables
+    ups = {}
+    sheets = {}
+
+    MAX_SHEETS = max(demand.values()) if demand else 1000
+
+    for p in range(max_plates):
+        sheets[p] = model.NewIntVar(1, MAX_SHEETS, f"sheets_{p}")
+
+        for t in tags:
+            ups[(p, t)] = model.NewIntVar(0, capacity, f"ups_{p}_{t}")
+
+    # Plate capacity constraint
+    for p in range(max_plates):
+        model.Add(sum(ups[(p, t)] for t in tags) <= capacity)
+
+    # Production constraints
+    produced_vars = {}
+
+    for t in tags:
+        produced = []
+
+        for p in range(max_plates):
+            prod = model.NewIntVar(0, 99999999, f"prod_{p}_{t}")
+
+            model.AddMultiplicationEquality(
+                prod,
+                [ups[(p, t)], sheets[p]]
+            )
+
+            produced.append(prod)
+
+        total_prod = model.NewIntVar(0, 999999999, f"total_prod_{t}")
+
+        model.Add(total_prod == sum(produced))
+        model.Add(total_prod >= demand[t])
+
+        produced_vars[t] = total_prod
+
+    # Waste
+    excess_vars = []
+
+    for t in tags:
+        excess = model.NewIntVar(0, 99999999, f"excess_{t}")
+        model.Add(excess == produced_vars[t] - demand[t])
+        excess_vars.append(excess)
+
+    total_waste = model.NewIntVar(0, 999999999, "total_waste")
+    model.Add(total_waste == sum(excess_vars))
+
+    # Minimize waste + sheets
+    total_sheet_var = model.NewIntVar(0, 999999999, "total_sheet_var")
+    model.Add(total_sheet_var == sum(sheets[p] for p in range(max_plates)))
+
+    model.Minimize(total_waste * 1000 + total_sheet_var)
+
+    # Solve
+    solver = cp_model.CpSolver()
+
+    solver.parameters.max_time_in_seconds = 30
+    solver.parameters.num_search_workers = 8
+
+    status = solver.Solve(model)
+
+    if status not in [cp_model.OPTIMAL, cp_model.FEASIBLE]:
+        return v13_optimizer(demand, capacity, max_plates)
+
+    plates = []
+
+    for p in range(max_plates):
+
+        layout = {}
+
+        for t in tags:
+            val = solver.Value(ups[(p, t)])
+
+            if val > 0:
+                layout[t] = val
+
+        if layout:
+            sheet_count = solver.Value(sheets[p])
+
+            plates.append({
+                "name": plate_name(len(plates) + 1),
+                "layout": layout,
+                "sheets": sheet_count
+            })
+
+    return plates
+
+
+# ================================================================
+# V15 - DYNAMIC PROGRAMMING REPAIR ENGINE
+# ================================================================
+def v15_optimizer(demand: dict, capacity: int, max_plates: int):
+
+    base = v14_optimizer(demand, capacity, max_plates)
+
+    if not base:
+        return v13_optimizer(demand, capacity, max_plates)
+
+    best = copy.deepcopy(base)
+    best_waste = calculate_waste_percent(best, demand)
+
+    for _ in range(300):
+
+        trial = copy.deepcopy(best)
+
+        for plate in trial:
+
+            tags = list(plate["layout"].keys())
+
+            if len(tags) < 2:
+                continue
+
+            a, b = random.sample(tags, 2)
+
+            if plate["layout"][a] > 1:
+
+                plate["layout"][a] -= 1
+                plate["layout"][b] += 1
+
+                if sum(plate["layout"].values()) > capacity:
+                    plate["layout"][a] += 1
+                    plate["layout"][b] -= 1
+
+        waste = calculate_waste_percent(trial, demand)
+
+        if waste < best_waste:
+            best = copy.deepcopy(trial)
+            best_waste = waste
+
+    return best
+
+
+# ================================================================
+# V16 - PLATE MERGE OPTIMIZER
+# ================================================================
+def v16_optimizer(demand: dict, capacity: int, max_plates: int):
+
+    plates = v15_optimizer(demand, capacity, max_plates)
+
+    if not plates:
+        return v13_optimizer(demand, capacity, max_plates)
+
+    merged = []
+
+    skip = set()
+
+    for i in range(len(plates)):
+
+        if i in skip:
+            continue
+
+        current = copy.deepcopy(plates[i])
+
+        for j in range(i + 1, len(plates)):
+
+            if j in skip:
+                continue
+
+            candidate = copy.deepcopy(plates[j])
+
+            combined = current["layout"].copy()
+
+            possible = True
+
+            for tag, ups in candidate["layout"].items():
+
+                combined[tag] = combined.get(tag, 0) + ups
+
+            if sum(combined.values()) <= capacity:
+
+                current["layout"] = combined
+                current["sheets"] = max(
+                    current["sheets"],
+                    candidate["sheets"]
+                )
+
+                skip.add(j)
+
+        merged.append(current)
+
+    return merged
+
+
+# ================================================================
+# V17 - AI EVOLUTION ENGINE
+# ================================================================
+def v17_optimizer(
+    demand: dict,
+    capacity: int,
+    max_plates: int,
+    generations: int = 200
+):
+
+    population = []
+
+    # Initial Population
+    for _ in range(20):
+
+        candidate = random.choice([
+            v3_optimizer,
+            v5_optimizer,
+            v9_optimizer,
+            v11_optimizer,
+            v13_optimizer,
+            v15_optimizer,
+            v16_optimizer
+        ])(demand, capacity, max_plates)
+
+        population.append(candidate)
+
+    best_solution = None
+    best_waste = 999999
+
+    for generation in range(generations):
+
+        scored = []
+
+        for sol in population:
+
+            waste = calculate_waste_percent(sol, demand)
+
+            scored.append((waste, sol))
+
+            if waste < best_waste:
+                best_waste = waste
+                best_solution = copy.deepcopy(sol)
+
+        scored.sort(key=lambda x: x[0])
+
+        elites = [copy.deepcopy(x[1]) for x in scored[:5]]
+
+        new_population = elites.copy()
+
+        while len(new_population) < 20:
+
+            parent = copy.deepcopy(random.choice(elites))
+
+            for plate in parent:
+
+                tags = list(plate["layout"].keys())
+
+                if len(tags) >= 2:
+
+                    a, b = random.sample(tags, 2)
+
+                    if plate["layout"][a] > 1:
+
+                        plate["layout"][a] -= 1
+                        plate["layout"][b] += 1
+
+                        if sum(plate["layout"].values()) > capacity:
+
+                            plate["layout"][a] += 1
+                            plate["layout"][b] -= 1
+
+            new_population.append(parent)
+
+        population = new_population
+
+    return best_solution
+
+
+# ================================================================
+# V18 - GLOBAL MULTI-PLATE OPTIMIZER
+# ================================================================
+def v18_optimizer(demand: dict, capacity: int, max_plates: int):
+
+    candidates = []
+
+    algos = [
+        v14_optimizer,
+        v15_optimizer,
+        v16_optimizer,
+        v17_optimizer,
+        v13_optimizer,
+        v11_optimizer,
+        v9_optimizer
+    ]
+
+    for algo in algos:
+
+        try:
+            result = algo(demand, capacity, max_plates)
+
+            if result:
+
+                waste = calculate_waste_percent(result, demand)
+
+                candidates.append((waste, result))
+
+        except:
+            pass
+
+    if not candidates:
+        return v13_optimizer(demand, capacity, max_plates)
+
+    candidates.sort(key=lambda x: x[0])
+
+    return candidates[0][1]
+
+
+# ================================================================
 # MAIN UI
 # ================================================================
 
@@ -1754,6 +2089,16 @@ with st.spinner("🔄 Running 13 algorithms simultaneously... This may take a mo
         "V11 - Genetic Algorithm": v11_optimizer(demand, cap, maxp, population_size=50, generations=100),
         "V12 - Column Generation": v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
         "V13 - Hybrid Master": v13_optimizer(demand, cap, maxp)
+        
+        "V14 - ORTools Exact Solver": v14_optimizer(demand, cap, maxp),
+
+        "V15 - DP Repair Engine": v15_optimizer(demand, cap, maxp),
+
+        "V16 - Plate Merge Optimizer": v16_optimizer(demand, cap, maxp),
+
+        "V17 - AI Evolution Engine": v17_optimizer(demand, cap, maxp),
+
+        "V18 - Global Multi-Plate Optimizer": v18_optimizer(demand, cap, maxp),
     }
 
     comparison_data = []
