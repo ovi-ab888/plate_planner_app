@@ -1778,9 +1778,17 @@ if generate_clicked:
         best_algo = comparison_df.iloc[0]["Algorithm"]
         best_waste = comparison_df.iloc[0]["Waste %"]
         
-        # Store results in session state
-        for algo_name, plates in results.items():
-            st.session_state[f'plates_{algo_name.replace(" ", "_")}'] = plates
+# Store results in session state
+for algo_name, plates in results.items():
+    safe_key = (
+        algo_name
+        .replace(" ", "_")
+        .replace("-", "_")
+        .replace("/", "_")
+        .replace("&", "and")
+    )
+
+    st.session_state[f'plates_{safe_key}'] = plates
 
         st.session_state['demand'] = demand
         st.session_state['original_qty'] = original_qty
