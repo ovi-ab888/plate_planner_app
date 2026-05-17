@@ -510,7 +510,10 @@ def calculate_waste_percent(plates: list, demand: dict) -> float:
 
 
 def build_full_summary(plates: list, demand: dict, original_qty: dict) -> pd.DataFrame:
-    """Build complete summary DataFrame"""
+    """Build complete summary DataFrame - FIXED VERSION"""
+    if not plates:
+        return pd.DataFrame()
+    
     rows = []
     sl = 1
 
@@ -518,21 +521,19 @@ def build_full_summary(plates: list, demand: dict, original_qty: dict) -> pd.Dat
         row = {
             "SL": sl,
             "Tag": tag,
-            "Original QTY": original_qty[tag],
+            "Original QTY": original_qty.get(tag, 0),
             "Produced (+Add-on)": demand[tag]
         }
 
-        for p in plates:
-            ups = p["layout"].get(tag, 0)
-            row[f"Plate {p['name']}"] = ups
-
         total_produced = 0
         for p in plates:
-            ups = p["layout"].get(tag, 0)
-            total_produced += ups * p["sheets"]
+            plate_name = p.get('name', f"Plate {len(rows)+1}")   # Safe name access
+            ups = p.get("layout", {}).get(tag, 0)
+            row[f"Plate {plate_name}"] = ups
+            total_produced += ups * p.get("sheets", 0)
 
         excess = total_produced - demand[tag]
-        excess_percent = round((excess / demand[tag]) * 100, 2) if demand[tag] else 0
+        excess_percent = round((excess / demand[tag]) * 100, 2) if demand[tag] > 0 else 0
 
         row["Total Produced QTY"] = total_produced
         row["Excess"] = excess
@@ -540,23 +541,24 @@ def build_full_summary(plates: list, demand: dict, original_qty: dict) -> pd.Dat
         rows.append(row)
         sl += 1
 
+    # Total Row
     df = pd.DataFrame(rows)
-
     total_row = {
         "SL": "📊",
         "Tag": "TOTAL",
         "Original QTY": df["Original QTY"].sum(),
         "Produced (+Add-on)": df["Produced (+Add-on)"].sum(),
+        "Total Produced QTY": df["Total Produced QTY"].sum(),
+        "Excess": df["Excess"].sum(),
     }
 
-    for p in plates:
-        total_row[f"Plate {p['name']}"] = df[f"Plate {p['name']}"].sum()
+    for col in df.columns:
+        if col.startswith("Plate "):
+            total_row[col] = df[col].sum()
 
-    total_row["Total Produced QTY"] = df["Total Produced QTY"].sum()
-    total_row["Excess"] = df["Excess"].sum()
-    total_row["Excess %"] = (
-        f"{round((total_row['Excess'] / total_row['Produced (+Add-on)']) * 100, 2) if total_row['Produced (+Add-on)'] > 0 else 0}%"
-    )
+    total_excess = total_row["Excess"]
+    total_produced = total_row["Produced (+Add-on)"]
+    total_row["Excess %"] = f"{round((total_excess / total_produced) * 100, 2)}%" if total_produced > 0 else "0%"
 
     df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
     return df
