@@ -2088,7 +2088,7 @@ with st.spinner("🔄 Running 13 algorithms simultaneously... This may take a mo
         "V10 - Exhaustive Search": v10_optimizer(demand, cap, maxp),
         "V11 - Genetic Algorithm": v11_optimizer(demand, cap, maxp, population_size=50, generations=100),
         "V12 - Column Generation": v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
-        "V13 - Hybrid Master": v13_optimizer(demand, cap, maxp)
+        "V13 - Hybrid Master": v13_optimizer(demand, cap, maxp),
         
         "V14 - ORTools Exact Solver": v14_optimizer(demand, cap, maxp),
 
@@ -2098,7 +2098,7 @@ with st.spinner("🔄 Running 13 algorithms simultaneously... This may take a mo
 
         "V17 - AI Evolution Engine": v17_optimizer(demand, cap, maxp),
 
-        "V18 - Global Multi-Plate Optimizer": v18_optimizer(demand, cap, maxp),
+        "V18 - Global Multi-Plate Optimizer": v18_optimizer(demand, cap, maxp)
     }
 
     comparison_data = []
