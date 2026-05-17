@@ -1610,21 +1610,7 @@ with col4:
 
 st.markdown('</div>', unsafe_allow_html=True)
 
-# Priority Tags for V12 (Optional)
-st.markdown('<div class="card"><div class="card-title">⭐ Priority Settings (Optional)</div>', unsafe_allow_html=True)
-priority_tags_input = st.text_input("Enter priority item names (comma-separated, e.g., Item 1, Item 3)", 
-                                     placeholder="Item 1, Item 3, Item 5")
-priority_tags = [tag.strip() for tag in priority_tags_input.split(",") if tag.strip()]
-st.markdown('</div>', unsafe_allow_html=True)
 
-# Dynamic Capacities for V13
-st.markdown('<div class="card"><div class="card-title">🔄 Dynamic Capacities (Optional for V13)</div>', unsafe_allow_html=True)
-capacity_input = st.text_input("Enter multiple capacities (comma-separated, e.g., 10, 15, 20)", 
-                                placeholder="10, 15, 20")
-dynamic_capacities = [int(c.strip()) for c in capacity_input.split(",") if c.strip().isdigit()]
-if not dynamic_capacities:
-    dynamic_capacities = [cap]
-st.markdown('</div>', unsafe_allow_html=True)
 
 # Tag Quantity Section
 st.markdown('<div class="card"><div class="card-title">📦 Item Quantity Details</div>', unsafe_allow_html=True)
@@ -1695,8 +1681,6 @@ if generate_clicked:
             "V9 - Simulated Annealing": v9_optimizer(demand, cap, maxp, iterations=200),
             "V10 - MCTS Tree Search": v10_optimizer(demand, cap, maxp, iterations=100),
             "V11 - Hybrid Ratio & Sheet Repair": v11_optimizer(demand, cap, maxp, repair_iterations=100),
-            "V12 - Priority-Based": v12_optimizer(demand, cap, maxp, priority_tags),
-            "V13 - Dynamic Capacity": v13_optimizer(demand, dynamic_capacities, maxp),
             "V14 - Exhaustive Search": v14_optimizer(demand, cap, maxp),
             "V15 - Genetic Algorithm": v15_optimizer(demand, cap, maxp, population_size=50, generations=100),
             "V16 - Column Generation": v16_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v5_optimizer(demand, cap, maxp),
