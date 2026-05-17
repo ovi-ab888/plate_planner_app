@@ -51,6 +51,12 @@ st.set_page_config(
 # ================================================================
 def check_password():
     """Modern password check with better UI"""
+    
+    # 🔥 এই লাইনটি যোগ করুন - সেশন রিসেট করার জন্য
+    if "force_logout" in st.query_params:
+        st.session_state["password_correct"] = False
+        st.query_params.clear()
+    
     expected = None
     try:
         expected = st.secrets.get("app_password", None)
@@ -76,8 +82,11 @@ def check_password():
             st.session_state["password_correct"] = False
             st.session_state["auth_success"] = False
 
+    # 🔥 এই অংশটুকু চেক করুন
     if st.session_state.get("password_correct", None) is True:
         return True
+
+    # ... বাকি কোড আগের মতো থাকবে
 
     # Modern Password UI
     st.markdown("""
