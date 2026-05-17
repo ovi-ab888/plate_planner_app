@@ -678,6 +678,28 @@ def generate_pdf_report(plates: list, demand: dict, original_qty: dict,
     except Exception as e:
         return None
 
+def normalize_layout(layout, capacity):
+
+    total = sum(layout.values())
+
+    while total < capacity:
+
+        biggest = max(layout, key=layout.get)
+        layout[biggest] += 1
+
+        total = sum(layout.values())
+
+    while total > capacity:
+
+        biggest = max(layout, key=layout.get)
+
+        if layout[biggest] > 1:
+            layout[biggest] -= 1
+
+        total = sum(layout.values())
+
+    return layout
+
 
 # ================================================================
 # V1 - Plate Ratio System
@@ -728,7 +750,7 @@ def v1_optimizer(demand: dict, cap: int, max_plates: int) -> list:
         layout = smart_layout_v1(remaining, cap)
         if not layout:
             break
-
+        layout = normalize_layout(layout, capacity)
         possible = [ceil(remaining[k] / v) for k, v in layout.items() if v > 0]
         sheets = max(1, min(possible))
 
@@ -777,7 +799,7 @@ def v2_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
         while sum(layout.values()) < capacity:
             biggest = max(active, key=active.get)
             layout[biggest] += 1
-
+      layout = normalize_layout(layout, capacity)
         possible_sheets = [ceil(remaining[tag] / layout[tag]) for tag in layout if layout[tag] > 0]
         sheets = max(1, min(possible_sheets))
 
@@ -844,6 +866,7 @@ def v3_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
             break
 
         layout = build_balanced_layout_v3(active, capacity)
+        layout = normalize_layout(layout, capacity)
         candidate_sheets = [ceil(remaining[tag] / layout[tag]) for tag in layout if layout[tag] > 0]
         sheets = max(1, min(candidate_sheets))
 
@@ -914,6 +937,7 @@ def v4_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
                 break
 
             layout = proportional_layout_v4(active, capacity)
+            layout = normalize_layout(layout, capacity)
             possible = [ceil(remaining[tag] / layout[tag]) for tag in layout if layout[tag] > 0]
 
             if not possible:
@@ -1005,6 +1029,7 @@ def v5_optimizer(demand: dict, capacity: int, max_plates: int, iterations: int =
                 break
 
             layout = generate_layout_v5(active, capacity)
+            layout = normalize_layout(layout, capacity)
             options = [ceil(remaining[tag] / layout[tag]) for tag in layout if layout[tag] > 0]
 
             if not options:
