@@ -1718,7 +1718,7 @@ def v14_optimizer(demand: dict, capacity: int, max_plates: int):
 
     # Plate capacity constraint
     for p in range(max_plates):
-        model.Add(sum(ups[(p, t)] for t in tags) <= capacity)
+        model.Add(sum(ups[(p, t)] for t in tags) == capacity)
 
     # Production constraints
     produced_vars = {}
