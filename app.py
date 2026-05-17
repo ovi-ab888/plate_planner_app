@@ -1978,10 +1978,7 @@ if generate_clicked:
 
 
 
-        st.markdown("### 🧾 Plate Configuration Details")
-        plate_rows = []
-        total_sheets_sum = 0
-        total_ups_sum = 0
+
 
         for idx, p in enumerate(selected_plates, 1):
             total_ups = sum(p["layout"].values())
