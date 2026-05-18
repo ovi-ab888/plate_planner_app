@@ -2229,8 +2229,7 @@ if 'results' in st.session_state and st.session_state['results']:
 
         else:
             st.error(f"❌ {selected_algo} এর রিপোর্ট পাওয়া যায়নি।")
-else:
-    st.info("⚠️ প্রথমে **Generate Plans** বাটনে ক্লিক করুন, তারপর এখান থেকে যেকোনো অ্যালগরিদমের রিপোর্ট দেখতে পারবেন।")
+
 
 st.markdown("""
 <div style="text-align: center; padding: 2rem; margin-top: 3rem; border-top: 2px solid rgba(102,126,234,0.3); background: rgba(255,255,255,0.02); border-radius: 20px;">
