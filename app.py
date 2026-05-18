@@ -1949,9 +1949,9 @@ def v18_optimizer(demand: dict, capacity: int, max_plates: int):
 # ================================================================
 st.markdown("""
 <div class="main-header">
-    <h1>🎯 Plate Ratio System</h1>
-    <p>Advanced Production Planning & Optimization Platform</p>
-    <p style="font-size: 0.85rem; opacity: 0.6;">18 Advanced Algorithms | Real-time Comparison | Smart Optimization</p>
+    <h1>Plate Ratio Intelligence System</h1>
+    <p>Intelligent Production Planning & Ratio Optimization</p>
+    <p style="font-size: 0.85rem; opacity: 0.6;">AI-Powered • Fast • Accurate</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -1964,7 +1964,7 @@ with col1:
 with col2:
     cap = st.number_input("📀 Plate Capacity (UPS)", 1, 200, 10)
 with col3:
-    maxp = st.number_input("🎨 Max Plates", 1, 30, 3)
+    maxp = st.number_input("🎨 Max Plates", 1, 50, 3)
 with col4:
     addon = st.number_input("📈 Add-on (%)", 0.0, 50.0, 0.0, step=0.5)
 
@@ -1996,7 +1996,7 @@ if not PULP_AVAILABLE:
 # ================== GENERATE BUTTON ==================
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    generate_clicked = st.button("🚀 Generate Plans (18 Algorithms)", use_container_width=True, type="primary")
+    generate_clicked = st.button("Generate Plans ", use_container_width=True, type="primary")
 
 # ================== AFTER GENERATE ==================
 if generate_clicked:
@@ -2227,7 +2227,7 @@ if 'results' in st.session_state and st.session_state['results']:
         else:
             st.error(f"❌ {selected_algo} এর রিপোর্ট পাওয়া যায়নি।")
 else:
-    st.info("⚠️ প্রথমে **🚀 Generate Plans** বাটনে ক্লিক করুন, তারপর এখান থেকে যেকোনো অ্যালগরিদমের রিপোর্ট দেখতে পারবেন।")
+    st.info("⚠️ প্রথমে **Generate Plans** বাটনে ক্লিক করুন, তারপর এখান থেকে যেকোনো অ্যালগরিদমের রিপোর্ট দেখতে পারবেন।")
 
 # Footer
 st.markdown("---")
