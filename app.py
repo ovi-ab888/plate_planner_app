@@ -1980,7 +1980,7 @@ for i in range(n):
     with col1:
         st.markdown(f"<div class='tag-display'>Item {i+1}</div>", unsafe_allow_html=True)
     with col2:
-        q = st.number_input(f"Quantity", 0, 100000, step=10, key=f"qty_{i}", label_visibility="collapsed")
+        q = st.number_input(f"Quantity", min_value=0, value=0, step=100, key=f"qty_{i}", label_visibility="collapsed")
     tags.append(f"Item {i+1}")
     qty.append(q)
 
