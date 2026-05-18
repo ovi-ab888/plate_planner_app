@@ -2233,59 +2233,15 @@ else:
     st.info("⚠️ প্রথমে **Generate Plans** বাটনে ক্লিক করুন, তারপর এখান থেকে যেকোনো অ্যালগরিদমের রিপোর্ট দেখতে পারবেন।")
 
 st.markdown("""
-<style>
-.modern-footer {
-    background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 1.5rem;
-    margin-top: 3rem;
-    text-align: center;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-.modern-footer .version {
-    font-size: 0.85rem;
-    color: #667eea;
-    font-weight: 600;
-    letter-spacing: 1px;
-}
-.modern-footer .title {
-    font-size: 1rem;
-    color: rgba(255,255,255,0.8);
-    font-weight: 500;
-    margin: 8px 0;
-}
-.modern-footer .badge {
-    display: inline-block;
-    background: rgba(102,126,234,0.2);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    color: #a8b2ff;
-    margin: 0 4px;
-}
-.modern-footer .credit {
-    font-size: 0.8rem;
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 600;
-    margin-top: 10px;
-}
-.modern-footer .heart {
-    color: #ff6b6b;
-}
-</style>
-
-<div class="modern-footer">
-    <div class="version">⚡ PLATE RATIO SYSTEM v18</div>
-    <div class="title">
-        <span class="badge">🔬 18 Algorithms</span>
-        <span class="badge">🧠 Hybrid Intelligence</span>
-        <span class="badge">🎯 Zero Waste Target</span>
-    </div>
-    <div class="credit">
-        ✨ Design & Developed with <span class="heart">❤️</span> by <strong>Ovi</strong> ✨
-    </div>
+<div class="footer" style="text-align: center; padding: 2rem; background: rgba(255,255,255,0.03); border-radius: 20px; margin-top: 3rem; border: 1px solid rgba(255,255,255,0.05);">
+    <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 0;">
+        📊 <strong>Plate Ratio System - Complete Edition (V18)</strong>
+    </p>
+    <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin: 8px 0;">
+        🔬 18 Advanced Algorithms | Hybrid Intelligence
+    </p>
+    <p style="color: #667eea; font-size: 0.85rem; margin: 8px 0 0 0;">
+        ✨ Design & Developed by <strong>Ovi</strong> ✨
+    </p>
 </div>
 """, unsafe_allow_html=True)
