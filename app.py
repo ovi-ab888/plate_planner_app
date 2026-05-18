@@ -2233,12 +2233,42 @@ else:
     st.info("⚠️ প্রথমে **Generate Plans** বাটনে ক্লিক করুন, তারপর এখান থেকে যেকোনো অ্যালগরিদমের রিপোর্ট দেখতে পারবেন।")
 
 st.markdown("""
-<div style="text-align: center; padding: 2rem; margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.05);">
-    <p style="color: rgba(255,255,255,0.5); font-size: 0.8rem;">
-        Plate Ratio System V18 | 18 Algorithms | Hybrid Intelligence
-    </p>
-    <p style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 0.85rem; font-weight: 600;">
-        ✨ Design by Ovi ✨
-    </p>
+<style>
+.glass-footer {
+    background: rgba(255,255,255,0.03);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 3rem;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.glass-footer .main-text {
+    font-size: 0.9rem;
+    font-weight: 500;
+    background: linear-gradient(135deg, #fff 0%, #a8b2ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+.glass-footer .sub-text {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
+    margin: 8px 0;
+}
+.glass-footer .designer {
+    font-size: 0.85rem;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 600;
+    margin: 5px 0 0 0;
+}
+</style>
+
+<div class="glass-footer">
+    <p class="main-text">⚡ Plate Ratio System — Complete Edition (V18)</p>
+    <p class="sub-text">🔬 18 Advanced Algorithms | 🧠 Hybrid Intelligence | 🎯 Precision Optimized</p>
+    <p class="designer">✨ Design & Developed by Ovi ✨</p>
 </div>
 """, unsafe_allow_html=True)
