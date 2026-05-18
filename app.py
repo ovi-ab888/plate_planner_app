@@ -2233,15 +2233,12 @@ else:
     st.info("⚠️ প্রথমে **Generate Plans** বাটনে ক্লিক করুন, তারপর এখান থেকে যেকোনো অ্যালগরিদমের রিপোর্ট দেখতে পারবেন।")
 
 st.markdown("""
-<div class="footer" style="text-align: center; padding: 2rem; background: rgba(255,255,255,0.03); border-radius: 20px; margin-top: 3rem; border: 1px solid rgba(255,255,255,0.05);">
-    <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; margin: 0;">
-        📊 <strong>Plate Ratio System - Complete Edition (V18)</strong>
+<div style="text-align: center; padding: 2rem; margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.05);">
+    <p style="color: rgba(255,255,255,0.5); font-size: 0.8rem;">
+        Plate Ratio System V18 | 18 Algorithms | Hybrid Intelligence
     </p>
-    <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin: 8px 0;">
-        🔬 18 Advanced Algorithms | Hybrid Intelligence
-    </p>
-    <p style="color: #667eea; font-size: 0.85rem; margin: 8px 0 0 0;">
-        ✨ Design & Developed by <strong>Ovi</strong> ✨
+    <p style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 0.85rem; font-weight: 600;">
+        ✨ Design by Ovi ✨
     </p>
 </div>
 """, unsafe_allow_html=True)
