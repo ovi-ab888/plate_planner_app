@@ -2162,7 +2162,7 @@ if generate_clicked:
    
 # ====================== VIEW ANY ALGORITHM REPORT (Independent Section) ======================
 st.markdown("---")
-st.markdown("## 🔍 View Any Algorithm Report")
+st.markdown("## 🔍 View others Report")
 
 if 'results' in st.session_state and st.session_state['results']:
     algo_list = list(st.session_state['results'].keys())
