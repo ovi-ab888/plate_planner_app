@@ -76,6 +76,7 @@ def check_password():
     if st.session_state.get("password_correct", None) is True:
         return True
 
+    # Password UI Styling
     st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -155,14 +156,14 @@ def check_password():
     </style>
     """, unsafe_allow_html=True)
 
-st.markdown("""
-<div class="main-header">
-    <h1>📊 Plate Ratio System</h1>
-    <p>Intelligent Production Planning & Ratio Optimization</p>
-    <p style="font-size: 0.9rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
-    <p class="designer-name">Design by Ovi</p>
-</div>
-""", unsafe_allow_html=True)
+    st.markdown("""
+    <div class="main-header">
+        <h1>📊 Plate Ratio System</h1>
+        <p>Intelligent Production Planning & Ratio Optimization</p>
+        <p style="font-size: 0.9rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
+        <p class="designer-name">Design by Ovi</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.markdown(
         '<div style="height: 20px;"></div><div class="password-container">'
@@ -180,6 +181,7 @@ st.markdown("""
 
     return False
 
+# Call the password check
 if not check_password():
     st.stop()
 
