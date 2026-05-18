@@ -1974,13 +1974,6 @@ with col4:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ================== ITEM QUANTITY ==================
-# Production Configuration Card
-st.markdown('<div class="card"><div class="card-title" style="text-align: center; display: block; width: 100%;">⚙️ Production Configuration</div>', unsafe_allow_html=True)
-
-# আপনার কলামগুলোর কোড (col1, col2, col3, col4) এখানে থাকবে
-# ... 
-
-st.markdown('</div>', unsafe_allow_html=True)
 
 # Item Quantity Details Card
 st.markdown('<div class="card"><div class="card-title" style="text-align: center; display: block; width: 100%;">📦 Item Quantity Details</div>', unsafe_allow_html=True)
