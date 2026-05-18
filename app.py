@@ -1959,7 +1959,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ================== CONFIGURATION ==================
-st.markdown('<div class="card"><div class="card-title">⚙️ Production Configuration</div>', unsafe_allow_html=True)
+st.markdown('<div class="card"><div class="card-title" style="text-align: center; display: block; width: 100%;">⚙️ Production Configuration</div>', unsafe_allow_html=True)
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
@@ -1974,7 +1974,21 @@ with col4:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ================== ITEM QUANTITY ==================
-st.markdown('<div class="card"><div class="card-title">📦 Item Quantity Details</div>', unsafe_allow_html=True)
+# Production Configuration Card
+st.markdown('<div class="card"><div class="card-title" style="text-align: center; display: block; width: 100%;">⚙️ Production Configuration</div>', unsafe_allow_html=True)
+
+# আপনার কলামগুলোর কোড (col1, col2, col3, col4) এখানে থাকবে
+# ... 
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Item Quantity Details Card
+st.markdown('<div class="card"><div class="card-title" style="text-align: center; display: block; width: 100%;">📦 Item Quantity Details</div>', unsafe_allow_html=True)
+
+# আপনার আইটেম কোয়ান্টিটির কোড এখানে থাকবে
+# ...
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 tags = []
 qty = []
