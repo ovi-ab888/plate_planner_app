@@ -422,7 +422,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-    st.markdown("""
+st.markdown("""
     <div style="height: 20px;"></div>
     <div class="password-container">
         <div class="lock-icon">🔐</div>
