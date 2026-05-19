@@ -47,7 +47,7 @@ st.set_page_config(
 
 
 # ================================================================
-# PASSWORD CHECK SYSTEM (WORKING - INPUT INSIDE BOX)
+# PASSWORD CHECK SYSTEM (FULLY WORKING)
 # ================================================================
 def check_password():
     expected = None
@@ -163,14 +163,18 @@ def check_password():
         
         .custom-password-container p {
             color: rgba(255,255,255,0.5);
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             font-size: 0.9rem;
         }
         
-        /* Make Streamlit Input Look Like Inside Box */
+        /* Streamlit Input - Inside Box */
         div[data-testid="stTextInput"] {
-            margin-top: -20px !important;
-            margin-bottom: 10px !important;
+            margin-top: -10px !important;
+            margin-bottom: 0 !important;
+        }
+        
+        div[data-testid="stTextInput"] > div {
+            margin-top: 0 !important;
         }
         
         div[data-testid="stTextInput"] input {
@@ -197,6 +201,11 @@ def check_password():
             letter-spacing: normal;
         }
         
+        /* Hide the label */
+        div[data-testid="stTextInput"] label {
+            display: none;
+        }
+        
         /* Error Message */
         .custom-error {
             max-width: 450px;
@@ -214,25 +223,6 @@ def check_password():
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
             75% { transform: translateX(10px); }
-        }
-        
-        /* Button Styling */
-        .stButton > button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            padding: 0.7rem 2rem;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-        
-        .stButton > button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102,126,234,0.4);
         }
         
         /* Footer */
@@ -275,7 +265,7 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    # Streamlit Input (Will appear inside the box visually)
+    # Streamlit Input (আসলে বক্সের ভিতরেই থাকবে)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.text_input(
