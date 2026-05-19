@@ -85,53 +85,37 @@ def check_password():
     if st.session_state.password_correct:
         return True
 
-    # ============== UI ==============
-    st.markdown("""
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        
-        * { font-family: 'Inter', sans-serif; }
-        
-        .stApp {
-            background: linear-gradient(-45deg, #0f0c29, #1a1a3e, #24243e);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
-        }
-        @keyframes gradientShift { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
-        
-        .main-header {
-            background: linear-gradient(135deg, rgba(102,126,234,0.15), rgba(118,75,162,0.15));
-            backdrop-filter: blur(10px);
-            padding: 2rem;
-            border-radius: 30px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
-            margin: 1rem;
-        }
-        
-        .password-container {
-            max-width: 460px;
-            margin: 40px auto;
-            padding: 2.8rem 2rem;
-            background: rgba(255,255,255,0.06);
-            backdrop-filter: blur(20px);
-            border-radius: 32px;
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
-        }
-        
-        .stTextInput input {
-            background: rgba(255,255,255,0.08) !important;
-            border: 1px solid rgba(255,255,255,0.25) !important;
-            border-radius: 50px !important;
-            color: white !important;
-            text-align: center;
-            font-size: 1.1rem;
-            letter-spacing: 3px;
-            padding: 1rem !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap');
+    
+    .stApp {
+        background: linear-gradient(135deg, #0a0a0a, #1a0033, #000033);
+        background-size: 400% 400%;
+        animation: neonFlow 12s ease infinite;
+    }
+    @keyframes neonFlow { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
+    
+    .password-container {
+        background: rgba(10, 10, 30, 0.85);
+        border: 2px solid #00ffea;
+        box-shadow: 0 0 35px #00ffea,
+                    0 0 60px rgba(0, 255, 234, 0.3);
+        border-radius: 20px;
+    }
+    
+    .stTextInput input {
+        background: transparent !important;
+        border: 2px solid #00ffea !important;
+        color: #00ffea !important;
+        font-family: 'Orbitron', sans-serif;
+        letter-spacing: 4px;
+        text-shadow: 0 0 10px #00ffea;
+    }
+    
+    h1, h2 { color: #00ffea; text-shadow: 0 0 15px #00ffea; }
+</style>
+""", unsafe_allow_html=True)
 
     st.markdown("""
     <div class="main-header">
