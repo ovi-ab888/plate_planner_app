@@ -89,7 +89,7 @@ def check_password():
         }
         
         .main > div { background: transparent !important; padding: 0 !important; }
-        .block-container { padding: 0rem !important; max-width: 100% !important; }
+        .block-container { padding: 0rem !important; max-width: 80% !important; }
         
         /* Password Input Field */
         .stTextInput input {
