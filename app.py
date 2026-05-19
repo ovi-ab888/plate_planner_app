@@ -86,8 +86,9 @@ if not check_password():
 
 
 # ================================================================
-# MODERN CSS FOR MAIN APP
+# PASSWORD PAGE UI & CSS (FULL WIDTH)
 # ================================================================
+
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -100,15 +101,25 @@ st.markdown("""
         background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #24243e 100%);
     }
     
-    /* Modern Header */
+    .main > div {
+        background: transparent !important;
+        padding: 0 !important;
+    }
+    
+    /* No max-width restriction - Full Width */
+    .block-container {
+        padding: 0rem !important;
+        max-width: 100% !important;
+    }
+    
+    /* Main Header (Same as Main Page) */
     .main-header {
         background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
         backdrop-filter: blur(10px);
         border-bottom: 1px solid rgba(255,255,255,0.1);
-        padding: 2rem 2rem;
+        padding: 2rem;
         margin-bottom: 2rem;
         text-align: center;
-        border-radius: 0;
     }
     
     .main-header h1 {
@@ -125,210 +136,146 @@ st.markdown("""
         margin-top: 0.5rem;
     }
     
-    /* Modern Cards */
-    .card {
-        background: rgba(255,255,255,0.05);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        border: 1px solid rgba(255,255,255,0.1);
-        transition: all 0.3s ease;
-    }
-    
-    .card:hover {
-        border-color: rgba(102,126,234,0.5);
-        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-    }
-    
-    .card-title {
-        font-size: 1.2rem;
+    .designer-name {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         font-weight: 600;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        border-bottom: 2px solid #667eea;
-        display: inline-block;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
     }
     
-    /* Modern Metrics */
-    .metric-card {
-        background: linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.2) 100%);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: 1rem;
-        color: white;
+    /* Password Container - Centered but full width available */
+    .password-container {
+        max-width: 450px;
+        margin: 50px auto 0 auto;
+        padding: 2.5rem;
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
         text-align: center;
         border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
     }
     
-    .metric-value {
-        font-size: 2rem;
-        font-weight: 700;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+    .password-container:hover {
+        border-color: rgba(102,126,234,0.5);
+        box-shadow: 0 0 30px rgba(102,126,234,0.2);
     }
     
-    .metric-label {
-        font-size: 0.85rem;
-        color: rgba(255,255,255,0.7);
-        margin-top: 0.5rem;
-    }
-    
-    /* Best Algorithm Banner */
-    .best-algo {
-        background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%);
-        border-radius: 20px;
-        padding: 1.5rem;
+    .password-container h2 {
         color: white;
-        text-align: center;
-        border: none;
-        box-shadow: 0 10px 30px rgba(0,176,155,0.3);
-        margin-bottom: 2rem;
+        font-size: 1.8rem;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
     }
     
-    .best-algo .metric-value {
-        -webkit-text-fill-color: white;
-        font-size: 1.5rem;
+    .password-container p {
+        color: rgba(255,255,255,0.5);
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
     }
     
-    /* Modern Buttons */
+    .lock-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+    
+    /* Password Input Field */
+    .stTextInput input {
+        background: rgba(255,255,255,0.08) !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        border-radius: 12px !important;
+        color: white !important;
+        text-align: center !important;
+        font-size: 1rem !important;
+        padding: 0.75rem 1rem !important;
+    }
+    
+    .stTextInput input:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
+    }
+    
+    /* Button */
     .stButton > button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
-        padding: 0.75rem 2rem;
-        font-weight: 600;
         border-radius: 12px;
+        padding: 0.7rem 2rem;
+        font-weight: 600;
         width: 100%;
-        transition: all 0.3s ease;
-        font-size: 1rem;
     }
     
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(102,126,234,0.4);
-    }
-    
-    /* Modern Inputs */
-    .stNumberInput input, .stTextInput input {
-        background: rgba(255,255,255,0.08) !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
+    /* Error Message */
+    .stAlert {
+        background: rgba(220,53,69,0.15) !important;
+        border: 1px solid rgba(220,53,69,0.4) !important;
         border-radius: 12px !important;
-        color: white !important;
-        padding: 0.5rem 1rem !important;
+        color: #ff6b6b !important;
     }
     
-    .stNumberInput input:focus, .stTextInput input:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 2px rgba(102,126,234,0.2) !important;
-        background: rgba(255,255,255,0.12) !important;
-    }
-    
-    /* Modern Dataframe */
-    .stDataFrame {
-        background: rgba(255,255,255,0.05);
-        border-radius: 16px;
-        padding: 0.5rem;
-    }
-    
-    .stDataFrame table {
-        border-radius: 12px;
-    }
-    
-    /* Tag Display */
-    .tag-display {
-        background: linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.2) 100%);
-        padding: 10px;
-        border-radius: 12px;
-        border: 1px solid rgba(102,126,234,0.3);
-        color: #667eea;
-        font-weight: 600;
-        text-align: center;
-        font-size: 0.9rem;
-    }
-    
-    /* Warning & Info */
-    .warning {
-        background: rgba(255,193,7,0.1);
-        padding: 12px;
-        border-radius: 12px;
-        border-left: 4px solid #ffc107;
-        color: #ffc107;
-        margin: 1rem 0;
-    }
-    
-    .info {
-        background: rgba(23,162,184,0.1);
-        padding: 12px;
-        border-radius: 12px;
-        border-left: 4px solid #17a2b8;
-        color: #17a2b8;
-    }
-    
-    /* Footer */
-    .footer {
+    /* Footer (Same as Main Page) */
+    .pro-footer {
         text-align: center;
         padding: 2rem;
         background: rgba(255,255,255,0.03);
         border-radius: 20px;
         margin-top: 3rem;
-        border-top: 1px solid rgba(255,255,255,0.05);
+        border-top: 2px solid rgba(102,126,234,0.3);
     }
     
-    .footer p {
+    .pro-footer p {
         color: rgba(255,255,255,0.5);
         font-size: 0.85rem;
     }
     
-    /* Radio Buttons */
-    .stRadio > div {
-        gap: 1rem;
-    }
-    
-    .stRadio label {
-        background: rgba(255,255,255,0.05);
-        padding: 0.5rem 1rem;
-        border-radius: 12px;
-        border: 1px solid rgba(255,255,255,0.1);
-        transition: all 0.3s ease;
-    }
-    
-    .stRadio label:hover {
-        background: rgba(102,126,234,0.2);
-        border-color: #667eea;
-    }
-    
-    /* Expander */
-    .streamlit-expanderHeader {
-        background: rgba(255,255,255,0.05);
-        border-radius: 12px;
-        color: white;
-    }
-    
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: rgba(255,255,255,0.05);
-        border-radius: 10px;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 10px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-        background: #667eea;
-    }
+    /* Hide Menu */
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
 </style>
+""", unsafe_allow_html=True)
+
+# Same Header as Main Page
+st.markdown("""
+<div class="main-header">
+    <h1>Plate Ratio Intelligence System</h1>
+    <p>Intelligent Production Planning & Ratio Optimization</p>
+    <p style="font-size: 0.85rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
+    <p class="designer-name">✨ Design by Ovi ✨</p>
+</div>
+""", unsafe_allow_html=True)
+
+# Password Card (Centered but page is full width)
+st.markdown("""
+<div style="height: 20px;"></div>
+<div class="password-container">
+    <div class="lock-icon">🔐</div>
+    <h2>Welcome Back!</h2>
+    <p>Enter your secure access code to continue</p>
+</div>
+""", unsafe_allow_html=True)
+
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    st.text_input(
+        "Password", 
+        type="password", 
+        key="password",
+        on_change=_password_entered, 
+        label_visibility="collapsed",
+        placeholder="••••••••"
+    )
+
+# Footer
+st.markdown("""
+<div class="pro-footer">
+    <p>© 2025 Plate Ratio System | Version 18</p>
+    <p>Enterprise Production Optimization Framework</p>
+    <p style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+        ✨ Developed by Ovi | All Rights Reserved ✨
+    </p>
+</div>
 """, unsafe_allow_html=True)
 
 
