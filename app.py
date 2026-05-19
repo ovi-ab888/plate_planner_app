@@ -86,7 +86,7 @@ def check_password():
         return True
 
   st.markdown("""
-<style>
+  <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap');
     
     .stApp {
