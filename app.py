@@ -47,7 +47,7 @@ st.set_page_config(
 
 
 # ================================================================
-# PASSWORD CHECK SYSTEM (INPUT INSIDE BOX - WORKING)
+# PASSWORD CHECK SYSTEM (WORKING - INPUT INSIDE BOX)
 # ================================================================
 def check_password():
     expected = None
@@ -68,6 +68,7 @@ def check_password():
             st.session_state["authenticated"] = True
         else:
             st.session_state["password_correct"] = False
+            st.session_state["authenticated"] = False
 
     if st.session_state.get("authenticated", False):
         return True
@@ -123,7 +124,7 @@ def check_password():
             font-weight: 700;
         }
         
-        /* Password Container - With Input Inside */
+        /* Password Container */
         .custom-password-container {
             max-width: 450px;
             margin: 50px auto 0 auto;
@@ -166,33 +167,32 @@ def check_password():
             font-size: 0.9rem;
         }
         
-        /* Custom Password Input */
-        .password-input-wrapper {
-            width: 100%;
+        /* Make Streamlit Input Look Like Inside Box */
+        div[data-testid="stTextInput"] {
+            margin-top: -20px !important;
+            margin-bottom: 10px !important;
         }
         
-        .password-input-wrapper input {
-            width: 100%;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 50px;
-            color: white;
-            text-align: center;
-            font-size: 1rem;
-            padding: 0.9rem 1.5rem;
-            transition: all 0.3s ease;
+        div[data-testid="stTextInput"] input {
+            background: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            border-radius: 50px !important;
+            color: white !important;
+            text-align: center !important;
+            font-size: 1rem !important;
+            padding: 0.9rem 1.5rem !important;
+            transition: all 0.3s ease !important;
             letter-spacing: 2px;
-            outline: none;
         }
         
-        .password-input-wrapper input:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 4px rgba(102,126,234,0.2);
-            background: rgba(255,255,255,0.12);
+        div[data-testid="stTextInput"] input:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 4px rgba(102,126,234,0.2) !important;
+            background: rgba(255,255,255,0.12) !important;
             transform: scale(1.02);
         }
         
-        .password-input-wrapper input::placeholder {
+        div[data-testid="stTextInput"] input::placeholder {
             color: rgba(255,255,255,0.4);
             letter-spacing: normal;
         }
@@ -214,6 +214,25 @@ def check_password():
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
             75% { transform: translateX(10px); }
+        }
+        
+        /* Button Styling */
+        .stButton > button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 0.7rem 2rem;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        
+        .stButton > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102,126,234,0.4);
         }
         
         /* Footer */
@@ -247,61 +266,36 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    # Password Container with Input Inside (Pure HTML/CSS)
+    # Password Container (Visual Box)
     st.markdown("""
     <div class="custom-password-container">
         <div class="lock-icon">🔐</div>
         <h2>Access Code</h2>
         <p>Enter your secure access code to continue</p>
-        <div class="password-input-wrapper">
-            <input type="password" id="custom_password" placeholder="••••••••" autocomplete="off">
-        </div>
     </div>
-    
-    <script>
-        const passwordInput = document.getElementById('custom_password');
-        if (passwordInput) {
-            passwordInput.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    const password = this.value;
-                    // Store in Streamlit
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.style.display = 'none';
-                    input.value = password;
-                    document.body.appendChild(input);
-                    
-                    // Trigger Streamlit
-                    const event = new Event('input', { bubbles: true });
-                    input.dispatchEvent(event);
-                    
-                    // Set session
-                    window.parent.postMessage({
-                        type: "streamlit:setComponentValue",
-                        value: password
-                    }, "*");
-                }
-            });
-        }
-    </script>
     """, unsafe_allow_html=True)
 
-    # Streamlit text input hidden for capturing (alternative method)
-    password_val = st.text_input(
-        "password_hidden",
-        type="password",
-        key="password_input",
-        label_visibility="collapsed",
-        on_change=_password_entered
-    )
-    
-    # Hide the default Streamlit input
+    # Streamlit Input (Will appear inside the box visually)
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.text_input(
+            "Password", 
+            type="password", 
+            key="password_input",
+            on_change=_password_entered, 
+            label_visibility="collapsed",
+            placeholder="••••••••"
+        )
+
+    # Footer
     st.markdown("""
-    <style>
-        div[data-testid="stTextInput"] {
-            display: none;
-        }
-    </style>
+    <div class="footer">
+        <p>© 2025 Plate Ratio System | Version 18</p>
+        <p>Enterprise Production Optimization Framework</p>
+        <p style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+            ✨ Developed by Ovi | All Rights Reserved ✨
+        </p>
+    </div>
     """, unsafe_allow_html=True)
 
     if st.session_state.get("password_correct") is False:
@@ -312,7 +306,6 @@ def check_password():
 # Call the password check
 if not check_password():
     st.stop()
-
 
 # ================================================================
 # PASSWORD PAGE UI & CSS (FULL WIDTH)
