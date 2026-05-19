@@ -106,27 +106,7 @@ def check_password():
         
         .block-container {
             padding: 0rem !important;
-            max-width: 90% !important;
-        }
-        
-        /* Password Input Field */
-        .stTextInput input {
-            background: rgba(255,255,255,0.08) !important;
-            border: 1px solid rgba(255,255,255,0.2) !important;
-            border-radius: 50px !important;
-            color: white !important;
-            text-align: center !important;
-            font-size: 1rem !important;
-            padding: 0.9rem 1.5rem !important;
-            transition: all 0.3s ease !important;
-            letter-spacing: 2px;
-        }
-        
-        .stTextInput input:focus {
-            border-color: #667eea !important;
-            box-shadow: 0 0 0 4px rgba(102,126,234,0.2) !important;
-            background: rgba(255,255,255,0.12) !important;
-            transform: scale(1.02);
+            max-width: 50% !important;
         }
         
         /* Main Header */
@@ -163,11 +143,11 @@ def check_password():
             font-size: 1rem;
         }
         
-        /* Password Container with Glow Effect */
+        /* Password Container - Taller Box */
         .password-container {
             max-width: 450px;
             margin: 50px auto 0 auto;
-            padding: 2.5rem;
+            padding: 3rem 2.5rem;
             background: rgba(255,255,255,0.05);
             backdrop-filter: blur(20px);
             border-radius: 32px;
@@ -208,14 +188,51 @@ def check_password():
         .password-container h2 {
             color: white;
             font-size: 1.8rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.8rem;
             font-weight: 700;
         }
         
         .password-container p {
             color: rgba(255,255,255,0.5);
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
             font-size: 0.9rem;
+        }
+        
+        /* Lock Icon - Bigger */
+        .lock-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        /* Password Input Field - Inside Box */
+        .stTextInput {
+            margin-top: 0 !important;
+            padding-top: 0 !important;
+        }
+        
+        .stTextInput input {
+            background: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            border-radius: 50px !important;
+            color: white !important;
+            text-align: center !important;
+            font-size: 1rem !important;
+            padding: 0.9rem 1.5rem !important;
+            transition: all 0.3s ease !important;
+            letter-spacing: 2px;
+        }
+        
+        .stTextInput input:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 4px rgba(102,126,234,0.2) !important;
+            background: rgba(255,255,255,0.12) !important;
+            transform: scale(1.02);
         }
         
         /* Button Styling */
@@ -252,22 +269,17 @@ def check_password():
             75% { transform: translateX(10px); }
         }
         
+        /* Centering the input inside box */
+        .input-wrapper {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+        
         /* Hide Menu */
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
         footer {visibility: hidden;}
-        
-        /* Lock Icon Animation */
-        .lock-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            animation: bounce 2s infinite;
-        }
-        
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -281,7 +293,7 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    # Password Card with Animated Lock
+    # Password Card Container
     st.markdown("""
     <div style="height: 20px;"></div>
     <div class="password-container">
@@ -291,6 +303,7 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
+    # Password Input Field (Inside the box effect - centered)
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.text_input(
