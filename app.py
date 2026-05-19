@@ -150,7 +150,7 @@ if st.session_state.get("password_correct") is False:
         else:
             st.error("❌ Incorrect password. Try again.")
 
-    return False
+return False
 
 
 # ===================== MAIN =====================
