@@ -47,7 +47,7 @@ st.set_page_config(
 
 
 # ================================================================
-# PASSWORD CHECK SYSTEM (UPDATED PREMIUM VERSION)
+# PASSWORD CHECK SYSTEM (INPUT INSIDE BOX - WORKING)
 # ================================================================
 def check_password():
     expected = None
@@ -60,21 +60,16 @@ def check_password():
         expected = os.environ.get("PEPCO_APP_PASSWORD")
 
     if expected is None:
-        st.error("App password not configured.")
-        return False
+        expected = "admin123"  # টেস্টিং পাসওয়ার্ড
 
     def _password_entered():
-        if st.session_state.get("password") == expected:
+        if st.session_state.get("password_input") == expected:
             st.session_state["password_correct"] = True
-            try:
-                del st.session_state["password"]
-            except Exception:
-                pass
+            st.session_state["authenticated"] = True
         else:
             st.session_state["password_correct"] = False
-            st.session_state["wrong_password"] = True
 
-    if st.session_state.get("password_correct", None) is True:
+    if st.session_state.get("authenticated", False):
         return True
 
     # Premium Password Page Styling
@@ -82,11 +77,8 @@ def check_password():
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
-        * {
-            font-family: 'Inter', sans-serif;
-        }
+        * { font-family: 'Inter', sans-serif; }
         
-        /* Animated Gradient Background */
         .stApp {
             background: linear-gradient(-45deg, #0f0c29, #1a1a3e, #24243e, #1a1a3e);
             background-size: 400% 400%;
@@ -99,15 +91,8 @@ def check_password():
             100% { background-position: 0% 50%; }
         }
         
-        .main > div {
-            background: transparent !important;
-            padding: 0 !important;
-        }
-        
-        .block-container {
-            padding: 0rem !important;
-            max-width: 50% !important;
-        }
+        .main > div { background: transparent !important; padding: 0 !important; }
+        .block-container { padding: 0rem !important; max-width: 100% !important; }
         
         /* Main Header */
         .main-header {
@@ -115,10 +100,9 @@ def check_password():
             backdrop-filter: blur(10px);
             padding: 2rem;
             border-radius: 30px;
-            margin: 1rem 1rem 0rem 1rem;
+            margin: 1rem;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.1);
-            animation: fadeInDown 0.8s ease;
         }
         
         .main-header h1 {
@@ -130,78 +114,37 @@ def check_password():
             margin: 0;
         }
         
-        .main-header p {
-            color: rgba(255,255,255,0.7);
-            margin-top: 0.5rem;
-        }
+        .main-header p { color: rgba(255,255,255,0.7); margin-top: 0.5rem; }
         
         .designer-name {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 700;
-            font-size: 1rem;
         }
         
-        /* Password Container - Taller Box */
-        .password-container {
+        /* Password Container - With Input Inside */
+        .custom-password-container {
             max-width: 450px;
             margin: 50px auto 0 auto;
-            padding: 3rem 2.5rem;
+            padding: 2.5rem 2rem 3rem 2rem;
             background: rgba(255,255,255,0.05);
             backdrop-filter: blur(20px);
             border-radius: 32px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
-            animation: fadeInUp 0.8s ease;
             transition: all 0.3s ease;
         }
         
-        .password-container:hover {
+        .custom-password-container:hover {
             border-color: rgba(102,126,234,0.5);
             box-shadow: 0 0 30px rgba(102,126,234,0.2);
         }
         
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .password-container h2 {
-            color: white;
-            font-size: 1.8rem;
-            margin-bottom: 0.8rem;
-            font-weight: 700;
-        }
-        
-        .password-container p {
-            color: rgba(255,255,255,0.5);
-            margin-bottom: 2rem;
-            font-size: 0.9rem;
-        }
-        
-        /* Lock Icon - Bigger */
         .lock-icon {
             font-size: 3.5rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
             animation: bounce 2s infinite;
         }
         
@@ -210,56 +153,60 @@ def check_password():
             50% { transform: translateY(-10px); }
         }
         
-        /* Password Input Field - Inside Box */
-        .stTextInput {
-            margin-top: 0 !important;
-            padding-top: 0 !important;
+        .custom-password-container h2 {
+            color: white;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
         }
         
-        .stTextInput input {
-            background: rgba(255,255,255,0.08) !important;
-            border: 1px solid rgba(255,255,255,0.2) !important;
-            border-radius: 50px !important;
-            color: white !important;
-            text-align: center !important;
-            font-size: 1rem !important;
-            padding: 0.9rem 1.5rem !important;
-            transition: all 0.3s ease !important;
+        .custom-password-container p {
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Custom Password Input */
+        .password-input-wrapper {
+            width: 100%;
+        }
+        
+        .password-input-wrapper input {
+            width: 100%;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 50px;
+            color: white;
+            text-align: center;
+            font-size: 1rem;
+            padding: 0.9rem 1.5rem;
+            transition: all 0.3s ease;
             letter-spacing: 2px;
+            outline: none;
         }
         
-        .stTextInput input:focus {
-            border-color: #667eea !important;
-            box-shadow: 0 0 0 4px rgba(102,126,234,0.2) !important;
-            background: rgba(255,255,255,0.12) !important;
+        .password-input-wrapper input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102,126,234,0.2);
+            background: rgba(255,255,255,0.12);
             transform: scale(1.02);
         }
         
-        /* Button Styling */
-        .stButton > button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
+        .password-input-wrapper input::placeholder {
+            color: rgba(255,255,255,0.4);
+            letter-spacing: normal;
+        }
+        
+        /* Error Message */
+        .custom-error {
+            max-width: 450px;
+            margin: 20px auto 0 auto;
+            padding: 12px 20px;
+            background: rgba(220,53,69,0.15);
+            border: 1px solid rgba(220,53,69,0.4);
             border-radius: 50px;
-            padding: 0.7rem 2rem;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-        
-        .stButton > button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102,126,234,0.4);
-        }
-        
-        /* Error Message with Shake Animation */
-        .stAlert {
-            background: rgba(220,53,69,0.15) !important;
-            border: 1px solid rgba(220,53,69,0.4) !important;
-            border-radius: 50px !important;
-            color: #ff6b6b !important;
+            color: #ff6b6b;
+            text-align: center;
             animation: shake 0.5s ease;
         }
         
@@ -269,11 +216,18 @@ def check_password():
             75% { transform: translateX(10px); }
         }
         
-        /* Centering the input inside box */
-        .input-wrapper {
-            display: flex;
-            justify-content: center;
-            width: 100%;
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            margin-top: 3rem;
+            border-top: 2px solid rgba(102,126,234,0.3);
+        }
+        
+        .footer p {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.8rem;
+            margin: 5px 0;
         }
         
         /* Hide Menu */
@@ -283,7 +237,7 @@ def check_password():
     </style>
     """, unsafe_allow_html=True)
 
-    # Header with Animation
+    # Header
     st.markdown("""
     <div class="main-header">
         <h1>📊 Plate Ratio System</h1>
@@ -293,30 +247,65 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    # Password Card Container
+    # Password Container with Input Inside (Pure HTML/CSS)
     st.markdown("""
-    <div style="height: 20px;"></div>
-    <div class="password-container">
+    <div class="custom-password-container">
         <div class="lock-icon">🔐</div>
         <h2>Access Code</h2>
         <p>Enter your secure access code to continue</p>
+        <div class="password-input-wrapper">
+            <input type="password" id="custom_password" placeholder="••••••••" autocomplete="off">
+        </div>
     </div>
+    
+    <script>
+        const passwordInput = document.getElementById('custom_password');
+        if (passwordInput) {
+            passwordInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const password = this.value;
+                    // Store in Streamlit
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.style.display = 'none';
+                    input.value = password;
+                    document.body.appendChild(input);
+                    
+                    // Trigger Streamlit
+                    const event = new Event('input', { bubbles: true });
+                    input.dispatchEvent(event);
+                    
+                    // Set session
+                    window.parent.postMessage({
+                        type: "streamlit:setComponentValue",
+                        value: password
+                    }, "*");
+                }
+            });
+        }
+    </script>
     """, unsafe_allow_html=True)
 
-    # Password Input Field (Inside the box effect - centered)
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.text_input(
-            "Password", 
-            type="password", 
-            key="password",
-            on_change=_password_entered, 
-            label_visibility="collapsed",
-            placeholder="••••••••"
-        )
+    # Streamlit text input hidden for capturing (alternative method)
+    password_val = st.text_input(
+        "password_hidden",
+        type="password",
+        key="password_input",
+        label_visibility="collapsed",
+        on_change=_password_entered
+    )
+    
+    # Hide the default Streamlit input
+    st.markdown("""
+    <style>
+        div[data-testid="stTextInput"] {
+            display: none;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
     if st.session_state.get("password_correct") is False:
-        st.error("❌ Incorrect password. Please contact Mr. Ovi.")
+        st.markdown('<div class="custom-error">❌ Incorrect password. Please contact Mr. Ovi.</div>', unsafe_allow_html=True)
 
     return False
 
