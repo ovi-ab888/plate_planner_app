@@ -87,33 +87,23 @@ def check_password():
 
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap');
-    
     .stApp {
-        background: linear-gradient(135deg, #0a0a0a, #1a0033, #000033);
-        background-size: 400% 400%;
-        animation: neonFlow 12s ease infinite;
+        background: linear-gradient(135deg, #1a1a1a, #2c1e16, #1a1a1a);
     }
-    @keyframes neonFlow { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
-    
     .password-container {
-        background: rgba(10, 10, 30, 0.85);
-        border: 2px solid #00ffea;
-        box-shadow: 0 0 35px #00ffea,
-                    0 0 60px rgba(0, 255, 234, 0.3);
-        border-radius: 20px;
+        background: rgba(30, 25, 20, 0.92);
+        border: 1px solid #d4af37;
+        box-shadow: 0 0 40px rgba(212, 175, 55, 0.4);
     }
-    
     .stTextInput input {
-        background: transparent !important;
-        border: 2px solid #00ffea !important;
-        color: #00ffea !important;
-        font-family: 'Orbitron', sans-serif;
-        letter-spacing: 4px;
-        text-shadow: 0 0 10px #00ffea;
+        background: rgba(0,0,0,0.6) !important;
+        border: 2px solid #d4af37 !important;
+        color: #f0d48f !important;
+        font-weight: 500;
     }
-    
-    h1, h2 { color: #00ffea; text-shadow: 0 0 15px #00ffea; }
+    h1 { background: linear-gradient(90deg, #d4af37, #f0d48f, #d4af37);
+         -webkit-background-clip: text;
+         -webkit-text-fill-color: transparent; }
 </style>
 """, unsafe_allow_html=True)
 
