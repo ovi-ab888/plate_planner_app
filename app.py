@@ -47,7 +47,7 @@ st.set_page_config(
 
 
 # ================================================================
-# PASSWORD CHECK SYSTEM
+# PASSWORD CHECK SYSTEM (UPDATED PREMIUM VERSION)
 # ================================================================
 def check_password():
     expected = None
@@ -72,119 +72,244 @@ def check_password():
                 pass
         else:
             st.session_state["password_correct"] = False
+            st.session_state["wrong_password"] = True
 
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # Password UI Styling
+    # Premium Password Page Styling
     st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        * { font-family: 'Inter', sans-serif; }
-        .stApp { background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important; }
-        .main > div { background: transparent !important; padding: 0 !important; }
-        .block-container { padding: 0rem !important; max-width: 55% !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        /* Animated Gradient Background */
+        .stApp {
+            background: linear-gradient(-45deg, #0f0c29, #1a1a3e, #24243e, #1a1a3e);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .main > div {
+            background: transparent !important;
+            padding: 0 !important;
+        }
+        
+        .block-container {
+            padding: 0rem !important;
+            max-width: 50% !important;
+        }
+        
+        /* Password Input Field */
         .stTextInput input {
             background: rgba(255,255,255,0.08) !important;
             border: 1px solid rgba(255,255,255,0.2) !important;
-            border-radius: 14px !important;
+            border-radius: 50px !important;
             color: white !important;
             text-align: center !important;
             font-size: 1rem !important;
-            padding: 0.75rem !important;
+            padding: 0.9rem 1.5rem !important;
             transition: all 0.3s ease !important;
+            letter-spacing: 2px;
         }
+        
         .stTextInput input:focus {
             border-color: #667eea !important;
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
+            box-shadow: 0 0 0 4px rgba(102,126,234,0.2) !important;
             background: rgba(255,255,255,0.12) !important;
+            transform: scale(1.02);
         }
+        
+        /* Main Header */
         .main-header {
             background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%);
             backdrop-filter: blur(10px);
             padding: 2rem;
-            border-radius: 20px;
+            border-radius: 30px;
             margin: 1rem 1rem 0rem 1rem;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.1);
+            animation: fadeInDown 0.8s ease;
         }
+        
         .main-header h1 {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-size: 2.5rem;
-            font-weight: 700;
+            font-weight: 800;
             margin: 0;
         }
-        .main-header p { color: rgba(255,255,255,0.7); margin-top: 0.5rem; }
+        
+        .main-header p {
+            color: rgba(255,255,255,0.7);
+            margin-top: 0.5rem;
+        }
+        
         .designer-name {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 1rem;
         }
+        
+        /* Password Container with Glow Effect */
         .password-container {
             max-width: 450px;
-            margin: 60px auto 0 auto;
+            margin: 50px auto 0 auto;
             padding: 2.5rem;
             background: rgba(255,255,255,0.05);
             backdrop-filter: blur(20px);
-            border-radius: 24px;
+            border-radius: 32px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+            animation: fadeInUp 0.8s ease;
+            transition: all 0.3s ease;
         }
-        .password-container h2 { color: white; font-size: 1.8rem; margin-bottom: 0.5rem; }
-        .password-container p { color: rgba(255,255,255,0.6); margin-bottom: 1.5rem; }
+        
+        .password-container:hover {
+            border-color: rgba(102,126,234,0.5);
+            box-shadow: 0 0 30px rgba(102,126,234,0.2);
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .password-container h2 {
+            color: white;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+        
+        .password-container p {
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Button Styling */
         .stButton > button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 12px;
-            padding: 0.5rem 1.5rem;
-            font-weight: 500;
+            border-radius: 50px;
+            padding: 0.7rem 2rem;
+            font-weight: 600;
+            width: 100%;
             transition: all 0.3s ease;
+            font-size: 1rem;
+            cursor: pointer;
         }
+        
         .stButton > button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102,126,234,0.3);
+            box-shadow: 0 10px 25px rgba(102,126,234,0.4);
         }
-        .stAlert { background: rgba(220,53,69,0.1); border: 1px solid rgba(220,53,69,0.3); border-radius: 12px; color: #ff6b6b; }
+        
+        /* Error Message with Shake Animation */
+        .stAlert {
+            background: rgba(220,53,69,0.15) !important;
+            border: 1px solid rgba(220,53,69,0.4) !important;
+            border-radius: 50px !important;
+            color: #ff6b6b !important;
+            animation: shake 0.5s ease;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+        
+        /* Hide Menu */
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
         footer {visibility: hidden;}
+        
+        /* Lock Icon Animation */
+        .lock-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
     </style>
     """, unsafe_allow_html=True)
 
+    # Header with Animation
     st.markdown("""
     <div class="main-header">
         <h1>📊 Plate Ratio System</h1>
         <p>Intelligent Production Planning & Ratio Optimization</p>
-        <p style="font-size: 0.9rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
-        <p class="designer-name">Design by Ovi</p>
+        <p style="font-size: 0.85rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
+        <p class="designer-name">✨ Design by Ovi ✨</p>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown(
-        '<div style="height: 20px;"></div><div class="password-container">'
-        '<h2>🔐 Access Code</h2><p>Enter your access code to continue</p></div>',
-        unsafe_allow_html=True
-    )
+    # Password Card with Animated Lock
+    st.markdown("""
+    <div style="height: 20px;"></div>
+    <div class="password-container">
+        <div class="lock-icon">🔐</div>
+        <h2>Access Code</h2>
+        <p>Enter your secure access code to continue</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.text_input("Password", type="password", key="password",
-                      on_change=_password_entered, label_visibility="collapsed")
+        st.text_input(
+            "Password", 
+            type="password", 
+            key="password",
+            on_change=_password_entered, 
+            label_visibility="collapsed",
+            placeholder="••••••••"
+        )
 
     if st.session_state.get("password_correct") is False:
-        st.error("❌ Incorrect password. Contact Mr. Ovi.")
+        st.error("❌ Incorrect password. Please contact Mr. Ovi.")
 
     return False
 
 # Call the password check
 if not check_password():
     st.stop()
-
 
 # ================================================================
 # MODERN CSS FOR MAIN APP
