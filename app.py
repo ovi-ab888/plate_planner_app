@@ -422,7 +422,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-    # Password Card with Animated Lock
     st.markdown("""
     <div style="height: 20px;"></div>
     <div class="password-container">
