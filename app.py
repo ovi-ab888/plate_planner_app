@@ -85,30 +85,56 @@ def check_password():
     if st.session_state.password_correct:
         return True
 
-st.markdown("""
-<style>
-    .stApp {
-        background: linear-gradient(135deg, #1a1a1a, #2c1e16, #1a1a1a);
-    }
-    .password-container {
-        background: rgba(30, 25, 20, 0.92);
-        border: 1px solid #d4af37;
-        box-shadow: 0 0 40px rgba(212, 175, 55, 0.4);
-    }
-    .stTextInput input {
-        background: rgba(0,0,0,0.6) !important;
-        border: 2px solid #d4af37 !important;
-        color: #f0d48f !important;
-        font-weight: 500;
-    }
-    h1 { background: linear-gradient(90deg, #d4af37, #f0d48f, #d4af37);
-         -webkit-background-clip: text;
-         -webkit-text-fill-color: transparent; }
-</style>
-""", unsafe_allow_html=True)
+    # ============== UI ==============
+    st.markdown("""
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        * { font-family: 'Inter', sans-serif; }
+        
+        .stApp {
+            background: linear-gradient(-45deg, #0f0c29, #1a1a3e, #24243e);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        @keyframes gradientShift { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
+        
+        .main-header {
+            background: linear-gradient(135deg, rgba(102,126,234,0.15), rgba(118,75,162,0.15));
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 30px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin: 1rem;
+        }
+        
+        .password-container {
+            max-width: 460px;
+            margin: 40px auto;
+            padding: 2.8rem 2rem;
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(20px);
+            border-radius: 32px;
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
+        }
+        
+        .stTextInput input {
+            background: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.25) !important;
+            border-radius: 50px !important;
+            color: white !important;
+            text-align: center;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            padding: 1rem !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
-st.markdown("""
-     <div class="main-header">
+    st.markdown("""
+    <div class="main-header">
         <h1>📊 Plate Ratio System</h1>
         <p>Intelligent Production Planning & Ratio Optimization</p>
         <p style="font-size: 0.9rem; opacity: 0.85;">AI-Powered • Fast • Accurate</p>
@@ -154,7 +180,6 @@ st.balloons()   # Optional
 # Tomar main app code ekhane
 st.title("Plate Ratio System")
 st.write("Welcome back!")
-
 
 # ================================================================
 # MODERN CSS FOR MAIN APP
