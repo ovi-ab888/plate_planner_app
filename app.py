@@ -266,7 +266,7 @@ def check_password():
         
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+            80% { transform: translateY(-10px); }
         }
     </style>
     """, unsafe_allow_html=True)
@@ -274,7 +274,7 @@ def check_password():
     # Header with Animation
     st.markdown("""
     <div class="main-header">
-        <h1>📊 Plate Ratio System</h1>
+        <h1>Plate Ratio Intelligence System</h1>
         <p>Intelligent Production Planning & Ratio Optimization</p>
         <p style="font-size: 0.85rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
         <p class="designer-name">✨ Design by Ovi ✨</p>
