@@ -106,7 +106,7 @@ def check_password():
         
         .block-container {
             padding: 0rem !important;
-            max-width: 80% !important;
+            max-width: 90% !important;
         }
         
         /* Password Input Field */
