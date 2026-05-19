@@ -107,7 +107,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-    st.markdown("""
+st.markdown("""
      <div class="main-header">
         <h1>📊 Plate Ratio System</h1>
         <p>Intelligent Production Planning & Ratio Optimization</p>
