@@ -49,44 +49,52 @@ st.set_page_config(
 # ================================================================
 # PASSWORD CHECK SYSTEM (UPDATED PREMIUM VERSION)
 # ================================================================
+import streamlit as st
+import os
+
 def check_password():
+    # Password Configuration
     expected = None
     try:
-        expected = st.secrets.get("app_password", None)
+        expected = st.secrets.get("app_password")
     except Exception:
         pass
-
+    
     if expected is None:
         expected = os.environ.get("PEPCO_APP_PASSWORD")
-
+    
     if expected is None:
         st.error("App password not configured.")
-        return False
+        st.stop()
+
+    # Session State Initialize
+    if "password_correct" not in st.session_state:
+        st.session_state.password_correct = False
+    if "login_attempts" not in st.session_state:
+        st.session_state.login_attempts = 0
 
     def _password_entered():
-        if st.session_state.get("password") == expected:
-            st.session_state["password_correct"] = True
-            try:
-                del st.session_state["password"]
-            except Exception:
-                pass
-        else:
-            st.session_state["password_correct"] = False
-            st.session_state["wrong_password"] = True
+        if st.session_state.get("password"):
+            if st.session_state.password == expected:
+                st.session_state.password_correct = True
+                st.session_state.login_attempts = 0
+            else:
+                st.session_state.password_correct = False
+                st.session_state.login_attempts += 1
+            # Password clear
+            st.session_state.password = ""
 
-    if st.session_state.get("password_correct", None) is True:
+    # Already logged in
+    if st.session_state.password_correct:
         return True
 
-    # Premium Password Page Styling
+    # ==================== Premium Styling ====================
     st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
-        * {
-            font-family: 'Inter', sans-serif;
-        }
+        * { font-family: 'Inter', sans-serif; }
         
-        /* Animated Gradient Background */
         .stApp {
             background: linear-gradient(-45deg, #0f0c29, #1a1a3e, #24243e, #1a1a3e);
             background-size: 400% 400%;
@@ -99,167 +107,41 @@ def check_password():
             100% { background-position: 0% 50%; }
         }
         
-        .main > div {
-            background: transparent !important;
-            padding: 0 !important;
-        }
-        
-        .block-container {
-            padding: 0rem !important;
-            max-width: 50% !important;
-        }
-        
-        /* Password Input Field */
-        .stTextInput input {
-            background: rgba(255,255,255,0.08) !important;
-            border: 1px solid rgba(255,255,255,0.2) !important;
-            border-radius: 50px !important;
-            color: white !important;
-            text-align: center !important;
-            font-size: 1rem !important;
-            padding: 0.9rem 1.5rem !important;
-            transition: all 0.3s ease !important;
-            letter-spacing: 2px;
-        }
-        
-        .stTextInput input:focus {
-            border-color: #667eea !important;
-            box-shadow: 0 0 0 4px rgba(102,126,234,0.2) !important;
-            background: rgba(255,255,255,0.12) !important;
-            transform: scale(1.02);
-        }
-        
-        /* Main Header */
         .main-header {
-            background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%);
+            background: linear-gradient(135deg, rgba(102,126,234,0.15), rgba(118,75,162,0.15));
             backdrop-filter: blur(10px);
-            padding: 2rem;
+            padding: 2.2rem;
             border-radius: 30px;
-            margin: 1rem 1rem 0rem 1rem;
+            margin: 1.5rem;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.1);
-            animation: fadeInDown 0.8s ease;
         }
         
-        .main-header h1 {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin: 0;
-        }
-        
-        .main-header p {
-            color: rgba(255,255,255,0.7);
-            margin-top: 0.5rem;
-        }
-        
-        .designer-name {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 700;
-            font-size: 1rem;
-        }
-        
-        /* Password Container with Glow Effect */
         .password-container {
-            max-width: 450px;
-            margin: 50px auto 0 auto;
-            padding: 2.5rem;
-            background: rgba(255,255,255,0.05);
+            max-width: 480px;
+            margin: 40px auto;
+            padding: 2.8rem 2rem;
+            background: rgba(255,255,255,0.06);
             backdrop-filter: blur(20px);
             border-radius: 32px;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
-            animation: fadeInUp 0.8s ease;
-            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
         }
         
-        .password-container:hover {
-            border-color: rgba(102,126,234,0.5);
-            box-shadow: 0 0 30px rgba(102,126,234,0.2);
-        }
-        
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .password-container h2 {
-            color: white;
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
-        
-        .password-container p {
-            color: rgba(255,255,255,0.5);
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
-        }
-        
-        /* Button Styling */
-        .stButton > button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            padding: 0.7rem 2rem;
-            font-weight: 600;
-            width: 100%;
-            transition: all 0.3s ease;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-        
-        .stButton > button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102,126,234,0.4);
-        }
-        
-        /* Error Message with Shake Animation */
-        .stAlert {
-            background: rgba(220,53,69,0.15) !important;
-            border: 1px solid rgba(220,53,69,0.4) !important;
+        .stTextInput input {
+            background: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.25) !important;
             border-radius: 50px !important;
-            color: #ff6b6b !important;
-            animation: shake 0.5s ease;
+            color: white !important;
+            text-align: center !important;
+            font-size: 1.1rem !important;
+            padding: 1rem 1.5rem !important;
+            letter-spacing: 3px;
         }
         
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-        
-        /* Hide Menu */
-        #MainMenu {visibility: hidden;}
-        header {visibility: hidden;}
-        footer {visibility: hidden;}
-        
-        /* Lock Icon Animation */
         .lock-icon {
-            font-size: 3rem;
+            font-size: 3.2rem;
             margin-bottom: 1rem;
             animation: bounce 2s infinite;
         }
@@ -268,8 +150,64 @@ def check_password():
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-10px); }
         }
+        
+        #MainMenu {visibility: hidden;}
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
+
+    # Header
+    st.markdown("""
+    <div class="main-header">
+        <h1>📊 Plate Ratio System</h1>
+        <p>Intelligent Production Planning & Ratio Optimization</p>
+        <p style="font-size: 0.9rem; opacity: 0.85;">AI-Powered • Fast • Accurate</p>
+        <p style="background: linear-gradient(135deg, #f093fb, #f5576c); 
+                  -webkit-background-clip: text; 
+                  -webkit-text-fill-color: transparent;
+                  font-weight: 700;">✨ Design by Ovi ✨</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Password Container
+    st.markdown("""
+    <div class="password-container">
+        <div class="lock-icon">🔐</div>
+        <h2>Access Code</h2>
+        <p>Enter your secure access code to continue</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col2:
+        st.text_input(
+            label="Password",
+            type="password",
+            key="password",
+            on_change=_password_entered,
+            label_visibility="collapsed",
+            placeholder="••••••••"
+        )
+
+    # Error Message
+    if st.session_state.get("password_correct") is False:
+        if st.session_state.login_attempts >= 5:
+            st.error("🔒 অনেকবার ভুল চেষ্টা হয়েছে। Mr. Ovi এর সাথে যোগাযোগ করুন।")
+        else:
+            st.error("❌ Incorrect password. Please contact Mr. Ovi.")
+
+    return False
+
+
+# ===================== MAIN APP =====================
+if not check_password():
+    st.stop()
+
+# তোমার মেইন অ্যাপ এখান থেকে শুরু
+st.success("✅ Access Granted!")
+st.balloons()
+st.title("Plate Ratio System")
 
     # Header with Animation
     st.markdown("""
