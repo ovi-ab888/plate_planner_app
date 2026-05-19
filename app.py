@@ -47,7 +47,7 @@ st.set_page_config(
 
 
 # ================================================================
-# PASSWORD CHECK SYSTEM (UPDATED PREMIUM VERSION)
+# PASSWORD CHECK SYSTEM (UPDATED - CLEAN VERSION)
 # ================================================================
 def check_password():
     expected = None
@@ -66,6 +66,7 @@ def check_password():
     def _password_entered():
         if st.session_state.get("password") == expected:
             st.session_state["password_correct"] = True
+            st.session_state["page"] = "main"  # মেইন পেজে যাবে
             try:
                 del st.session_state["password"]
             except Exception:
@@ -77,7 +78,7 @@ def check_password():
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # Premium Password Page Styling
+    # Password Page Styling (Same as Main Page)
     st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -86,17 +87,8 @@ def check_password():
             font-family: 'Inter', sans-serif;
         }
         
-        /* Animated Gradient Background */
         .stApp {
-            background: linear-gradient(-45deg, #0f0c29, #1a1a3e, #24243e, #1a1a3e);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
-        }
-        
-        @keyframes gradientShift {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+            background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #24243e 100%);
         }
         
         .main > div {
@@ -113,32 +105,28 @@ def check_password():
         .stTextInput input {
             background: rgba(255,255,255,0.08) !important;
             border: 1px solid rgba(255,255,255,0.2) !important;
-            border-radius: 50px !important;
+            border-radius: 12px !important;
             color: white !important;
             text-align: center !important;
             font-size: 1rem !important;
-            padding: 0.9rem 1.5rem !important;
+            padding: 0.75rem 1rem !important;
             transition: all 0.3s ease !important;
-            letter-spacing: 2px;
         }
         
         .stTextInput input:focus {
             border-color: #667eea !important;
-            box-shadow: 0 0 0 4px rgba(102,126,234,0.2) !important;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
             background: rgba(255,255,255,0.12) !important;
-            transform: scale(1.02);
         }
         
         /* Main Header */
         .main-header {
-            background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%);
+            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
             backdrop-filter: blur(10px);
-            padding: 2rem;
-            border-radius: 30px;
-            margin: 1rem 1rem 0rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 2rem 2rem;
+            margin-bottom: 2rem;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
-            animation: fadeInDown 0.8s ease;
         }
         
         .main-header h1 {
@@ -146,7 +134,7 @@ def check_password():
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-size: 2.5rem;
-            font-weight: 800;
+            font-weight: 700;
             margin: 0;
         }
         
@@ -159,50 +147,26 @@ def check_password():
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 700;
+            font-weight: 600;
             font-size: 1rem;
         }
         
-        /* Password Container with Glow Effect */
+        /* Password Container */
         .password-container {
             max-width: 450px;
             margin: 50px auto 0 auto;
             padding: 2.5rem;
             background: rgba(255,255,255,0.05);
             backdrop-filter: blur(20px);
-            border-radius: 32px;
+            border-radius: 24px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
-            animation: fadeInUp 0.8s ease;
-            transition: all 0.3s ease;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
         }
         
         .password-container:hover {
             border-color: rgba(102,126,234,0.5);
             box-shadow: 0 0 30px rgba(102,126,234,0.2);
-        }
-        
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
         
         .password-container h2 {
@@ -218,18 +182,23 @@ def check_password():
             font-size: 0.9rem;
         }
         
+        /* Lock Icon */
+        .lock-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
         /* Button Styling */
         .stButton > button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 50px;
+            border-radius: 12px;
             padding: 0.7rem 2rem;
             font-weight: 600;
             width: 100%;
             transition: all 0.3s ease;
             font-size: 1rem;
-            cursor: pointer;
         }
         
         .stButton > button:hover {
@@ -237,41 +206,22 @@ def check_password():
             box-shadow: 0 10px 25px rgba(102,126,234,0.4);
         }
         
-        /* Error Message with Shake Animation */
+        /* Error Message */
         .stAlert {
             background: rgba(220,53,69,0.15) !important;
             border: 1px solid rgba(220,53,69,0.4) !important;
-            border-radius: 50px !important;
+            border-radius: 12px !important;
             color: #ff6b6b !important;
-            animation: shake 0.5s ease;
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
         }
         
         /* Hide Menu */
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
         footer {visibility: hidden;}
-        
-        /* Lock Icon Animation */
-        .lock-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            animation: bounce 2s infinite;
-        }
-        
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            80% { transform: translateY(-10px); }
-        }
     </style>
     """, unsafe_allow_html=True)
 
-    # Header with Animation
+    # Same Header as Main Page
     st.markdown("""
     <div class="main-header">
         <h1>Plate Ratio Intelligence System</h1>
@@ -281,12 +231,12 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    # Password Card with Animated Lock
+    # Password Card (Clean)
     st.markdown("""
     <div style="height: 20px;"></div>
     <div class="password-container">
         <div class="lock-icon">🔐</div>
-        <h2>Wellcome Back!</h2>
+        <h2>Access Code</h2>
         <p>Enter your secure access code to continue</p>
     </div>
     """, unsafe_allow_html=True)
@@ -310,6 +260,9 @@ def check_password():
 # Call the password check
 if not check_password():
     st.stop()
+
+
+
 # ================================================================
 # MODERN CSS FOR MAIN APP
 # ================================================================
