@@ -144,7 +144,7 @@ with col2:
 st.markdown('</div>', unsafe_allow_html=True)
 
     # Error Message
-    if st.session_state.get("password_correct") is False:
+if st.session_state.get("password_correct") is False:
         if st.session_state.login_attempts >= 5:
             st.error("🔒 Too many failed attempts. Please contact Mr. Ovi.")
         else:
