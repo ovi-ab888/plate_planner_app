@@ -47,7 +47,7 @@ st.set_page_config(
 
 
 # ================================================================
-# PASSWORD CHECK SYSTEM (UPDATED - CLEAN VERSION)
+# PASSWORD CHECK SYSTEM (CLEAN VERSION - SAME AS MAIN PAGE UI)
 # ================================================================
 def check_password():
     expected = None
@@ -66,7 +66,6 @@ def check_password():
     def _password_entered():
         if st.session_state.get("password") == expected:
             st.session_state["password_correct"] = True
-            st.session_state["page"] = "main"  # মেইন পেজে যাবে
             try:
                 del st.session_state["password"]
             except Exception:
@@ -78,28 +77,19 @@ def check_password():
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # Password Page Styling (Same as Main Page)
+    # Same CSS as Main Page (Password Page er jonno)
     st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
-        * {
-            font-family: 'Inter', sans-serif;
-        }
+        * { font-family: 'Inter', sans-serif; }
         
         .stApp {
             background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #24243e 100%);
         }
         
-        .main > div {
-            background: transparent !important;
-            padding: 0 !important;
-        }
-        
-        .block-container {
-            padding: 0rem !important;
-            max-width: 50% !important;
-        }
+        .main > div { background: transparent !important; padding: 0 !important; }
+        .block-container { padding: 0rem !important; max-width: 50% !important; }
         
         /* Password Input Field */
         .stTextInput input {
@@ -110,13 +100,11 @@ def check_password():
             text-align: center !important;
             font-size: 1rem !important;
             padding: 0.75rem 1rem !important;
-            transition: all 0.3s ease !important;
         }
         
         .stTextInput input:focus {
             border-color: #667eea !important;
             box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
-            background: rgba(255,255,255,0.12) !important;
         }
         
         /* Main Header */
@@ -124,7 +112,7 @@ def check_password():
             background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding: 2rem 2rem;
+            padding: 2rem;
             margin-bottom: 2rem;
             text-align: center;
         }
@@ -138,17 +126,13 @@ def check_password():
             margin: 0;
         }
         
-        .main-header p {
-            color: rgba(255,255,255,0.7);
-            margin-top: 0.5rem;
-        }
+        .main-header p { color: rgba(255,255,255,0.7); margin-top: 0.5rem; }
         
         .designer-name {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 600;
-            font-size: 1rem;
         }
         
         /* Password Container */
@@ -164,11 +148,6 @@ def check_password():
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
         }
         
-        .password-container:hover {
-            border-color: rgba(102,126,234,0.5);
-            box-shadow: 0 0 30px rgba(102,126,234,0.2);
-        }
-        
         .password-container h2 {
             color: white;
             font-size: 1.8rem;
@@ -182,13 +161,8 @@ def check_password():
             font-size: 0.9rem;
         }
         
-        /* Lock Icon */
-        .lock-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
+        .lock-icon { font-size: 3rem; margin-bottom: 1rem; }
         
-        /* Button Styling */
         .stButton > button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -197,16 +171,8 @@ def check_password():
             padding: 0.7rem 2rem;
             font-weight: 600;
             width: 100%;
-            transition: all 0.3s ease;
-            font-size: 1rem;
         }
         
-        .stButton > button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102,126,234,0.4);
-        }
-        
-        /* Error Message */
         .stAlert {
             background: rgba(220,53,69,0.15) !important;
             border: 1px solid rgba(220,53,69,0.4) !important;
@@ -214,7 +180,6 @@ def check_password():
             color: #ff6b6b !important;
         }
         
-        /* Hide Menu */
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
         footer {visibility: hidden;}
@@ -231,12 +196,12 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    # Password Card (Clean)
+    # Password Card
     st.markdown("""
     <div style="height: 20px;"></div>
     <div class="password-container">
         <div class="lock-icon">🔐</div>
-        <h2>Access Code</h2>
+        <h2>Welcome Back!</h2>
         <p>Enter your secure access code to continue</p>
     </div>
     """, unsafe_allow_html=True)
@@ -252,6 +217,21 @@ def check_password():
             placeholder="••••••••"
         )
 
+    # Same Footer as Main Page
+    st.markdown("""
+    <div style="text-align: center; padding: 2rem; margin-top: 3rem; border-top: 2px solid rgba(102,126,234,0.3); background: rgba(255,255,255,0.02); border-radius: 20px;">
+        <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin: 0;">
+            © 2025 Plate Ratio System | Version 18
+        </p>
+        <p style="color: rgba(255,255,255,0.5); font-size: 0.8rem; margin: 8px 0;">
+            Enterprise Production Optimization Framework
+        </p>
+        <p style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 0.85rem; font-weight: 600; margin: 10px 0 0 0;">
+            ✨ Developed by Ovi | All Rights Reserved ✨
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
     if st.session_state.get("password_correct") is False:
         st.error("❌ Incorrect password. Please contact Mr. Ovi.")
 
@@ -260,7 +240,6 @@ def check_password():
 # Call the password check
 if not check_password():
     st.stop()
-
 
 
 # ================================================================
