@@ -81,52 +81,71 @@ def check_password():
     if st.session_state.password_correct:
         return True
 
-    # ==================== Improved Style ====================
+    # ==================== Modern Dark Blue Style ====================
     st.markdown("""
     <style>
         .stApp {
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background: #1a1733;
         }
         
         .main-card {
-            background: rgba(20, 20, 45, 0.85);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(100, 150, 255, 0.4);
-            border-radius: 24px;
-            padding: 3rem 2rem;
-            max-width: 520px;
-            margin: 60px auto 30px auto;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            background: rgba(26, 23, 51, 0.95);
+            border: 1px solid rgba(100, 120, 255, 0.3);
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
+            max-width: 560px;
+            margin: 80px auto 40px auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
         }
         
         .stTextInput input {
-            background: rgba(255,255,255,0.1) !important;
-            border: 2px solid rgba(100, 150, 255, 0.6) !important;
+            background: #2a2744 !important;
+            border: 2px solid #6366f1 !important;
             color: white !important;
             border-radius: 50px !important;
             padding: 1rem 1.5rem !important;
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             text-align: center;
-            letter-spacing: 4px;
+            letter-spacing: 5px;
         }
         
-        h1 { color: #a5b4fc; }
+        h1 {
+            color: #a5b4fc;
+            font-size: 2.4rem;
+            font-weight: 700;
+        }
     </style>
     """, unsafe_allow_html=True)
 
-    # Main Card (এটাই খালি বক্সটা পূরণ করবে)
+    # Main Card
     st.markdown('<div class="main-card">', unsafe_allow_html=True)
     
     st.markdown("""
-        <h1 style="text-align:center; margin-bottom: 10px;">📊 Plate Ratio System</h1>
-        <p style="text-align:center; color:#c4d0ff; margin-bottom: 5px;">Intelligent Production Planning & Ratio Optimization</p>
-        <p style="text-align:center; font-size: 0.95rem; color:#8499ff;">AI-Powered • Fast • Accurate</p>
-        <p style="text-align:center; color:#a5b4fc; margin-top: 15px;">✦ Design by Ovi ✦</p>
+        <div style="text-align: center;">
+            <h1>📘 Plate Ratio System</h1>
+            <p style="color: #c7d2fe; font-size: 1.05rem; margin-top: 8px;">
+                Intelligent Production Planning & Ratio Optimization
+            </p>
+            <p style="color: #818cf8; margin: 8px 0 20px 0;">
+                AI-Powered • Fast • Accurate
+            </p>
+            <p style="color: #6474f2; font-weight: 500;">✦ Design by Ovi ✦</p>
+        </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align:center; color:#e0e7ff;'>🔐 Secure Access</h3>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; color:#b0b8ff;'>Enter your access code to continue</p>", unsafe_allow_html=True)
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    st.markdown("""
+        <h3 style="text-align:center; color:#e0e7ff; margin-bottom:10px;">
+            🔐 Secure Access
+        </h3>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("""
+        <p style="text-align:center; color:#b0b8ff; margin-bottom:25px;">
+            Enter your access code to continue
+        </p>
+    """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 4, 1])
     with col2:
@@ -151,11 +170,11 @@ def check_password():
     return False
 
 
-# ===================== MAIN =====================
+# ===================== MAIN APP =====================
 if not check_password():
     st.stop()
 
-st.success("✅ লগইন সফল!")
+st.success("✅ লগইন সফল হয়েছে!")
 st.balloons()
 st.title("Plate Ratio System")
 # ================================================================
