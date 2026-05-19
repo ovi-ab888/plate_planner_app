@@ -209,47 +209,6 @@ st.success("✅ Access Granted!")
 st.balloons()
 st.title("Plate Ratio System")
 
-    # Header with Animation
-    st.markdown("""
-    <div class="main-header">
-        <h1>📊 Plate Ratio System</h1>
-        <p>Intelligent Production Planning & Ratio Optimization</p>
-        <p style="font-size: 0.85rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
-        <p class="designer-name">✨ Design by Ovi ✨</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Password Card with Animated Lock
-    st.markdown("""
-    <div style="height: 20px;"></div>
-    <div class="password-container">
-        <div class="lock-icon">🔐</div>
-        <h2>Access Code</h2>
-        <p>Enter your secure access code to continue</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.text_input(
-            "Password", 
-            type="password", 
-            key="password",
-            on_change=_password_entered, 
-            label_visibility="collapsed",
-            placeholder="••••••••"
-        )
-
-    if st.session_state.get("password_correct") is False:
-        st.error("❌ Incorrect password. Please contact Mr. Ovi.")
-
-    return False
-
-# Call the password check
-if not check_password():
-    st.stop()
-
-
 # ================================================================
 # MODERN CSS FOR MAIN APP
 # ================================================================
