@@ -63,6 +63,7 @@ def check_password():
         st.error("❌ App password not configured by admin.")
         st.stop()
 
+    # Session State
     if "password_correct" not in st.session_state:
         st.session_state.password_correct = False
     if "login_attempts" not in st.session_state:
@@ -81,66 +82,89 @@ def check_password():
     if st.session_state.password_correct:
         return True
 
-    # ==================== Dark Luxury Gold Style ====================
+    # ==================== NEW FUTURISTIC STYLE ====================
     st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
         
         .stApp {
-            background: linear-gradient(135deg, #1a1a1a, #2c1e16, #1a1a1a);
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         
         .main-header {
-            background: linear-gradient(135deg, rgba(30,25,20,0.95), rgba(45,35,25,0.95));
-            backdrop-filter: blur(12px);
-            padding: 2.2rem;
-            border-radius: 25px;
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+            padding: 2.5rem 2rem;
+            border-radius: 24px;
             text-align: center;
-            border: 1px solid #d4af37;
-            margin: 1rem;
-            box-shadow: 0 0 40px rgba(212, 175, 55, 0.25);
+            margin: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
         
         .password-container {
-            background: rgba(30, 25, 20, 0.92);
-            border: 2px solid #d4af37;
-            box-shadow: 0 0 45px rgba(212, 175, 55, 0.35);
+            background: rgba(20, 20, 45, 0.75);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(100, 150, 255, 0.4);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4),
+                        0 0 30px rgba(100, 150, 255, 0.15);
             border-radius: 28px;
-            padding: 2.8rem 2rem;
-            max-width: 460px;
+            padding: 3rem 2.5rem;
+            max-width: 480px;
             margin: 40px auto;
         }
         
         .stTextInput input {
-            background: rgba(0,0,0,0.6) !important;
-            border: 2px solid #d4af37 !important;
-            color: #f0d48f !important;
+            background: rgba(255,255,255,0.08) !important;
+            border: 1.5px solid rgba(100, 150, 255, 0.5) !important;
+            color: #e0e7ff !important;
+            border-radius: 50px !important;
+            padding: 1.1rem !important;
             font-size: 1.15rem;
+            text-align: center;
             letter-spacing: 3px;
         }
         
-        h1, h2 {
-            background: linear-gradient(90deg, #d4af37, #f0d48f, #d4af37);
+        .stTextInput input:focus {
+            border-color: #6496ff !important;
+            box-shadow: 0 0 0 4px rgba(100, 150, 255, 0.2) !important;
+        }
+        
+        h1 {
+            background: linear-gradient(90deg, #a5b4fc, #c4d0ff, #a5b4fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            font-family: 'Space Grotesk', sans-serif;
         }
+        
+        h2 { color: #c4d0ff; }
     </style>
     """, unsafe_allow_html=True)
 
+    # Header
     st.markdown("""
     <div class="main-header">
         <h1>📊 Plate Ratio System</h1>
-        <p>Intelligent Production Planning & Ratio Optimization</p>
-        <p style="font-size: 0.9rem; opacity: 0.9;">AI-Powered • Fast • Accurate</p>
-        <p style="color: #d4af37; font-weight: 600;">✦ Design by Ovi ✦</p>
+        <p style="color: #c4d0ff; margin-top: 8px;">Intelligent Production Planning & Ratio Optimization</p>
+        <p style="font-size: 0.92rem; opacity: 0.9; color: #a5b4fc;">AI-Powered • Fast • Accurate</p>
+        <p style="color: #8499ff; font-weight: 600; margin-top: 12px;">✦ Design by Ovi ✦</p>
     </div>
     """, unsafe_allow_html=True)
 
+    # Password Box
     st.markdown('<div class="password-container">', unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center;'>🔐 Access Code</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; color:#c9b38a;'>Enter your secure access code</p>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; margin-bottom: 8px;'>🔐 Secure Access</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#b0b8ff; margin-bottom: 25px;'>Enter your access code to continue</p>", unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 3, 1])
+    col1, col2, col3 = st.columns([1, 3.5, 1])
     with col2:
         st.text_input(
             label="Password",
@@ -152,22 +176,25 @@ def check_password():
         )
     st.markdown('</div>', unsafe_allow_html=True)
 
+    # Error Message
     if st.session_state.get("password_correct") is False:
         if st.session_state.login_attempts >= 5:
-            st.error("🔒 অনেকবার ভুল হয়েছে। Mr. Ovi এর সাথে যোগাযোগ করুন।")
+            st.error("🔒 অনেকবার ভুল চেষ্টা হয়েছে। Mr. Ovi এর সাথে যোগাযোগ করুন।")
         elif st.session_state.login_attempts > 0:
             st.error("❌ ভুল পাসওয়ার্ড। আবার চেষ্টা করুন।")
 
     return False
 
 
-# ===================== MAIN =====================
+# ===================== MAIN APP =====================
 if not check_password():
     st.stop()
 
-st.success("✅ অ্যাক্সেস সফল হয়েছে!")
+# App Content শুরু
+st.success("✅ লগইন সফল হয়েছে!")
 st.balloons()
 st.title("Plate Ratio System")
+st.markdown("**স্বাগতম!** এখন আপনি অ্যাপ ব্যবহার করতে পারবেন।")
 # ================================================================
 # MODERN CSS FOR MAIN APP
 # ================================================================
