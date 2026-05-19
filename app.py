@@ -61,10 +61,10 @@ def check_password():
         expected = os.environ.get("PEPCO_APP_PASSWORD")
     
     if not expected:
-        st.error("App password not configured by admin.")
+        st.error("❌ App password not configured by admin.")
         st.stop()
 
-    # Initialize session state
+    # Initialize Session State
     if "password_correct" not in st.session_state:
         st.session_state.password_correct = False
     if "login_attempts" not in st.session_state:
@@ -78,47 +78,78 @@ def check_password():
             else:
                 st.session_state.password_correct = False
                 st.session_state.login_attempts += 1
-            # Clear password from session
+            
+            # Clear password field
             st.session_state.password = ""
 
     # If already logged in
     if st.session_state.password_correct:
         return True
 
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap');
-    
-    .stApp {
-        background: linear-gradient(135deg, #0a0a0a, #1a0033, #000033);
-        background-size: 400% 400%;
-        animation: neonFlow 12s ease infinite;
-    }
-    @keyframes neonFlow { 0% {background-position: 0% 50%} 50% {background-position: 100% 50%} 100% {background-position: 0% 50%} }
-    
-    .password-container {
-        background: rgba(10, 10, 30, 0.85);
-        border: 2px solid #00ffea;
-        box-shadow: 0 0 35px #00ffea,
-                    0 0 60px rgba(0, 255, 234, 0.3);
-        border-radius: 20px;
-    }
-    
-    .stTextInput input {
-        background: transparent !important;
-        border: 2px solid #00ffea !important;
-        color: #00ffea !important;
-        font-family: 'Orbitron', sans-serif;
-        letter-spacing: 4px;
-        text-shadow: 0 0 10px #00ffea;
-    }
-    
-    h1, h2 { color: #00ffea; text-shadow: 0 0 15px #00ffea; }
-</style>
-""", unsafe_allow_html=True)
+    # ====================== Cyber Neon Styling ======================
+    st.markdown("""
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap');
+        
+        .stApp {
+            background: linear-gradient(135deg, #0a0a0a, #1a0033, #000033);
+            background-size: 400% 400%;
+            animation: neonFlow 12s ease infinite;
+        }
+        @keyframes neonFlow { 
+            0% {background-position: 0% 50%} 
+            50% {background-position: 100% 50%} 
+            100% {background-position: 0% 50%} 
+        }
+        
+        .main-header {
+            background: rgba(10, 10, 30, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid #00ffea;
+            margin: 1rem;
+            box-shadow: 0 0 25px rgba(0, 255, 234, 0.3);
+        }
+        
+        .password-container {
+            background: rgba(10, 10, 30, 0.85);
+            border: 2px solid #00ffea;
+            box-shadow: 0 0 35px #00ffea,
+                        0 0 60px rgba(0, 255, 234, 0.3);
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
+            max-width: 460px;
+            margin: 40px auto;
+        }
+        
+        .stTextInput input {
+            background: transparent !important;
+            border: 2px solid #00ffea !important;
+            color: #00ffea !important;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 4px;
+            text-shadow: 0 0 10px #00ffea;
+            font-size: 1.1rem;
+        }
+        
+        h1, h2 { 
+            color: #00ffea; 
+            text-shadow: 0 0 15px #00ffea;
+        }
+        
+        .stButton > button {
+            background: linear-gradient(135deg, #00ffea, #00b8ff);
+            color: black;
+            font-weight: bold;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
-st.markdown("""
-<div class="main-header">
+    # Header
+    st.markdown("""
+    <div class="main-header">
         <h1>📊 Plate Ratio System</h1>
         <p>Intelligent Production Planning & Ratio Optimization</p>
         <p style="font-size: 0.9rem; opacity: 0.85;">AI-Powered • Fast • Accurate</p>
@@ -126,12 +157,13 @@ st.markdown("""
     </div>
     """, unsafe_allow_html=True)
 
-st.markdown('<div class="password-container">', unsafe_allow_html=True)
-st.markdown("<h2 style='text-align:center; color:white;'>🔐 Access Code</h2>", unsafe_allow_html=True)
-st.markdown("<p style='text-align:center; color:#b0b0b0;'>Enter your secure access code</p>", unsafe_allow_html=True)
+    # Password Container
+    st.markdown('<div class="password-container">', unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center;'>🔐 Access Code</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#b0b0b0;'>Enter your secure access code to continue</p>", unsafe_allow_html=True)
 
-col1, col2, col3 = st.columns([1, 3, 1])
-with col2:
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col2:
         st.text_input(
             label="Password",
             type="password",
@@ -141,30 +173,28 @@ with col2:
             label_visibility="collapsed"
         )
 
-st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Error Message
-if st.session_state.get("password_correct") is False:
+    if st.session_state.get("password_correct") is False:
         if st.session_state.login_attempts >= 5:
-            st.error("🔒 Too many failed attempts. Please contact Mr. Ovi.")
-        else:
-            st.error("❌ Incorrect password. Try again.")
+            st.error("🔒 অনেকবার ভুল হয়েছে। Mr. Ovi এর সাথে যোগাযোগ করুন।")
+        elif st.session_state.login_attempts > 0:
+            st.error("❌ ভুল পাসওয়ার্ড। আবার চেষ্টা করুন।")
 
-return False
+    return False
 
 
-# ===================== MAIN =====================
+# ===================== MAIN APP =====================
 if not check_password():
     st.stop()
 
-# ------------------ App Content Starts Here ------------------
-st.success("✅ Access Granted!")
-st.balloons()   # Optional
+# ------------------ তোমার মেইন অ্যাপ এখান থেকে শুরু ------------------
+st.success("✅ অ্যাক্সেস অনুমোদিত হয়েছে!")
+st.balloons()
 
-# Tomar main app code ekhane
 st.title("Plate Ratio System")
-st.write("Welcome back!")
-
+st.write("স্বাগতম! এখন তোমার অ্যাপ চালাতে পারো।")
 # ================================================================
 # MODERN CSS FOR MAIN APP
 # ================================================================
