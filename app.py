@@ -81,30 +81,30 @@ def check_password():
     if st.session_state.password_correct:
         return True
 
-    # ==================== Glassmorphism Minimal ====================
+    # ==================== Dark Luxury Gold Style ====================
     st.markdown("""
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+        
         .stApp {
-            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), 
-                        url('https://source.unsplash.com/random/1920x1080/?dark,technology') no-repeat center center fixed;
-            background-size: cover;
+            background: linear-gradient(135deg, #1a1a1a, #2c1e16, #1a1a1a);
         }
         
         .main-header {
-            background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px);
-            padding: 2rem;
+            background: linear-gradient(135deg, rgba(30,25,20,0.95), rgba(45,35,25,0.95));
+            backdrop-filter: blur(12px);
+            padding: 2.2rem;
             border-radius: 25px;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.15);
+            border: 1px solid #d4af37;
             margin: 1rem;
+            box-shadow: 0 0 40px rgba(212, 175, 55, 0.25);
         }
         
         .password-container {
-            background: rgba(255, 255, 255, 0.09);
-            backdrop-filter: blur(25px);
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            background: rgba(30, 25, 20, 0.92);
+            border: 2px solid #d4af37;
+            box-shadow: 0 0 45px rgba(212, 175, 55, 0.35);
             border-radius: 28px;
             padding: 2.8rem 2rem;
             max-width: 460px;
@@ -112,13 +112,18 @@ def check_password():
         }
         
         .stTextInput input {
-            background: rgba(255,255,255,0.1) !important;
-            border: 1px solid rgba(255,255,255,0.3) !important;
-            color: white !important;
-            font-size: 1.1rem;
+            background: rgba(0,0,0,0.6) !important;
+            border: 2px solid #d4af37 !important;
+            color: #f0d48f !important;
+            font-size: 1.15rem;
+            letter-spacing: 3px;
         }
         
-        h1, h2 { color: white; }
+        h1, h2 {
+            background: linear-gradient(90deg, #d4af37, #f0d48f, #d4af37);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -126,14 +131,14 @@ def check_password():
     <div class="main-header">
         <h1>📊 Plate Ratio System</h1>
         <p>Intelligent Production Planning & Ratio Optimization</p>
-        <p style="font-size: 0.9rem; opacity: 0.85;">AI-Powered • Fast • Accurate</p>
-        <p style="color: #a0d8ff;">✦ Design by Ovi ✦</p>
+        <p style="font-size: 0.9rem; opacity: 0.9;">AI-Powered • Fast • Accurate</p>
+        <p style="color: #d4af37; font-weight: 600;">✦ Design by Ovi ✦</p>
     </div>
     """, unsafe_allow_html=True)
 
     st.markdown('<div class="password-container">', unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:white;'>🔐 Access Code</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; color:#dddddd;'>Enter your secure access code</p>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center;'>🔐 Access Code</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#c9b38a;'>Enter your secure access code</p>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
