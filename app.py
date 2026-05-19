@@ -47,9 +47,8 @@ st.set_page_config(
 
 
 # ================================================================
-# PASSWORD CHECK SYSTEM (FULL WIDTH VERSION - BUG FREE)
+# PASSWORD CHECK SYSTEM (UPDATED PREMIUM VERSION)
 # ================================================================
-
 def check_password():
     expected = None
     try:
@@ -60,31 +59,25 @@ def check_password():
     if expected is None:
         expected = os.environ.get("PEPCO_APP_PASSWORD")
 
-    # For testing only - remove in production
     if expected is None:
-        expected = "admin123"  # ডিফল্ট পাসওয়ার্ড (শুধু টেস্টিং এর জন্য)
+        st.error("App password not configured.")
+        return False
 
-    # Check if already authenticated
-    if st.session_state.get("authenticated", False):
-        return True
-
-    # Password entered callback
-    def check_password_callback():
-        if st.session_state.get("password_input") == expected:
-            st.session_state["authenticated"] = True
+    def _password_entered():
+        if st.session_state.get("password") == expected:
             st.session_state["password_correct"] = True
-            # Clear the password from session
-            if "password_input" in st.session_state:
-                del st.session_state["password_input"]
+            try:
+                del st.session_state["password"]
+            except Exception:
+                pass
         else:
-            st.session_state["authenticated"] = False
             st.session_state["password_correct"] = False
+            st.session_state["wrong_password"] = True
 
-    # If we're already authenticated, return True
-    if st.session_state.get("authenticated", False):
+    if st.session_state.get("password_correct", None) is True:
         return True
 
-    # ========== PASSWORD PAGE CSS (FULL WIDTH) ==========
+    # Premium Password Page Styling
     st.markdown("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
@@ -93,8 +86,17 @@ def check_password():
             font-family: 'Inter', sans-serif;
         }
         
+        /* Animated Gradient Background */
         .stApp {
-            background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #24243e 100%);
+            background: linear-gradient(-45deg, #0f0c29, #1a1a3e, #24243e, #1a1a3e);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         
         .main > div {
@@ -102,20 +104,41 @@ def check_password():
             padding: 0 !important;
         }
         
-        /* Full Width - No max-width restriction */
         .block-container {
             padding: 0rem !important;
-            max-width: 100% !important;
+            max-width: 50% !important;
+        }
+        
+        /* Password Input Field */
+        .stTextInput input {
+            background: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            border-radius: 50px !important;
+            color: white !important;
+            text-align: center !important;
+            font-size: 1rem !important;
+            padding: 0.9rem 1.5rem !important;
+            transition: all 0.3s ease !important;
+            letter-spacing: 2px;
+        }
+        
+        .stTextInput input:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 4px rgba(102,126,234,0.2) !important;
+            background: rgba(255,255,255,0.12) !important;
+            transform: scale(1.02);
         }
         
         /* Main Header */
         .main-header {
-            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+            background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%);
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
             padding: 2rem;
-            margin-bottom: 2rem;
+            border-radius: 30px;
+            margin: 1rem 1rem 0rem 1rem;
             text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+            animation: fadeInDown 0.8s ease;
         }
         
         .main-header h1 {
@@ -123,7 +146,7 @@ def check_password():
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-size: 2.5rem;
-            font-weight: 700;
+            font-weight: 800;
             margin: 0;
         }
         
@@ -136,25 +159,50 @@ def check_password():
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 1rem;
         }
         
-        /* Password Container - Centered Box */
+        /* Password Container with Glow Effect */
         .password-container {
             max-width: 450px;
             margin: 50px auto 0 auto;
             padding: 2.5rem;
             background: rgba(255,255,255,0.05);
             backdrop-filter: blur(20px);
-            border-radius: 24px;
+            border-radius: 32px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+            animation: fadeInUp 0.8s ease;
+            transition: all 0.3s ease;
         }
         
         .password-container:hover {
             border-color: rgba(102,126,234,0.5);
             box-shadow: 0 0 30px rgba(102,126,234,0.2);
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .password-container h2 {
@@ -170,121 +218,101 @@ def check_password():
             font-size: 0.9rem;
         }
         
-        .lock-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        
-        /* Password Input Field */
-        .stTextInput input {
-            background: rgba(255,255,255,0.08) !important;
-            border: 1px solid rgba(255,255,255,0.2) !important;
-            border-radius: 12px !important;
-            color: white !important;
-            text-align: center !important;
-            font-size: 1rem !important;
-            padding: 0.75rem 1rem !important;
-        }
-        
-        .stTextInput input:focus {
-            border-color: #667eea !important;
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
-        }
-        
-        /* Button */
+        /* Button Styling */
         .stButton > button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: 50px;
             padding: 0.7rem 2rem;
             font-weight: 600;
             width: 100%;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            cursor: pointer;
         }
         
-        /* Error Message */
+        .stButton > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102,126,234,0.4);
+        }
+        
+        /* Error Message with Shake Animation */
         .stAlert {
             background: rgba(220,53,69,0.15) !important;
             border: 1px solid rgba(220,53,69,0.4) !important;
-            border-radius: 12px !important;
+            border-radius: 50px !important;
             color: #ff6b6b !important;
+            animation: shake 0.5s ease;
         }
         
-        /* Footer */
-        .pro-footer {
-            text-align: center;
-            padding: 2rem;
-            background: rgba(255,255,255,0.03);
-            border-radius: 20px;
-            margin-top: 3rem;
-            border-top: 2px solid rgba(102,126,234,0.3);
-        }
-        
-        .pro-footer p {
-            color: rgba(255,255,255,0.5);
-            font-size: 0.85rem;
-            margin: 5px 0;
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
         }
         
         /* Hide Menu */
         #MainMenu {visibility: hidden;}
         header {visibility: hidden;}
         footer {visibility: hidden;}
+        
+        /* Lock Icon Animation */
+        .lock-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
     </style>
     """, unsafe_allow_html=True)
 
-    # ========== PASSWORD PAGE HEADER ==========
+    # Header with Animation
     st.markdown("""
     <div class="main-header">
-        <h1>Plate Ratio Intelligence System</h1>
+        <h1>📊 Plate Ratio System</h1>
         <p>Intelligent Production Planning & Ratio Optimization</p>
         <p style="font-size: 0.85rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
         <p class="designer-name">✨ Design by Ovi ✨</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # ========== PASSWORD CARD ==========
+    # Password Card with Animated Lock
     st.markdown("""
     <div style="height: 20px;"></div>
     <div class="password-container">
         <div class="lock-icon">🔐</div>
-        <h2>Welcome Back!</h2>
+        <h2>Access Code</h2>
         <p>Enter your secure access code to continue</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # ========== PASSWORD INPUT ==========
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.text_input(
             "Password", 
             type="password", 
-            key="password_input",
-            on_change=check_password_callback, 
+            key="password",
+            on_change=_password_entered, 
             label_visibility="collapsed",
             placeholder="••••••••"
         )
 
-    # ========== PASSWORD PAGE FOOTER ==========
-    st.markdown("""
-    <div class="pro-footer">
-        <p>© 2025 Plate Ratio System | Version 18</p>
-        <p>Enterprise Production Optimization Framework</p>
-        <p style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-            ✨ Developed by Ovi | All Rights Reserved ✨
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # ========== ERROR MESSAGE ==========
     if st.session_state.get("password_correct") is False:
         st.error("❌ Incorrect password. Please contact Mr. Ovi.")
 
     return False
 
-# ========== CALL PASSWORD CHECK ==========
+# Call the password check
 if not check_password():
     st.stop()
+
+
+
 # ================================================================
 # PASSWORD PAGE UI & CSS (FULL WIDTH)
 # ================================================================
