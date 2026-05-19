@@ -50,7 +50,6 @@ import streamlit as st
 import os
 
 def check_password():
-    # Password Configuration
     expected = None
     try:
         expected = st.secrets.get("app_password")
@@ -64,7 +63,6 @@ def check_password():
         st.error("❌ App password not configured by admin.")
         st.stop()
 
-    # Initialize Session State
     if "password_correct" not in st.session_state:
         st.session_state.password_correct = False
     if "login_attempts" not in st.session_state:
@@ -78,89 +76,64 @@ def check_password():
             else:
                 st.session_state.password_correct = False
                 st.session_state.login_attempts += 1
-            
-            # Clear password field
             st.session_state.password = ""
 
-    # If already logged in
     if st.session_state.password_correct:
         return True
 
-    # ====================== Cyber Neon Styling ======================
+    # ==================== Glassmorphism Minimal ====================
     st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap');
-        
         .stApp {
-            background: linear-gradient(135deg, #0a0a0a, #1a0033, #000033);
-            background-size: 400% 400%;
-            animation: neonFlow 12s ease infinite;
-        }
-        @keyframes neonFlow { 
-            0% {background-position: 0% 50%} 
-            50% {background-position: 100% 50%} 
-            100% {background-position: 0% 50%} 
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), 
+                        url('https://source.unsplash.com/random/1920x1080/?dark,technology') no-repeat center center fixed;
+            background-size: cover;
         }
         
         .main-header {
-            background: rgba(10, 10, 30, 0.8);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
             padding: 2rem;
-            border-radius: 20px;
+            border-radius: 25px;
             text-align: center;
-            border: 1px solid #00ffea;
+            border: 1px solid rgba(255,255,255,0.15);
             margin: 1rem;
-            box-shadow: 0 0 25px rgba(0, 255, 234, 0.3);
         }
         
         .password-container {
-            background: rgba(10, 10, 30, 0.85);
-            border: 2px solid #00ffea;
-            box-shadow: 0 0 35px #00ffea,
-                        0 0 60px rgba(0, 255, 234, 0.3);
-            border-radius: 20px;
-            padding: 2.5rem 2rem;
+            background: rgba(255, 255, 255, 0.09);
+            backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border-radius: 28px;
+            padding: 2.8rem 2rem;
             max-width: 460px;
             margin: 40px auto;
         }
         
         .stTextInput input {
-            background: transparent !important;
-            border: 2px solid #00ffea !important;
-            color: #00ffea !important;
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 4px;
-            text-shadow: 0 0 10px #00ffea;
+            background: rgba(255,255,255,0.1) !important;
+            border: 1px solid rgba(255,255,255,0.3) !important;
+            color: white !important;
             font-size: 1.1rem;
         }
         
-        h1, h2 { 
-            color: #00ffea; 
-            text-shadow: 0 0 15px #00ffea;
-        }
-        
-        .stButton > button {
-            background: linear-gradient(135deg, #00ffea, #00b8ff);
-            color: black;
-            font-weight: bold;
-        }
+        h1, h2 { color: white; }
     </style>
     """, unsafe_allow_html=True)
 
-    # Header
     st.markdown("""
     <div class="main-header">
         <h1>📊 Plate Ratio System</h1>
         <p>Intelligent Production Planning & Ratio Optimization</p>
         <p style="font-size: 0.9rem; opacity: 0.85;">AI-Powered • Fast • Accurate</p>
-        <p style="color: #f093fb; font-weight: 600;">✦ Design by Ovi ✦</p>
+        <p style="color: #a0d8ff;">✦ Design by Ovi ✦</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # Password Container
     st.markdown('<div class="password-container">', unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center;'>🔐 Access Code</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; color:#b0b0b0;'>Enter your secure access code to continue</p>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align:center; color:white;'>🔐 Access Code</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; color:#dddddd;'>Enter your secure access code</p>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
@@ -172,10 +145,8 @@ def check_password():
             on_change=_password_entered,
             label_visibility="collapsed"
         )
-
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Error Message
     if st.session_state.get("password_correct") is False:
         if st.session_state.login_attempts >= 5:
             st.error("🔒 অনেকবার ভুল হয়েছে। Mr. Ovi এর সাথে যোগাযোগ করুন।")
@@ -185,16 +156,13 @@ def check_password():
     return False
 
 
-# ===================== MAIN APP =====================
+# ===================== MAIN =====================
 if not check_password():
     st.stop()
 
-# ------------------ তোমার মেইন অ্যাপ এখান থেকে শুরু ------------------
-st.success("✅ অ্যাক্সেস অনুমোদিত হয়েছে!")
+st.success("✅ অ্যাক্সেস সফল হয়েছে!")
 st.balloons()
-
 st.title("Plate Ratio System")
-st.write("স্বাগতম! এখন তোমার অ্যাপ চালাতে পারো।")
 # ================================================================
 # MODERN CSS FOR MAIN APP
 # ================================================================
