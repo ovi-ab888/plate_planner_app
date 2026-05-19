@@ -126,9 +126,9 @@ st.markdown("""
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="password-container">', unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align:center; color:white;'>🔐 Access Code</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; color:#b0b0b0;'>Enter your secure access code</p>", unsafe_allow_html=True)
+st.markdown('<div class="password-container">', unsafe_allow_html=True)
+st.markdown("<h2 style='text-align:center; color:white;'>🔐 Access Code</h2>", unsafe_allow_html=True)
+st.markdown("<p style='text-align:center; color:#b0b0b0;'>Enter your secure access code</p>", unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
