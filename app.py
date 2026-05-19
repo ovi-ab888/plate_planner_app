@@ -47,7 +47,7 @@ st.set_page_config(
 
 
 # ================================================================
-# PASSWORD CHECK SYSTEM (CLEAN VERSION - SAME AS MAIN PAGE UI)
+# PASSWORD CHECK SYSTEM (NO BOX - JUST REDIRECT)
 # ================================================================
 def check_password():
     expected = None
@@ -60,8 +60,8 @@ def check_password():
         expected = os.environ.get("PEPCO_APP_PASSWORD")
 
     if expected is None:
-        st.error("App password not configured.")
-        return False
+        # No password configured, just show main page
+        return True
 
     def _password_entered():
         if st.session_state.get("password") == expected:
@@ -72,172 +72,15 @@ def check_password():
                 pass
         else:
             st.session_state["password_correct"] = False
-            st.session_state["wrong_password"] = True
 
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # Same CSS as Main Page (Password Page er jonno)
-    st.markdown("""
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
-        * { font-family: 'Inter', sans-serif; }
-        
-        .stApp {
-            background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #24243e 100%);
-        }
-        
-        .main > div { background: transparent !important; padding: 0 !important; }
-        .block-container { padding: 0rem !important; max-width: 80% !important; }
-        
-        /* Password Input Field */
-        .stTextInput input {
-            background: rgba(255,255,255,0.08) !important;
-            border: 1px solid rgba(255,255,255,0.2) !important;
-            border-radius: 12px !important;
-            color: white !important;
-            text-align: center !important;
-            font-size: 1rem !important;
-            padding: 0.75rem 1rem !important;
-        }
-        
-        .stTextInput input:focus {
-            border-color: #667eea !important;
-            box-shadow: 0 0 0 3px rgba(102,126,234,0.2) !important;
-        }
-        
-        /* Main Header */
-        .main-header {
-            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding: 2rem;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        
-        .main-header h1 {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin: 0;
-        }
-        
-        .main-header p { color: rgba(255,255,255,0.7); margin-top: 0.5rem; }
-        
-        .designer-name {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-weight: 600;
-        }
-        
-        /* Password Container */
-        .password-container {
-            max-width: 450px;
-            margin: 50px auto 0 auto;
-            padding: 2.5rem;
-            background: rgba(255,255,255,0.05);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-        }
-        
-        .password-container h2 {
-            color: white;
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-            font-weight: 700;
-        }
-        
-        .password-container p {
-            color: rgba(255,255,255,0.5);
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
-        }
-        
-        .lock-icon { font-size: 3rem; margin-bottom: 1rem; }
-        
-        .stButton > button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            padding: 0.7rem 2rem;
-            font-weight: 600;
-            width: 100%;
-        }
-        
-        .stAlert {
-            background: rgba(220,53,69,0.15) !important;
-            border: 1px solid rgba(220,53,69,0.4) !important;
-            border-radius: 12px !important;
-            color: #ff6b6b !important;
-        }
-        
-        #MainMenu {visibility: hidden;}
-        header {visibility: hidden;}
-        footer {visibility: hidden;}
-    </style>
-    """, unsafe_allow_html=True)
+    # Show only main page content (no password box)
+    # Main UI will be shown directly
+    return True
 
-    # Same Header as Main Page
-    st.markdown("""
-    <div class="main-header">
-        <h1>Plate Ratio Intelligence System</h1>
-        <p>Intelligent Production Planning & Ratio Optimization</p>
-        <p style="font-size: 0.85rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
-        <p class="designer-name">✨ Design by Ovi ✨</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Password Card
-    st.markdown("""
-    <div style="height: 20px;"></div>
-    <div class="password-container">
-        <div class="lock-icon">🔐</div>
-        <h2>Welcome Back!</h2>
-        <p>Enter your secure access code to continue</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.text_input(
-            "Password", 
-            type="password", 
-            key="password",
-            on_change=_password_entered, 
-            label_visibility="collapsed",
-            placeholder="••••••••"
-        )
-
-    # Same Footer as Main Page
-    st.markdown("""
-    <div style="text-align: center; padding: 2rem; margin-top: 3rem; border-top: 2px solid rgba(102,126,234,0.3); background: rgba(255,255,255,0.02); border-radius: 20px;">
-        <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin: 0;">
-            © 2025 Plate Ratio System | Version 18
-        </p>
-        <p style="color: rgba(255,255,255,0.5); font-size: 0.8rem; margin: 8px 0;">
-            Enterprise Production Optimization Framework
-        </p>
-        <p style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 0.85rem; font-weight: 600; margin: 10px 0 0 0;">
-            ✨ Developed by Ovi | All Rights Reserved ✨
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if st.session_state.get("password_correct") is False:
-        st.error("❌ Incorrect password. Please contact Mr. Ovi.")
-
-    return False
-
-# Call the password check
+# Call password check
 if not check_password():
     st.stop()
 
