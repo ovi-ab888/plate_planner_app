@@ -271,8 +271,7 @@ def check_password():
     </style>
     """, unsafe_allow_html=True)
 
-# ================== Password Card ==================
-    # Header
+    # ================== HEADER ==================
     st.markdown("""
     <div class="main-header">
         <h1>Plate Ratio System</h1>
@@ -282,17 +281,16 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    # Password Container
+    # ================== PASSWORD CARD WITH INPUT INSIDE ==================
     st.markdown("""
     <div class="password-container">
         <h2>Welcome Back</h2>
         <div class="lock-icon">🔐</div>
         <p>Enter your secure access code to continue</p>
-    </div>
     """, unsafe_allow_html=True)
 
-    # Password Input (আলাদা কলাম দিয়ে)
-    col1, col2, col3 = st.columns([1.4, 1, 1.4])
+    # Input Box (এখানে কলাম দিয়ে সেন্টার করা)
+    col1, col2, col3 = st.columns([1.6, 1, 1.6])
     with col2:
         st.text_input(
             label="",
@@ -302,6 +300,8 @@ def check_password():
             label_visibility="collapsed",
             placeholder="••••••••"
         )
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # Error Message
     if st.session_state.get("password_correct") is False:
