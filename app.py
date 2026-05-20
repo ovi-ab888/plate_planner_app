@@ -271,37 +271,26 @@ def check_password():
     </style>
     """, unsafe_allow_html=True)
 
-      # Header with Animation
-    st.markdown("""
-    <div class="main-header">
-        <h1>Plate Ratio System</h1>
-        <p>Intelligent Production Planning & Ratio Optimization</p>
-        <p style="font-size: 0.85rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
-        <p class="designer-name">✨ Design by Ovi ✨</p>
-    </div>
-    """, unsafe_allow_html=True)
+# ================== Password Card ==================
+st.markdown("""
+<div class="password-container">
+    <h2>Welcome Back</h2>
+    <div class="lock-icon">🔐</div>
+    <p>Enter your secure access code to continue</p>
+""", unsafe_allow_html=True)
 
-    # ================== Password Container ==================
-    st.markdown("""
-    <div class="password-container">
-        <h2>Welcome Back</h2>
-        <div class="lock-icon">🔐</div>
-        <p>Enter your secure access code to continue</p>
-    """, unsafe_allow_html=True)
+col1, col2, col3 = st.columns([1.5, 1, 1.5])
+with col2:
+    st.text_input(
+        label="",
+        type="password",
+        key="password",
+        on_change=_password_entered,
+        label_visibility="collapsed",
+        placeholder="••••••••"
+    )
 
-    # Password Input Box (কনটেইনারের ভিতরে)
-    col1, col2, col3 = st.columns([1.5, 1, 1.5])
-    with col2:
-        st.text_input(
-            label="", 
-            type="password",
-            key="password",
-            on_change=_password_entered,
-            label_visibility="collapsed",
-            placeholder="••••••••"
-        )
-
-    st.markdown("</div>", unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
     # Error Message
     if st.session_state.get("password_correct") is False:
