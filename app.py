@@ -180,7 +180,7 @@ def check_password():
         
         .password-container:hover {
             border-color: rgba(102,126,234,0.5);
-            box-shadow: 0 0 30px rgba(102,126,234,0.2);
+            box-shadow: 0 0 50px rgba(102,126,234,0.2);
         }
         
         @keyframes fadeInDown {
