@@ -165,7 +165,7 @@ def check_password():
         
         /* Password Container with Glow Effect */
         .password-container {
-            max-width: 470px;
+            max-width: 450px;
             margin: 50px auto 0 auto;
             padding: 6.5rem;
             background: rgba(255,255,255,0.05);
