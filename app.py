@@ -113,7 +113,7 @@ def check_password():
         .stTextInput input {
             background: rgba(255,255,255,0.08) !important;
             border: 1px solid rgba(255,255,255,0.2) !important;
-            border-radius: 90px !important;
+            border-radius: 30px !important;
             color: white !important;
             text-align: center !important;
             font-size: 1rem !important;
@@ -180,7 +180,7 @@ def check_password():
         
         .password-container:hover {
             border-color: rgba(102,126,234,0.5);
-            box-shadow: 0 0 50px rgba(102,126,234,0.2);
+            box-shadow: 0 0 30px rgba(102,126,234,0.2);
         }
         
         @keyframes fadeInDown {
