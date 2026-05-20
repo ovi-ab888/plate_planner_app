@@ -165,9 +165,9 @@ def check_password():
         
         /* Password Container with Glow Effect */
         .password-container {
-            max-width: 800px;
-            margin: 50px auto 0 auto;
-            padding: 1rem;
+            max-width: 400px;
+            margin: 40px auto 10px auto;
+            padding: 2.8rem 2rem 2.2rem 2rem;
             background: rgba(255,255,255,0.05);
             backdrop-filter: blur(20px);
             border-radius: 32px;
@@ -208,7 +208,7 @@ def check_password():
         .password-container h2 {
             color: white;
             font-size: 1.8rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.8rem;
             font-weight: 700;
         }
         
@@ -271,7 +271,7 @@ def check_password():
     </style>
     """, unsafe_allow_html=True)
 
-    # ================== HEADER ==================
+      # Header
     st.markdown("""
     <div class="main-header">
         <h1>Plate Ratio System</h1>
@@ -281,18 +281,19 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    # ================== PASSWORD CARD WITH INPUT INSIDE ==================
+    # ================== PASSWORD BOX WITH INPUT ==================
+    st.markdown('<div class="password-container">', unsafe_allow_html=True)
+
     st.markdown("""
-    <div class="password-container">
         <h2>Welcome Back</h2>
         <div class="lock-icon">🔐</div>
         <p>Enter your secure access code to continue</p>
     """, unsafe_allow_html=True)
 
-    # Input Box (এখানে কলাম দিয়ে সেন্টার করা)
-    col1, col2, col3 = st.columns([1.6, 1, 1.6])
+    # Input Field
+    col1, col2, col3 = st.columns([1.5, 1, 1.5])
     with col2:
-        st.text_input(
+        password_input = st.text_input(
             label="",
             type="password",
             key="password",
@@ -301,7 +302,7 @@ def check_password():
             placeholder="••••••••"
         )
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Error Message
     if st.session_state.get("password_correct") is False:
