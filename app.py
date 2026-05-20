@@ -72,10 +72,10 @@ def check_password():
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # ================== FULL STYLING ==================
+    # ================== CUSTOM CSS ==================
     st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
         * { font-family: 'Inter', sans-serif; }
         
@@ -91,65 +91,60 @@ def check_password():
             100% { background-position: 0% 50%; }
         }
         
-        .main > div { background: transparent !important; padding: 0 !important; }
-        .block-container { padding: 0rem !important; max-width: 90% !important; }
-        
-        /* Main Header */
         .main-header {
-            background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%);
-            backdrop-filter: blur(10px);
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(12px);
             padding: 2rem;
             border-radius: 30px;
-            margin: 1rem 1rem 0rem 1rem;
+            margin: 20px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.1);
         }
         
         .main-header h1 {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea, #764ba2);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-size: 2.5rem;
+            font-size: 2.6rem;
             font-weight: 800;
-            margin: 0;
         }
         
         .password-container {
-            max-width: 460px;
-            margin: 40px auto 8px auto;
-            padding: 2.8rem 2rem 1.8rem 2rem;
-            background: rgba(255,255,255,0.05);
+            max-width: 480px;
+            margin: 40px auto 10px auto;
+            padding: 40px 30px 25px 30px;
+            background: rgba(255,255,255,0.06);
             backdrop-filter: blur(20px);
             border-radius: 32px;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
         }
         
         .lock-icon {
-            font-size: 3rem;
-            margin: 1rem 0;
+            font-size: 3.2rem;
+            margin: 15px 0;
             animation: bounce 2s infinite;
         }
         
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
+            50% { transform: translateY(-8px); }
         }
         
-        .stTextInput { margin-top: -10px !important; }
+        .stTextInput { margin-top: 5px !important; }
         .stTextInput input {
-            background: rgba(255,255,255,0.08) !important;
-            border: 1px solid rgba(255,255,255,0.2) !important;
-            border-radius: 30px !important;
-            color: white !important;
-            text-align: center !important;
+            border-radius: 50px !important;
+            padding: 14px 20px !important;
             font-size: 1.1rem !important;
-            padding: 0.9rem 1.5rem !important;
-            letter-spacing: 3px;
+            text-align: center !important;
+            letter-spacing: 4px;
+            background: rgba(255,255,255,0.1) !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            color: white !important;
         }
         
-        #MainMenu, header, footer {visibility: hidden;}
+        #MainMenu, header, footer { visibility: hidden; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -158,8 +153,8 @@ def check_password():
     <div class="main-header">
         <h1>Plate Ratio System</h1>
         <p>Intelligent Production Planning & Ratio Optimization</p>
-        <p style="font-size: 0.85rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
-        <p class="designer-name">✨ Design by Ovi ✨</p>
+        <p style="font-size: 0.9rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
+        <p class="designer-name" style="color: #f093fb; margin-top: 8px;">✨ Design by Ovi ✨</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -172,8 +167,8 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    # Password Input (বক্সের ঠিক নিচে)
-    col1, col2, col3 = st.columns([1.4, 1.1, 1.4])
+    # Password Input
+    col1, col2, col3 = st.columns([1.4, 1, 1.4])
     with col2:
         st.text_input(
             label="",
