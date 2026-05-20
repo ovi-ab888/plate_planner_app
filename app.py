@@ -274,7 +274,7 @@ def check_password():
     # Header with Animation
     st.markdown("""
     <div class="main-header">
-        <h1>📊 Plate Ratio System</h1>
+        <h1>Plate Ratio System</h1>
         <p>Intelligent Production Planning & Ratio Optimization</p>
         <p style="font-size: 0.85rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
         <p class="designer-name">✨ Design by Ovi ✨</p>
@@ -285,8 +285,8 @@ def check_password():
     st.markdown("""
     <div style="height: 20px;"></div>
     <div class="password-container">
+        <h2>Wellcome Back</h2>
         <div class="lock-icon">🔐</div>
-        <h2>Access Code</h2>
         <p>Enter your secure access code to continue</p>
     </div>
     """, unsafe_allow_html=True)
