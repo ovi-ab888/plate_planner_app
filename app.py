@@ -281,26 +281,29 @@ def check_password():
     </div>
     """, unsafe_allow_html=True)
 
-    # Password Card with Animated Lock
-    st.markdown("""
-    <div style="height: 20px;"></div>
-    <div class="password-container">
-        <h2>Wellcome Back</h2>
-        <div class="lock-icon">🔐</div>
-        <p>Enter your secure access code to continue</p>
-    </div>
-    """, unsafe_allow_html=True)
+# Password Container with Input Inside
+st.markdown("""
+<div class="password-container">
+    <h2>Welcome Back</h2>
+    <div class="lock-icon">🔐</div>
+    <p>Enter your secure access code to continue</p>
+""", unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        st.text_input(
-            "Password", 
-            type="password", 
-            key="password",
-            on_change=_password_entered, 
-            label_visibility="collapsed",
-            placeholder="••••••••"
-        )
+# Input Box এখন কনটেইনারের ভিতরে
+col1, col2, col3 = st.columns([1.2, 1, 1.2])
+with col2:
+    st.text_input(
+        "Password",
+        type="password",
+        key="password",
+        on_change=_password_entered,
+        label_visibility="collapsed",
+        placeholder="••••••••"
+    )
+
+st.markdown("""
+</div>
+""", unsafe_allow_html=True)
 
     if st.session_state.get("password_correct") is False:
         st.error("❌ Incorrect password. Please contact Mr. Ovi.")
