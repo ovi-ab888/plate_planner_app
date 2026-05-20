@@ -305,10 +305,10 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-    if st.session_state.get("password_correct") is False:
-        st.error("❌ Incorrect password. Please contact Mr. Ovi.")
+if st.session_state.get("password_correct") is False:
+    st.error("❌ Incorrect password. Please contact Mr. Ovi.")
 
-    return False
+return False
 
 # Call the password check
 if not check_password():
