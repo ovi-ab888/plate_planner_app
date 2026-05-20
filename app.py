@@ -46,25 +46,18 @@ st.set_page_config(
 )
 
 
-import streamlit as st
-import os
-
 def check_password():
-    # Password Configuration
     expected = None
     try:
         expected = st.secrets.get("app_password", None)
     except Exception:
         pass
-    
     if expected is None:
         expected = os.environ.get("PEPCO_APP_PASSWORD")
-    
     if expected is None:
         st.error("App password not configured.")
         return False
 
-    # Password Check Function
     def _password_entered():
         if st.session_state.get("password") == expected:
             st.session_state["password_correct"] = True
@@ -76,14 +69,13 @@ def check_password():
             st.session_state["password_correct"] = False
             st.session_state["wrong_password"] = True
 
-    # If already logged in
     if st.session_state.get("password_correct", None) is True:
         return True
 
-    # ====================== CSS ======================
+    # ================== FULL STYLING ==================
     st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
         * { font-family: 'Inter', sans-serif; }
         
@@ -99,76 +91,89 @@ def check_password():
             100% { background-position: 0% 50%; }
         }
         
+        .main > div { background: transparent !important; padding: 0 !important; }
+        .block-container { padding: 0rem !important; max-width: 90% !important; }
+        
+        /* Main Header */
         .main-header {
-            background: rgba(255,255,255,0.07);
-            backdrop-filter: blur(12px);
-            padding: 2.2rem;
+            background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
             border-radius: 30px;
-            margin: 20px;
+            margin: 1rem 1rem 0rem 1rem;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.1);
         }
         
         .main-header h1 {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-size: 2.7rem;
+            font-size: 2.5rem;
             font-weight: 800;
-            margin: 0 0 10px 0;
+            margin: 0;
         }
         
-        .password-card {
-            max-width: 480px;
-            margin: 40px auto 15px auto;
-            padding: 45px 35px 35px 35px;
-            background: rgba(255,255,255,0.06);
+        .password-container {
+            max-width: 460px;
+            margin: 40px auto 8px auto;
+            padding: 2.8rem 2rem 1.8rem 2rem;
+            background: rgba(255,255,255,0.05);
             backdrop-filter: blur(20px);
             border-radius: 32px;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
         }
         
+        .lock-icon {
+            font-size: 3rem;
+            margin: 1rem 0;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .stTextInput { margin-top: -10px !important; }
         .stTextInput input {
-            border-radius: 50px !important;
-            padding: 16px 20px !important;
-            font-size: 1.2rem !important;
-            text-align: center !important;
-            letter-spacing: 5px;
-            background: rgba(255,255,255,0.1) !important;
-            border: 1px solid rgba(255,255,255,0.25) !important;
+            background: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            border-radius: 30px !important;
             color: white !important;
-            height: 55px;
+            text-align: center !important;
+            font-size: 1.1rem !important;
+            padding: 0.9rem 1.5rem !important;
+            letter-spacing: 3px;
         }
         
-        .stTextInput { margin-top: 8px !important; }
-        
-        #MainMenu, header, footer { visibility: hidden; }
+        #MainMenu, header, footer {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
 
-    # ====================== HEADER ======================
+    # ================== HEADER ==================
     st.markdown("""
     <div class="main-header">
         <h1>Plate Ratio System</h1>
         <p>Intelligent Production Planning & Ratio Optimization</p>
-        <p style="font-size: 0.95rem; opacity: 0.85;">AI-Powered • Fast • Accurate</p>
-        <p style="color: #f093fb; margin-top: 10px;">✨ Design by Ovi ✨</p>
+        <p style="font-size: 0.85rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
+        <p class="designer-name">✨ Design by Ovi ✨</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # ====================== PASSWORD CARD ======================
+    # ================== PASSWORD CARD ==================
     st.markdown("""
-    <div class="password-card">
+    <div class="password-container">
         <h2>Welcome Back</h2>
-        <div style="font-size: 3.8rem; margin: 20px 0;">🔐</div>
+        <div class="lock-icon">🔐</div>
         <p>Enter your secure access code to continue</p>
     </div>
     """, unsafe_allow_html=True)
 
-    # Password Input Field
-    col1, col2, col3 = st.columns([1.3, 1, 1.3])
+    # Password Input (বক্সের ঠিক নিচে)
+    col1, col2, col3 = st.columns([1.4, 1.1, 1.4])
     with col2:
         st.text_input(
             label="",
@@ -184,7 +189,6 @@ def check_password():
         st.error("❌ Incorrect password. Please contact Mr. Ovi.")
 
     return False
-
 
 # ================== APP START ==================
 if not check_password():
