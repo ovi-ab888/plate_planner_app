@@ -167,7 +167,7 @@ def check_password():
         .password-container {
             max-width: 450px;
             margin: 50px auto 0 auto;
-            padding: 3.5rem;
+            padding: 5.5rem;
             background: rgba(255,255,255,0.05);
             backdrop-filter: blur(20px);
             border-radius: 32px;
