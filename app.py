@@ -226,7 +226,7 @@ def check_password():
             border-radius: 50px;
             padding: 0.7rem 2rem;
             font-weight: 600;
-            width: 100%;
+            width: 90%;
             transition: all 0.3s ease;
             font-size: 1rem;
             cursor: pointer;
