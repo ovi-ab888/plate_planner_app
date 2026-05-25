@@ -3187,20 +3187,20 @@ algo_functions = {
     "V26 - NN Predictor": lambda: v26_optimizer(demand, cap, maxp),
 }
 
-        for algo_name, func in algo_functions.items():
-            try:
-                if maxp == 1 and algo_name in problematic_for_single_plate:
-                    results[algo_name] = v3_optimizer(demand, cap, maxp)
-                else:
-                    results[algo_name] = func()
-            except Exception as e:
-
+    for algo_name, func in algo_functions.items():
+        try:
+            if maxp == 1 and algo_name in problematic_for_single_plate:
                 results[algo_name] = v3_optimizer(demand, cap, maxp)
+            else:
+                results[algo_name] = func()
+        except Exception as e:
+
+            results[algo_name] = v3_optimizer(demand, cap, maxp)
 
         # Ensure all have results
-        for algo_name in list(results.keys()):
-            if not results.get(algo_name):
-                results[algo_name] = v3_optimizer(demand, cap, maxp)
+    for algo_name in list(results.keys()):
+        if not results.get(algo_name):
+            results[algo_name] = v3_optimizer(demand, cap, maxp)
 
     # Comparison Data
     comparison_data = []
