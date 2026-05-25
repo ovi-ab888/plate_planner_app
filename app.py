@@ -3177,7 +3177,7 @@ algo_functions = {
     "V18 - Global Multi-Plate Optimizer": lambda: v18_optimizer(demand, cap, maxp),
 }
 
-# শুধু ORTOOLS থাকলে V19 যোগ করুন (V20-V26 কমেন্ট করা ভালো)
+# শুধু ORTOOLS থাকলে V19 যোগ করুন
 if ORTOOLS_AVAILABLE:
     algo_functions["V19 - CP-SAT Optimizer"] = lambda: v19_optimizer(demand, cap, maxp)
 
@@ -3187,7 +3187,7 @@ problematic_for_single_plate = {
     "V17 - AI Evolution Engine", "V19 - CP-SAT Optimizer"
 }
 
-# ========== MAIN LOOP - CORRECT INDENTATION ==========
+# ========== MAIN LOOP ==========
 results = {}
 
 for algo_name, func in algo_functions.items():
@@ -3237,81 +3237,90 @@ st.session_state['best_waste'] = best_waste
 st.session_state['demand'] = demand
 st.session_state['original_qty'] = original_qty
 
-    # ====================== UI OUTPUT ======================
+# ====================== UI OUTPUT ======================
 st.markdown(f"""
-    <div class="best-algo">
-        <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
-        <div class="metric-label">Waste Percentage: {best_waste}%</div>
-        <div class="metric-label">✨ Total Algorithms Tested: {len(results)} ✨</div>
-    </div>
-    """, unsafe_allow_html=True)
+<div class="best-algo">
+    <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
+    <div class="metric-label">Waste Percentage: {best_waste}%</div>
+    <div class="metric-label">✨ Total Algorithms Tested: {len(results)} ✨</div>
+</div>
+""", unsafe_allow_html=True)
 
-    # Best Algorithm Report
+# Best Algorithm Report
 st.markdown("## 📋 Best Algorithm Report")
-    best_plates = results[best_algo]
+best_plates = results[best_algo]
 
-    if best_plates:
-        st.markdown("### 📊 Production Summary")
-        full_df = build_full_summary(best_plates, demand, original_qty)
-        st.dataframe(full_df, use_container_width=True, height=380)
-
+if best_plates:
+    st.markdown("### 📊 Production Summary")
+    full_df = build_full_summary(best_plates, demand, original_qty)
+    st.dataframe(full_df, use_container_width=True, height=380)
+    
     st.markdown("### 🧾 Plate Configuration Details")
-        plate_rows = []
-        total_sheets_sum = 0
-        total_ups_sum = 0
-        for idx, p in enumerate(best_plates, 1):
-            total_ups = sum(p["layout"].values())
-            plate_rows.append({
-                "SL": idx,
-                "Plate ID": p["name"],
-                "Sheets Required": p["sheets"],
-                "Total UPS": total_ups,
-                
-            })
-            total_sheets_sum += p["sheets"]
-            total_ups_sum += total_ups
-
+    plate_rows = []
+    total_sheets_sum = 0
+    total_ups_sum = 0
+    
+    for idx, p in enumerate(best_plates, 1):
+        total_ups = sum(p["layout"].values())
         plate_rows.append({
-            "SL": "📊",
-            "Plate ID": "TOTAL",
-            "Sheets Required": total_sheets_sum,
-            "Total UPS": total_ups_sum,
-            
+            "SL": idx,
+            "Plate ID": p["name"],
+            "Sheets Required": p["sheets"],
+            "Total UPS": total_ups,
         })
-
-        plate_details_df = pd.DataFrame(plate_rows)
-        st.dataframe(plate_details_df, use_container_width=True)
-
-        # Download Best Report
+        total_sheets_sum += p["sheets"]
+        total_ups_sum += total_ups
+    
+    plate_rows.append({
+        "SL": "📊",
+        "Plate ID": "TOTAL",
+        "Sheets Required": total_sheets_sum,
+        "Total UPS": total_ups_sum,
+    })
+    
+    plate_details_df = pd.DataFrame(plate_rows)
+    st.dataframe(plate_details_df, use_container_width=True)
+    
+    # Download Best Report
     st.markdown("### 📥 Download Best Report")
-        col1, col2 = st.columns(2)
-        with col1:
-            bio_excel = BytesIO()
-            with pd.ExcelWriter(bio_excel, engine="openpyxl") as writer:
-                full_df.to_excel(writer, sheet_name="Summary", index=False)
-                plate_details_df.to_excel(writer, sheet_name="Plate Details", index=False)
-                comparison_df.to_excel(writer, sheet_name="Comparison", index=False)
-            bio_excel.seek(0)
-            st.download_button("📊 Download Excel", bio_excel,
-                             f"BEST_{best_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
-                             use_container_width=True)
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        bio_excel = BytesIO()
+        with pd.ExcelWriter(bio_excel, engine="openpyxl") as writer:
+            full_df.to_excel(writer, sheet_name="Summary", index=False)
+            plate_details_df.to_excel(writer, sheet_name="Plate Details", index=False)
+            comparison_df.to_excel(writer, sheet_name="Comparison", index=False)
+        bio_excel.seek(0)
+        st.download_button(
+            "📊 Download Excel", 
+            bio_excel,
+            f"BEST_{best_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+            use_container_width=True
+        )
+    
+    with col2:
+        if REPORTLAB_AVAILABLE:
+            pdf_buffer = generate_pdf_report(best_plates, demand, original_qty, best_algo, best_waste)
+            if pdf_buffer:
+                st.download_button(
+                    "📄 Download PDF", 
+                    pdf_buffer,
+                    f"BEST_{best_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                    mime="application/pdf", 
+                    use_container_width=True
+                )
 
-        with col2:
-            if REPORTLAB_AVAILABLE:
-                pdf_buffer = generate_pdf_report(best_plates, demand, original_qty, best_algo, best_waste)
-                if pdf_buffer:
-                    st.download_button("📄 Download PDF", pdf_buffer,
-                                     f"BEST_{best_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-                                     mime="application/pdf", use_container_width=True)
-
-    # Algorithm Comparison
+# Algorithm Comparison
 st.markdown("---")
 st.markdown("## 📊 Algorithm Comparison (Sorted by Waste %)")
-    styled_df = comparison_df.style.apply(
-        lambda row: ['background-color: #2e7d32; color: white'] * len(row) 
-        if row["Algorithm"] == best_algo else [''] * len(row), axis=1
-    ).format({"Waste %": "{:.2f}%"})
-    st.dataframe(styled_df, use_container_width=True, height=460)
+
+styled_df = comparison_df.style.apply(
+    lambda row: ['background-color: #2e7d32; color: white'] * len(row) 
+    if row["Algorithm"] == best_algo else [''] * len(row), axis=1
+).format({"Waste %": "{:.2f}%"})
+
+st.dataframe(styled_df, use_container_width=True, height=460)
 
    
 # ====================== VIEW ANY ALGORITHM REPORT (Independent Section) ======================
