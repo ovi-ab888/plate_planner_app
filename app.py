@@ -3175,6 +3175,14 @@ algo_functions = {
     "V16 - Plate Merge Optimizer": lambda: v16_optimizer(demand, cap, maxp),
     "V17 - AI Evolution Engine": lambda: v17_optimizer(demand, cap, maxp),
     "V18 - Global Multi-Plate Optimizer": lambda: v18_optimizer(demand, cap, maxp),
+    "V19 - CP-SAT Optimizer": lambda: v19_optimizer(demand, cap, maxp) if ORTOOLS_AVAILABLE else v18_optimizer(demand, cap, maxp),
+    "V20 - PSO Optimizer": lambda: v20_optimizer(demand, cap, maxp),
+    "V21 - ACO Optimizer": lambda: v21_optimizer(demand, cap, maxp),
+    "V22 - Q-Learning Optimizer": lambda: v22_optimizer(demand, cap, maxp),
+    "V23 - Branch & Bound": lambda: v23_optimizer(demand, cap, maxp),
+    "V24 - Differential Evolution": lambda: v24_optimizer(demand, cap, maxp),
+    "V25 - Pareto Optimizer": lambda: v25_optimizer(demand, cap, maxp),
+    "V26 - NN Predictor": lambda: v26_optimizer(demand, cap, maxp),
 }
 
 # শুধু ORTOOLS থাকলে V19 যোগ করুন
