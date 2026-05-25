@@ -39,12 +39,7 @@ try:
 except ImportError:
     REPORTLAB_AVAILABLE = False
 
-# Try to import OR-Tools for V19
-try:
-    from ortools.sat.python import cp_model
-    ORTOOLS_AVAILABLE = True
-except ImportError:
-    ORTOOLS_AVAILABLE = False
+
 
 # ================================================================
 # STREAMLIT PAGE CONFIGURATION
