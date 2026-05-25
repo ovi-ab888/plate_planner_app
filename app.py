@@ -1631,100 +1631,203 @@ def v11_optimizer(demand: dict, capacity: int, max_plates: int,
 
 
 # ================================================================
-# V12 - Column Generation Method (Advanced)
+# V12 - COLUMN GENERATION METHOD (Corrected)
 # ================================================================
 def v12_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
-    """V12 - Column Generation Method for Large Scale"""
+    """V12 - Column Generation Method for Large Scale (Corrected)"""
     if not PULP_AVAILABLE:
         return v3_optimizer(demand, capacity, max_plates)
     
     remaining = demand.copy()
     plates = []
     
-    def generate_pattern(remaining_demand, capacity):
-        try:
-            model = LpProblem("Pattern_Gen", LpMinimize)
-            ups = {t: LpVariable(f"UPS_{t}", lowBound=0, upBound=min(remaining_demand.get(t, 1), capacity), cat="Integer") for t in remaining_demand.keys()}
-            
-            model += lpSum(ups[t] for t in remaining_demand.keys())
-            model += lpSum(ups[t] for t in remaining_demand.keys()) <= capacity
-            
-            model.solve()
-            
-            if model.status == 1:
-                return {t: int(value(ups[t])) for t in remaining_demand.keys() if value(ups[t]) > 0}
-            return None
-        except:
-            return None
+    # Collect all unique tags
+    tags_list = list(demand.keys())
     
-    for plate_num in range(max_plates):
-        active = {k: v for k, v in remaining.items() if v > 0}
+    def solve_master_problem(patterns):
+        """Solve master problem to get dual values"""
+        try:
+            # Master problem: minimize waste/plates
+            master = LpProblem("Master_Problem", LpMinimize)
+            
+            # Variables for each pattern
+            pattern_vars = []
+            for idx in range(len(patterns)):
+                var = LpVariable(f"x_{idx}", lowBound=0, cat="Integer")
+                pattern_vars.append(var)
+            
+            # Objective: minimize total sheets used
+            master += lpSum(pattern_vars)
+            
+            # Constraints: meet demand for each tag
+            for tag in tags_list:
+                master += lpSum(patterns[idx].get(tag, 0) * pattern_vars[idx] 
+                               for idx in range(len(patterns))) >= demand[tag]
+            
+            master.solve()
+            
+            if master.status == 1:
+                # Get dual values for each tag
+                duals = {}
+                for tag in tags_list:
+                    constraint = [c for c in master.constraints.values() 
+                                 if tag in str(c)][0] if master.constraints else None
+                    duals[tag] = constraint.pi if constraint else 0
+                
+                return value(master.objective), duals
+            return None, None
+        except Exception as e:
+            return None, None
+    
+    def generate_pattern_with_dual(duals, capacity):
+        """Subproblem: generate pattern with positive reduced cost"""
+        try:
+            sub = LpProblem("Subproblem", LpMaximize)
+            
+            # Variables for each tag
+            ups = {tag: LpVariable(f"ups_{tag}", lowBound=0, upBound=capacity, cat="Integer") 
+                   for tag in tags_list}
+            
+            # Objective: maximize reduced cost
+            sub += lpSum(duals.get(tag, 0) * ups[tag] for tag in tags_list) - 1
+            
+            # Capacity constraint
+            sub += lpSum(ups[tag] for tag in tags_list) <= capacity
+            
+            sub.solve()
+            
+            if sub.status == 1:
+                pattern = {tag: int(value(ups[tag])) for tag in tags_list if value(ups[tag]) > 0}
+                reduced_cost = value(sub.objective)
+                return pattern, reduced_cost
+            return None, -1
+        except Exception:
+            return None, -1
+    
+    # Initial patterns (simple proportional layouts)
+    patterns = []
+    
+    # Generate initial feasible patterns
+    initial_demand = demand.copy()
+    for _ in range(min(max_plates, len(tags_list) * 2)):
+        active = {k: v for k, v in initial_demand.items() if v > 0}
         if not active:
             break
         
-        pattern = generate_pattern(active, capacity)
+        total = sum(active.values())
+        pattern = {}
+        for tag, qty in active.items():
+            pattern[tag] = max(1, int((qty / total) * capacity))
         
-        if not pattern or sum(pattern.values()) == 0:
-            total = sum(active.values())
-            pattern = {tag: max(1, int((qty / total) * capacity)) for tag, qty in active.items()}
-            while sum(pattern.values()) > capacity:
-                max_tag = max(pattern, key=pattern.get)
-                if pattern[max_tag] > 1:
-                    pattern[max_tag] -= 1
-                else:
-                    break
+        # Adjust to capacity
+        while sum(pattern.values()) > capacity:
+            max_tag = max(pattern, key=pattern.get)
+            if pattern[max_tag] > 1:
+                pattern[max_tag] -= 1
+            else:
+                break
         
-        sheets = max(1, min(ceil(remaining[tag] / pattern.get(tag, 1)) for tag in active))
+        while sum(pattern.values()) < capacity:
+            max_tag = max(active, key=active.get)
+            pattern[max_tag] = pattern.get(max_tag, 0) + 1
+        
+        patterns.append(pattern)
+        
+        # Update remaining for next initial pattern
+        sheets = 1
+        for tag, ups in pattern.items():
+            initial_demand[tag] = max(0, initial_demand[tag] - (ups * sheets))
+    
+    # Column Generation Loop
+    iteration = 0
+    max_iterations = 50
+    
+    while iteration < max_iterations:
+        # Solve master problem with current patterns
+        obj_value, duals = solve_master_problem(patterns)
+        
+        if duals is None:
+            break
+        
+        # Generate new pattern
+        new_pattern, reduced_cost = generate_pattern_with_dual(duals, capacity)
+        
+        # Stop if no improving pattern found
+        if new_pattern is None or reduced_cost <= 0.001:
+            break
+        
+        # Add new pattern
+        patterns.append(new_pattern)
+        iteration += 1
+    
+    # Build final solution from patterns
+    remaining = demand.copy()
+    plate_counter = 0
+    
+    # Sort patterns by efficiency
+    pattern_efficiency = []
+    for idx, pattern in enumerate(patterns):
+        if sum(pattern.values()) > 0:
+            total_ups = sum(pattern.values())
+            pattern_efficiency.append((idx, total_ups))
+    
+    pattern_efficiency.sort(key=lambda x: x[1], reverse=True)
+    
+    for idx, _ in pattern_efficiency:
+        if plate_counter >= max_plates:
+            break
+        
+        pattern = patterns[idx]
+        
+        # Skip if pattern doesn't help
+        active_tags = [t for t in pattern if remaining.get(t, 0) > 0]
+        if not active_tags:
+            continue
+        
+        # Calculate maximum sheets possible with this pattern
+        possible_sheets = []
+        for tag in active_tags:
+            if pattern.get(tag, 0) > 0:
+                possible_sheets.append(ceil(remaining[tag] / pattern[tag]))
+        
+        if not possible_sheets:
+            continue
+        
+        sheets = min(possible_sheets)
+        
+        # Don't use too many plates
+        if plate_counter + 1 > max_plates:
+            sheets = 1
         
         plates.append({
-            "name": plate_name(len(plates) + 1),
+            "name": plate_name(plate_counter + 1),
             "layout": pattern,
             "sheets": sheets
         })
         
         for tag, ups in pattern.items():
             remaining[tag] = max(0, remaining[tag] - (ups * sheets))
+        
+        plate_counter += 1
+        
+        # Check if all demand met
+        if all(v <= 0 for v in remaining.values()):
+            break
     
+    # Handle remaining demand
     if any(v > 0 for v in remaining.values()) and plates:
         last = plates[-1]
-        for tag in remaining:
+        for tag in list(remaining.keys()):
             if remaining[tag] > 0:
                 ups = max(1, last["layout"].get(tag, 1))
-                last["sheets"] += ceil(remaining[tag] / ups)
+                add_sheets = ceil(remaining[tag] / ups)
+                last["sheets"] += add_sheets
                 remaining[tag] = 0
+    elif any(v > 0 for v in remaining.values()):
+        # Fallback to V3 if no plates generated
+        return v3_optimizer(demand, capacity, max_plates)
     
-    return plates
-
-
-# ================================================================
-# V13 - Hybrid Master Optimizer
-# ================================================================
-def v13_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
-    """V13 - Hybrid Master Optimizer (Combines best of all)"""
-    
-    candidates = []
-    
-    candidates.append(("v3", v3_optimizer(demand, capacity, max_plates)))
-    candidates.append(("v9", v9_optimizer(demand, capacity, max_plates)))
-    candidates.append(("v11", v11_optimizer(demand, capacity, max_plates, population_size=30, generations=50)))
-    
-    if len(demand) <= 5:
-        candidates.append(("v10", v10_optimizer(demand, capacity, max_plates)))
-    
-    if PULP_AVAILABLE:
-        candidates.append(("v12", v12_optimizer(demand, capacity, max_plates)))
-    
-    best_waste = float('inf')
-    best_plates = None
-    
-    for name, plates in candidates:
-        if plates:
-            waste = calculate_waste_percent(plates, demand)
-            if waste < best_waste:
-                best_waste = waste
-                best_plates = plates
-    
-    return best_plates if best_plates else v3_optimizer(demand, capacity, max_plates)
+    return plates if plates else v3_optimizer(demand, capacity, max_plates)
 
 # ================================================================
 # INSTALL REQUIREMENT
