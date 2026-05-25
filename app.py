@@ -3238,7 +3238,7 @@ st.session_state['demand'] = demand
 st.session_state['original_qty'] = original_qty
 
     # ====================== UI OUTPUT ======================
-    st.markdown(f"""
+st.markdown(f"""
     <div class="best-algo">
         <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
         <div class="metric-label">Waste Percentage: {best_waste}%</div>
