@@ -1875,6 +1875,44 @@ try:
 except:
     ORTOOLS_AVAILABLE = False
 
+# ================================================================
+# V13 - HYBRID MASTER OPTIMIZER (যোগ করুন)
+# ================================================================
+def v13_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
+    """V13 - Hybrid Master Optimizer (Combines best of all)"""
+    
+    candidates = []
+    
+    candidates.append(("v3", v3_optimizer(demand, capacity, max_plates)))
+    candidates.append(("v9", v9_optimizer(demand, capacity, max_plates)))
+    candidates.append(("v11", v11_optimizer(demand, capacity, max_plates, population_size=30, generations=50)))
+    
+    if len(demand) <= 5:
+        candidates.append(("v10", v10_optimizer(demand, capacity, max_plates)))
+    
+    if PULP_AVAILABLE:
+        candidates.append(("v12", v12_optimizer(demand, capacity, max_plates)))
+    
+    best_waste = float('inf')
+    best_plates = None
+    
+    for name, plates in candidates:
+        if plates:
+            waste = calculate_waste_percent(plates, demand)
+            if waste < best_waste:
+                best_waste = waste
+                best_plates = plates
+    
+    return best_plates if best_plates else v3_optimizer(demand, capacity, max_plates)
+
+
+# ================================================================
+# V14 - BASE OPTIMIZER (যোগ করুন)
+# ================================================================
+def v14_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
+    """V14 - Base Optimizer using V13 as fallback"""
+    return v13_optimizer(demand, capacity, max_plates)
+
 
 
 
@@ -3134,14 +3172,7 @@ with col4:
 st.markdown('</div>', unsafe_allow_html=True)
 
 # ================== ITEM QUANTITY ==================
-
-# Item Quantity Details Card
 st.markdown('<div class="card"><div class="card-title" style="text-align: center; display: block; width: 100%;">📦 Item Quantity Details</div>', unsafe_allow_html=True)
-
-# আপনার আইটেম কোয়ান্টিটির কোড এখানে থাকবে
-# ...
-
-st.markdown('</div>', unsafe_allow_html=True)
 
 tags = []
 qty = []
@@ -3175,146 +3206,160 @@ if generate_clicked:
         st.stop()
 
     with st.spinner("🔄 Running all algorithms... Please wait..."):
-        # ================== RESULTS GENERATION ==================
-        results = {}
-        problematic_for_single_plate = {
-            "V11 - Genetic Algorithm",
-            "V16 - Plate Merge Optimizer",
-            "V17 - AI Evolution Engine"
+        # ================== ALGORITHMS DEFINITION ==================
+        algo_functions = {
+            "V1 - Plate Ratio System": lambda: v1_optimizer(demand, cap, maxp),
+            "V2 - Common Sheet Optimizer": lambda: v2_optimizer(demand, cap, maxp),
+            "V3 - Smart Decimal Balancing": lambda: v3_optimizer(demand, cap, maxp),
+            "V4 - Multi-Variation Optimizer": lambda: v4_optimizer(demand, cap, maxp),
+            "V5 - AI Mutation Engine": lambda: v5_optimizer(demand, cap, maxp, iterations=80),
+            "V6 - Integer Solver": lambda: v6_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
+            "V7 - Simulated Annealing": lambda: v7_optimizer(demand, cap, maxp, iterations=150),
+            "V8 - MCTS Tree Search": lambda: v8_optimizer(demand, cap, maxp, iterations=80),
+            "V9 - Hybrid Ratio & Sheet Repair": lambda: v9_optimizer(demand, cap, maxp),
+            "V10 - Exhaustive Search": lambda: v10_optimizer(demand, cap, maxp),
+            "V11 - Genetic Algorithm": lambda: v11_optimizer(demand, cap, maxp, population_size=30, generations=50),
+            "V12 - Column Generation": lambda: v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
+            "V13 - Hybrid Master": lambda: v13_optimizer(demand, cap, maxp),
+            "V15 - DP Repair Engine": lambda: v15_optimizer(demand, cap, maxp),
+            "V16 - Plate Merge Optimizer": lambda: v16_optimizer(demand, cap, maxp),
+            "V17 - AI Evolution Engine": lambda: v17_optimizer(demand, cap, maxp),
+            "V18 - Global Multi-Plate Optimizer": lambda: v18_optimizer(demand, cap, maxp),
         }
         
-algo_functions = {
-    "V1 - Plate Ratio System": lambda: v1_optimizer(demand, cap, maxp),
-    "V2 - Common Sheet Optimizer": lambda: v2_optimizer(demand, cap, maxp),
-    "V3 - Smart Decimal Balancing": lambda: v3_optimizer(demand, cap, maxp),
-    "V4 - Multi-Variation Optimizer": lambda: v4_optimizer(demand, cap, maxp),
-    "V5 - AI Mutation Engine": lambda: v5_optimizer(demand, cap, maxp, iterations=80),
-    "V6 - Integer Solver": lambda: v6_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
-    "V7 - Simulated Annealing": lambda: v7_optimizer(demand, cap, maxp, iterations=150),
-    "V8 - MCTS Tree Search": lambda: v8_optimizer(demand, cap, maxp, iterations=80),
-    "V9 - Hybrid Ratio & Sheet Repair": lambda: v9_optimizer(demand, cap, maxp),
-    "V10 - Exhaustive Search": lambda: v10_optimizer(demand, cap, maxp),
-    "V11 - Genetic Algorithm": lambda: v11_optimizer(demand, cap, maxp, population_size=30, generations=50),
-    "V12 - Column Generation": lambda: v12_optimizer(demand, cap, maxp) if PULP_AVAILABLE else v3_optimizer(demand, cap, maxp),
-    "V13 - Hybrid Master": lambda: v13_optimizer(demand, cap, maxp),
-    "V15 - DP Repair Engine": lambda: v15_optimizer(demand, cap, maxp),
-    "V16 - Plate Merge Optimizer": lambda: v16_optimizer(demand, cap, maxp),
-    "V17 - AI Evolution Engine": lambda: v17_optimizer(demand, cap, maxp),
-    "V18 - Global Multi-Plate Optimizer": lambda: v18_optimizer(demand, cap, maxp),
-    "V19 - CP-SAT Optimizer": lambda: v19_optimizer(demand, cap, maxp) if ORTOOLS_AVAILABLE else v18_optimizer(demand, cap, maxp),
-    "V20 - PSO Optimizer": lambda: v20_optimizer(demand, cap, maxp),
-    "V21 - ACO Optimizer": lambda: v21_optimizer(demand, cap, maxp),
-    "V22 - Q-Learning Optimizer": lambda: v22_optimizer(demand, cap, maxp),
-    "V23 - Branch & Bound": lambda: v23_optimizer(demand, cap, maxp),
-    "V24 - Differential Evolution": lambda: v24_optimizer(demand, cap, maxp),
-    "V25 - Pareto Optimizer": lambda: v25_optimizer(demand, cap, maxp),
-    "V26 - NN Predictor": lambda: v26_optimizer(demand, cap, maxp),
-}
-
-# শুধু ORTOOLS থাকলে V19 যোগ করুন
-if ORTOOLS_AVAILABLE:
-    algo_functions["V19 - CP-SAT Optimizer"] = lambda: v19_optimizer(demand, cap, maxp)
-
-# Problematic algorithms for single plate
-problematic_for_single_plate = {
-    "V11 - Genetic Algorithm", "V16 - Plate Merge Optimizer", 
-    "V17 - AI Evolution Engine", "V19 - CP-SAT Optimizer"
-}
-
-# ========== MAIN LOOP ==========
-# ====================== UI OUTPUT (সংশোধিত) ======================
-if results:
-    # Filter out invalid results
-    valid_results = {}
-    for algo_name, plates in results.items():
-        if plates:
-            waste = calculate_waste_percent(plates, demand)
-            if 0 <= waste <= 100:  # Valid waste percentage
-                valid_results[algo_name] = plates
-            else:
-                # Use V3 as fallback
-                valid_results[algo_name] = v3_optimizer(demand, cap, maxp)
-        else:
-            valid_results[algo_name] = v3_optimizer(demand, cap, maxp)
-    
-    results = valid_results
-    
-    # Update comparison
-    comparison_data = []
-    for algo_name, plates in results.items():
-        waste = calculate_waste_percent(plates, demand)
-        comparison_data.append({
-            "Algorithm": algo_name,
-            "Waste %": waste,
-            "Total Plates": len(plates),
-            "Total Sheets": sum(p.get("sheets", 0) for p in plates),
-            "Status": "✅ Success" if plates else "❌ Failed"
-        })
-    
-    comparison_df = pd.DataFrame(comparison_data).sort_values("Waste %")
-    best_algo = comparison_df.iloc[0]["Algorithm"]
-    best_waste = comparison_df.iloc[0]["Waste %"]
-    
-    # Store in session state
-    st.session_state['results'] = results
-    st.session_state['comparison_df'] = comparison_df
-    st.session_state['best_algo'] = best_algo
-    st.session_state['best_waste'] = best_waste
-    
-    # Display Best Algorithm Banner
-    st.markdown(f"""
-    <div class="best-algo">
-        <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
-        <div class="metric-label">Waste Percentage: {best_waste}%</div>
-        <div class="metric-label">✨ Total Algorithms Tested: {len(results)} ✨</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Best Algorithm Report
-    st.markdown("## 📋 Best Algorithm Report")
-    best_plates = results[best_algo]
-    
-    if best_plates:
+        # OR-Tools থাকলে V19 যোগ করুন
+        if ORTOOLS_AVAILABLE:
+            algo_functions["V19 - CP-SAT Optimizer"] = lambda: v19_optimizer(demand, cap, maxp)
+        
+        # V20-V26 যোগ করুন (যদি ফাংশন ডিফাইন থাকে)
         try:
-            st.markdown("### 📊 Production Summary")
-            full_df = build_full_summary(best_plates, demand, original_qty)
-            if not full_df.empty:
-                st.dataframe(full_df, use_container_width=True, height=380)
-            
-            st.markdown("### 🧾 Plate Configuration Details")
-            plate_rows = []
-            total_sheets_sum = 0
-            total_ups_sum = 0
-            
-            for idx, p in enumerate(best_plates, 1):
-                if p and "layout" in p:
-                    total_ups = sum(p["layout"].values())
-                    plate_name_str = p.get("name", f"Plate {idx}")
-                    plate_rows.append({
-                        "SL": idx,
-                        "Plate ID": plate_name_str,
-                        "Sheets Required": p.get("sheets", 0),
-                        "Total UPS": total_ups,
-                    })
-                    total_sheets_sum += p.get("sheets", 0)
-                    total_ups_sum += total_ups
-            
-            plate_rows.append({
-                "SL": "📊",
-                "Plate ID": "TOTAL",
-                "Sheets Required": total_sheets_sum,
-                "Total UPS": total_ups_sum,
+            algo_functions["V20 - PSO Optimizer"] = lambda: v20_optimizer(demand, cap, maxp)
+            algo_functions["V21 - ACO Optimizer"] = lambda: v21_optimizer(demand, cap, maxp)
+            algo_functions["V22 - Q-Learning Optimizer"] = lambda: v22_optimizer(demand, cap, maxp)
+            algo_functions["V23 - Branch & Bound"] = lambda: v23_optimizer(demand, cap, maxp)
+            algo_functions["V24 - Differential Evolution"] = lambda: v24_optimizer(demand, cap, maxp)
+            algo_functions["V25 - Pareto Optimizer"] = lambda: v25_optimizer(demand, cap, maxp)
+            algo_functions["V26 - NN Predictor"] = lambda: v26_optimizer(demand, cap, maxp)
+        except NameError:
+            pass  # V20-V26 ডিফাইন না থাকলে এগিয়ে যান
+        
+        # Problematic algorithms for single plate
+        problematic_for_single_plate = {
+            "V11 - Genetic Algorithm", "V16 - Plate Merge Optimizer", 
+            "V17 - AI Evolution Engine", "V19 - CP-SAT Optimizer",
+            "V20 - PSO Optimizer", "V21 - ACO Optimizer", "V22 - Q-Learning Optimizer",
+            "V23 - Branch & Bound", "V24 - Differential Evolution",
+            "V25 - Pareto Optimizer", "V26 - NN Predictor"
+        }
+        
+        # ========== MAIN LOOP ==========
+        results = {}
+        
+        for algo_name, func in algo_functions.items():
+            try:
+                if maxp == 1 and algo_name in problematic_for_single_plate:
+                    results[algo_name] = v3_optimizer(demand, cap, maxp)
+                else:
+                    results[algo_name] = func()
+            except Exception as e:
+                results[algo_name] = v3_optimizer(demand, cap, maxp)
+        
+        # Ensure all have results
+        for algo_name in list(results.keys()):
+            if not results.get(algo_name):
+                results[algo_name] = v3_optimizer(demand, cap, maxp)
+        
+        # Filter out invalid results
+        valid_results = {}
+        for algo_name, plates in results.items():
+            if plates:
+                waste = calculate_waste_percent(plates, demand)
+                if 0 <= waste <= 100:
+                    valid_results[algo_name] = plates
+                else:
+                    valid_results[algo_name] = v3_optimizer(demand, cap, maxp)
+            else:
+                valid_results[algo_name] = v3_optimizer(demand, cap, maxp)
+        
+        results = valid_results
+        
+        # Update comparison
+        comparison_data = []
+        for algo_name, plates in results.items():
+            waste = calculate_waste_percent(plates, demand)
+            comparison_data.append({
+                "Algorithm": algo_name,
+                "Waste %": waste,
+                "Total Plates": len(plates),
+                "Total Sheets": sum(p.get("sheets", 0) for p in plates),
+                "Status": "✅ Success" if plates else "❌ Failed"
             })
-            
-            plate_details_df = pd.DataFrame(plate_rows)
-            st.dataframe(plate_details_df, use_container_width=True)
-            
-            # Download buttons
-            st.markdown("### 📥 Download Best Report")
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                if 'full_df' in dir() and not full_df.empty:
+        
+        comparison_df = pd.DataFrame(comparison_data).sort_values("Waste %")
+        best_algo = comparison_df.iloc[0]["Algorithm"]
+        best_waste = comparison_df.iloc[0]["Waste %"]
+        
+        # Store in session state
+        st.session_state['results'] = results
+        st.session_state['comparison_df'] = comparison_df
+        st.session_state['best_algo'] = best_algo
+        st.session_state['best_waste'] = best_waste
+        st.session_state['demand'] = demand
+        st.session_state['original_qty'] = original_qty
+        
+        # ====================== UI OUTPUT ======================
+        st.markdown(f"""
+        <div class="best-algo">
+            <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
+            <div class="metric-label">Waste Percentage: {best_waste}%</div>
+            <div class="metric-label">✨ Total Algorithms Tested: {len(results)} ✨</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Best Algorithm Report
+        st.markdown("## 📋 Best Algorithm Report")
+        best_plates = results[best_algo]
+        
+        if best_plates:
+            try:
+                st.markdown("### 📊 Production Summary")
+                full_df = build_full_summary(best_plates, demand, original_qty)
+                if not full_df.empty:
+                    st.dataframe(full_df, use_container_width=True, height=380)
+                
+                st.markdown("### 🧾 Plate Configuration Details")
+                plate_rows = []
+                total_sheets_sum = 0
+                total_ups_sum = 0
+                
+                for idx, p in enumerate(best_plates, 1):
+                    if p and "layout" in p:
+                        total_ups = sum(p["layout"].values())
+                        plate_name_str = p.get("name", f"Plate {idx}")
+                        plate_rows.append({
+                            "SL": idx,
+                            "Plate ID": plate_name_str,
+                            "Sheets Required": p.get("sheets", 0),
+                            "Total UPS": total_ups,
+                        })
+                        total_sheets_sum += p.get("sheets", 0)
+                        total_ups_sum += total_ups
+                
+                plate_rows.append({
+                    "SL": "📊",
+                    "Plate ID": "TOTAL",
+                    "Sheets Required": total_sheets_sum,
+                    "Total UPS": total_ups_sum,
+                })
+                
+                plate_details_df = pd.DataFrame(plate_rows)
+                st.dataframe(plate_details_df, use_container_width=True)
+                
+                # Download buttons
+                st.markdown("### 📥 Download Best Report")
+                col1, col2 = st.columns(2)
+                
+                with col1:
                     bio_excel = BytesIO()
                     with pd.ExcelWriter(bio_excel, engine="openpyxl") as writer:
                         full_df.to_excel(writer, sheet_name="Summary", index=False)
@@ -3327,42 +3372,40 @@ if results:
                         f"BEST_{best_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
                         use_container_width=True
                     )
-            
-            with col2:
-                if REPORTLAB_AVAILABLE:
-                    pdf_buffer = generate_pdf_report(best_plates, demand, original_qty, best_algo, best_waste)
-                    if pdf_buffer:
-                        st.download_button(
-                            "📄 Download PDF", 
-                            pdf_buffer,
-                            f"BEST_{best_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-                            mime="application/pdf", 
-                            use_container_width=True
-                        )
-        except Exception as e:
-            st.error(f"Error generating report: {str(e)}")
-            st.info("Showing comparison table instead...")
-    
-    # Algorithm Comparison
-    st.markdown("---")
-    st.markdown("## 📊 Algorithm Comparison (Sorted by Waste %)")
-    
-    styled_df = comparison_df.style.apply(
-        lambda row: ['background-color: #2e7d32; color: white'] * len(row) 
-        if row["Algorithm"] == best_algo else [''] * len(row), axis=1
-    ).format({"Waste %": "{:.2f}%"})
-    
-    st.dataframe(styled_df, use_container_width=True, height=460)
+                
+                with col2:
+                    if REPORTLAB_AVAILABLE:
+                        pdf_buffer = generate_pdf_report(best_plates, demand, original_qty, best_algo, best_waste)
+                        if pdf_buffer:
+                            st.download_button(
+                                "📄 Download PDF", 
+                                pdf_buffer,
+                                f"BEST_{best_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                                mime="application/pdf", 
+                                use_container_width=True
+                            )
+            except Exception as e:
+                st.error(f"Error generating report: {str(e)}")
+                st.info("Showing comparison table instead...")
+        
+        # Algorithm Comparison
+        st.markdown("---")
+        st.markdown("## 📊 Algorithm Comparison (Sorted by Waste %)")
+        
+        styled_df = comparison_df.style.apply(
+            lambda row: ['background-color: #2e7d32; color: white'] * len(row) 
+            if row["Algorithm"] == best_algo else [''] * len(row), axis=1
+        ).format({"Waste %": "{:.2f}%"})
+        
+        st.dataframe(styled_df, use_container_width=True, height=460)
 
-   
-# ====================== VIEW ANY ALGORITHM REPORT (Independent Section) ======================
+# ====================== VIEW ANY ALGORITHM REPORT ======================
 st.markdown("---")
 st.markdown("## 🔍 View others Report")
 
 if 'results' in st.session_state and st.session_state['results']:
     algo_list = list(st.session_state['results'].keys())
     
-    # Default Best Algorithm
     default_index = 0
     if st.session_state.get('best_algo') in algo_list:
         default_index = algo_list.index(st.session_state['best_algo'])
@@ -3373,7 +3416,7 @@ if 'results' in st.session_state and st.session_state['results']:
             "👇 যে অ্যালগরিদমের রিপোর্ট দেখতে চান:",
             options=algo_list,
             index=default_index,
-            key="independent_algo_selector"   # Unique key
+            key="independent_algo_selector"
         )
 
     with col2:
@@ -3402,7 +3445,6 @@ if 'results' in st.session_state and st.session_state['results']:
                     "Plate ID": p["name"],
                     "Sheets Required": p["sheets"],
                     "Total UPS": ups_sum,
-                    
                 })
                 total_sheets += p["sheets"]
                 total_ups += ups_sum
@@ -3412,7 +3454,6 @@ if 'results' in st.session_state and st.session_state['results']:
                 "Plate ID": "TOTAL",
                 "Sheets Required": total_sheets,
                 "Total UPS": total_ups,
-                
             })
 
             plate_df = pd.DataFrame(plate_rows)
@@ -3421,15 +3462,14 @@ if 'results' in st.session_state and st.session_state['results']:
             waste = calculate_waste_percent(selected_plates, st.session_state['demand'])
             st.success(f"**Waste: {waste}%** | Plates: {len(selected_plates)} | Total Sheets: {total_sheets}")
 
-
         else:
             st.error(f"❌ {selected_algo} এর রিপোর্ট পাওয়া যায়নি।")
 
-
+# Footer
 st.markdown("""
 <div style="text-align: center; padding: 2rem; margin-top: 3rem; border-top: 2px solid rgba(102,126,234,0.3); background: rgba(255,255,255,0.02); border-radius: 20px;">
     <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin: 0;">
-        © 2025 Plate Ratio System | Version 18
+        © 2025 Plate Ratio System | Version 26
     </p>
     <p style="color: rgba(255,255,255,0.5); font-size: 0.8rem; margin: 8px 0;">
         Enterprise Production Optimization Framework
