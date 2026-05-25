@@ -10,3 +10,4 @@ PyPDF2
 pymupdf
 pypdf
 ortools
+ortools==9.8.3296
