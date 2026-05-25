@@ -470,19 +470,30 @@ def calculate_waste_percent(plates: list, demand: dict) -> float:
     """Calculate waste percentage from plates and demand"""
     total_produced = 0
     total_demand = sum(demand.values())
+    
+    if total_demand == 0:
+        return 0.0
 
     for tag in demand:
         produced_qty = 0
         for p in plates:
-            ups = p["layout"].get(tag, 0)
-            produced_qty += ups * p["sheets"]
+            if p and "layout" in p:  # Check if plate exists
+                ups = p["layout"].get(tag, 0)
+                produced_qty += ups * p.get("sheets", 0)
         total_produced += produced_qty
 
     if total_produced == 0:
-        return 100
+        return 100.0
 
+    # Waste calculation: (produced - demand) / produced * 100
     waste = total_produced - total_demand
-    return round((waste / total_produced) * 100, 2)
+    waste_percent = (waste / total_produced) * 100
+    
+    # Ensure waste is not negative (if produced < demand, it's underproduction)
+    if waste_percent < 0:
+        waste_percent = 0.0
+    
+    return round(waste_percent, 2)
 
 
 def build_full_summary(plates: list, demand: dict, original_qty: dict) -> pd.DataFrame:
@@ -494,30 +505,39 @@ def build_full_summary(plates: list, demand: dict, original_qty: dict) -> pd.Dat
         row = {
             "SL": sl,
             "Tag": tag,
-            "Original QTY": original_qty[tag],
+            "Original QTY": original_qty.get(tag, 0),
             "Produced (+Add-on)": demand[tag]
         }
 
-        for p in plates:
-            ups = p["layout"].get(tag, 0)
-            row[f"Plate {p['name']}"] = ups
+        for idx, p in enumerate(plates):
+            if p and "layout" in p and "name" in p:
+                ups = p["layout"].get(tag, 0)
+                row[f"Plate {p['name']}"] = ups
+            else:
+                row[f"Plate {idx+1}"] = 0
 
         total_produced = 0
         for p in plates:
-            ups = p["layout"].get(tag, 0)
-            total_produced += ups * p["sheets"]
+            if p and "layout" in p:
+                ups = p["layout"].get(tag, 0)
+                sheets = p.get("sheets", 0)
+                total_produced += ups * sheets
 
         excess = total_produced - demand[tag]
         excess_percent = round((excess / demand[tag]) * 100, 2) if demand[tag] else 0
 
         row["Total Produced QTY"] = total_produced
-        row["Excess"] = excess
-        row["Excess %"] = f"{excess_percent}%"
+        row["Excess"] = max(0, excess)  # Can't have negative excess
+        row["Excess %"] = f"{max(0, excess_percent)}%"
         rows.append(row)
         sl += 1
 
+    if not rows:
+        return pd.DataFrame()
+
     df = pd.DataFrame(rows)
 
+    # Add total row
     total_row = {
         "SL": "📊",
         "Tag": "TOTAL",
@@ -525,14 +545,20 @@ def build_full_summary(plates: list, demand: dict, original_qty: dict) -> pd.Dat
         "Produced (+Add-on)": df["Produced (+Add-on)"].sum(),
     }
 
-    for p in plates:
-        total_row[f"Plate {p['name']}"] = df[f"Plate {p['name']}"].sum()
+    for idx, p in enumerate(plates):
+        col_name = f"Plate {p['name']}" if "name" in p else f"Plate {idx+1}"
+        if col_name in df.columns:
+            total_row[col_name] = df[col_name].sum()
+        else:
+            total_row[col_name] = 0
 
     total_row["Total Produced QTY"] = df["Total Produced QTY"].sum()
-    total_row["Excess"] = df["Excess"].sum()
-    total_row["Excess %"] = (
-        f"{round((total_row['Excess'] / total_row['Produced (+Add-on)']) * 100, 2) if total_row['Produced (+Add-on)'] > 0 else 0}%"
-    )
+    total_excess = df["Excess"].sum()
+    total_row["Excess"] = total_excess
+    
+    total_produced_qty = total_row["Total Produced QTY"]
+    total_excess_percent = round((total_excess / total_produced_qty) * 100, 2) if total_produced_qty > 0 else 0
+    total_row["Excess %"] = f"{total_excess_percent}%"
 
     df = pd.concat([df, pd.DataFrame([total_row])], ignore_index=True)
     return df
@@ -3196,139 +3222,137 @@ problematic_for_single_plate = {
 }
 
 # ========== MAIN LOOP ==========
-results = {}
-
-for algo_name, func in algo_functions.items():
-    try:
-        if maxp == 1 and algo_name in problematic_for_single_plate:
-            results[algo_name] = v3_optimizer(demand, cap, maxp)
+# ====================== UI OUTPUT (সংশোধিত) ======================
+if results:
+    # Filter out invalid results
+    valid_results = {}
+    for algo_name, plates in results.items():
+        if plates:
+            waste = calculate_waste_percent(plates, demand)
+            if 0 <= waste <= 100:  # Valid waste percentage
+                valid_results[algo_name] = plates
+            else:
+                # Use V3 as fallback
+                valid_results[algo_name] = v3_optimizer(demand, cap, maxp)
         else:
-            results[algo_name] = func()
-    except Exception as e:
-        results[algo_name] = v3_optimizer(demand, cap, maxp)
-
-# Ensure all have results
-for algo_name in list(results.keys()):
-    if not results.get(algo_name):
-        results[algo_name] = v3_optimizer(demand, cap, maxp)
-
-# ========== COMPARISON DATA ==========
-comparison_data = []
-
-for algo_name, plates in results.items():
-    if plates:
+            valid_results[algo_name] = v3_optimizer(demand, cap, maxp)
+    
+    results = valid_results
+    
+    # Update comparison
+    comparison_data = []
+    for algo_name, plates in results.items():
+        waste = calculate_waste_percent(plates, demand)
         comparison_data.append({
             "Algorithm": algo_name,
-            "Waste %": calculate_waste_percent(plates, demand),
+            "Waste %": waste,
             "Total Plates": len(plates),
-            "Total Sheets": sum(p["sheets"] for p in plates),
-            "Status": "✅ Success"
+            "Total Sheets": sum(p.get("sheets", 0) for p in plates),
+            "Status": "✅ Success" if plates else "❌ Failed"
         })
-    else:
-        comparison_data.append({
-            "Algorithm": algo_name,
-            "Waste %": 100,
-            "Total Plates": 0,
-            "Total Sheets": 0,
-            "Status": "❌ Failed"
-        })
-
-comparison_df = pd.DataFrame(comparison_data).sort_values("Waste %")
-best_algo = comparison_df.iloc[0]["Algorithm"]
-best_waste = comparison_df.iloc[0]["Waste %"]
-
-# Store in session state
-st.session_state['results'] = results
-st.session_state['comparison_df'] = comparison_df
-st.session_state['best_algo'] = best_algo
-st.session_state['best_waste'] = best_waste
-st.session_state['demand'] = demand
-st.session_state['original_qty'] = original_qty
-
-# ====================== UI OUTPUT ======================
-st.markdown(f"""
-<div class="best-algo">
-    <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
-    <div class="metric-label">Waste Percentage: {best_waste}%</div>
-    <div class="metric-label">✨ Total Algorithms Tested: {len(results)} ✨</div>
-</div>
-""", unsafe_allow_html=True)
-
-# Best Algorithm Report
-st.markdown("## 📋 Best Algorithm Report")
-best_plates = results[best_algo]
-
-if best_plates:
-    st.markdown("### 📊 Production Summary")
-    full_df = build_full_summary(best_plates, demand, original_qty)
-    st.dataframe(full_df, use_container_width=True, height=380)
     
-    st.markdown("### 🧾 Plate Configuration Details")
-    plate_rows = []
-    total_sheets_sum = 0
-    total_ups_sum = 0
+    comparison_df = pd.DataFrame(comparison_data).sort_values("Waste %")
+    best_algo = comparison_df.iloc[0]["Algorithm"]
+    best_waste = comparison_df.iloc[0]["Waste %"]
     
-    for idx, p in enumerate(best_plates, 1):
-        total_ups = sum(p["layout"].values())
-        plate_rows.append({
-            "SL": idx,
-            "Plate ID": p["name"],
-            "Sheets Required": p["sheets"],
-            "Total UPS": total_ups,
-        })
-        total_sheets_sum += p["sheets"]
-        total_ups_sum += total_ups
+    # Store in session state
+    st.session_state['results'] = results
+    st.session_state['comparison_df'] = comparison_df
+    st.session_state['best_algo'] = best_algo
+    st.session_state['best_waste'] = best_waste
     
-    plate_rows.append({
-        "SL": "📊",
-        "Plate ID": "TOTAL",
-        "Sheets Required": total_sheets_sum,
-        "Total UPS": total_ups_sum,
-    })
+    # Display Best Algorithm Banner
+    st.markdown(f"""
+    <div class="best-algo">
+        <div class="metric-value">🏆 BEST ALGORITHM: {best_algo}</div>
+        <div class="metric-label">Waste Percentage: {best_waste}%</div>
+        <div class="metric-label">✨ Total Algorithms Tested: {len(results)} ✨</div>
+    </div>
+    """, unsafe_allow_html=True)
     
-    plate_details_df = pd.DataFrame(plate_rows)
-    st.dataframe(plate_details_df, use_container_width=True)
+    # Best Algorithm Report
+    st.markdown("## 📋 Best Algorithm Report")
+    best_plates = results[best_algo]
     
-    # Download Best Report
-    st.markdown("### 📥 Download Best Report")
-    col1, col2 = st.columns(2)
+    if best_plates:
+        try:
+            st.markdown("### 📊 Production Summary")
+            full_df = build_full_summary(best_plates, demand, original_qty)
+            if not full_df.empty:
+                st.dataframe(full_df, use_container_width=True, height=380)
+            
+            st.markdown("### 🧾 Plate Configuration Details")
+            plate_rows = []
+            total_sheets_sum = 0
+            total_ups_sum = 0
+            
+            for idx, p in enumerate(best_plates, 1):
+                if p and "layout" in p:
+                    total_ups = sum(p["layout"].values())
+                    plate_name_str = p.get("name", f"Plate {idx}")
+                    plate_rows.append({
+                        "SL": idx,
+                        "Plate ID": plate_name_str,
+                        "Sheets Required": p.get("sheets", 0),
+                        "Total UPS": total_ups,
+                    })
+                    total_sheets_sum += p.get("sheets", 0)
+                    total_ups_sum += total_ups
+            
+            plate_rows.append({
+                "SL": "📊",
+                "Plate ID": "TOTAL",
+                "Sheets Required": total_sheets_sum,
+                "Total UPS": total_ups_sum,
+            })
+            
+            plate_details_df = pd.DataFrame(plate_rows)
+            st.dataframe(plate_details_df, use_container_width=True)
+            
+            # Download buttons
+            st.markdown("### 📥 Download Best Report")
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if 'full_df' in dir() and not full_df.empty:
+                    bio_excel = BytesIO()
+                    with pd.ExcelWriter(bio_excel, engine="openpyxl") as writer:
+                        full_df.to_excel(writer, sheet_name="Summary", index=False)
+                        plate_details_df.to_excel(writer, sheet_name="Plate Details", index=False)
+                        comparison_df.to_excel(writer, sheet_name="Comparison", index=False)
+                    bio_excel.seek(0)
+                    st.download_button(
+                        "📊 Download Excel", 
+                        bio_excel,
+                        f"BEST_{best_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+                        use_container_width=True
+                    )
+            
+            with col2:
+                if REPORTLAB_AVAILABLE:
+                    pdf_buffer = generate_pdf_report(best_plates, demand, original_qty, best_algo, best_waste)
+                    if pdf_buffer:
+                        st.download_button(
+                            "📄 Download PDF", 
+                            pdf_buffer,
+                            f"BEST_{best_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                            mime="application/pdf", 
+                            use_container_width=True
+                        )
+        except Exception as e:
+            st.error(f"Error generating report: {str(e)}")
+            st.info("Showing comparison table instead...")
     
-    with col1:
-        bio_excel = BytesIO()
-        with pd.ExcelWriter(bio_excel, engine="openpyxl") as writer:
-            full_df.to_excel(writer, sheet_name="Summary", index=False)
-            plate_details_df.to_excel(writer, sheet_name="Plate Details", index=False)
-            comparison_df.to_excel(writer, sheet_name="Comparison", index=False)
-        bio_excel.seek(0)
-        st.download_button(
-            "📊 Download Excel", 
-            bio_excel,
-            f"BEST_{best_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
-            use_container_width=True
-        )
+    # Algorithm Comparison
+    st.markdown("---")
+    st.markdown("## 📊 Algorithm Comparison (Sorted by Waste %)")
     
-    with col2:
-        if REPORTLAB_AVAILABLE:
-            pdf_buffer = generate_pdf_report(best_plates, demand, original_qty, best_algo, best_waste)
-            if pdf_buffer:
-                st.download_button(
-                    "📄 Download PDF", 
-                    pdf_buffer,
-                    f"BEST_{best_algo.replace(' ','_')}_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-                    mime="application/pdf", 
-                    use_container_width=True
-                )
-
-# Algorithm Comparison
-st.markdown("---")
-st.markdown("## 📊 Algorithm Comparison (Sorted by Waste %)")
-
-styled_df = comparison_df.style.apply(
-    lambda row: ['background-color: #2e7d32; color: white'] * len(row) 
-    if row["Algorithm"] == best_algo else [''] * len(row), axis=1
-).format({"Waste %": "{:.2f}%"})
-
-st.dataframe(styled_df, use_container_width=True, height=460)
+    styled_df = comparison_df.style.apply(
+        lambda row: ['background-color: #2e7d32; color: white'] * len(row) 
+        if row["Algorithm"] == best_algo else [''] * len(row), axis=1
+    ).format({"Waste %": "{:.2f}%"})
+    
+    st.dataframe(styled_df, use_container_width=True, height=460)
 
    
 # ====================== VIEW ANY ALGORITHM REPORT (Independent Section) ======================
