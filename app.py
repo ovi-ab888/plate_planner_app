@@ -2151,46 +2151,43 @@ def v19_optimizer(demand: dict, capacity: int, max_plates: int, time_limit_secon
     
     model = cp_model.CpModel()
     
-    # Variables: plates (max_plates পর্যন্ত)
-    max_possible_plates = min(max_plates, sum(demand.values()) // 1 + 5)
+    # Variables
+    max_possible_plates = max_plates
     
-    # UPS for each tag in each plate
     ups = {}
     for i in range(max_possible_plates):
         for idx, tag in enumerate(tags):
-            ups[(i, idx)] = model.NewIntVar(0, min(capacity, demand[tag]), f'ups_{i}_{tag}')
+            max_ups = min(capacity, demand.get(tag, 0))
+            ups[(i, idx)] = model.NewIntVar(0, max_ups, f'ups_{i}_{tag}')
     
-    # Sheets for each plate
     sheets = {}
     for i in range(max_possible_plates):
-        sheets[i] = model.NewIntVar(0, max(demand.values()), f'sheets_{i}')
+        sheets[i] = model.NewIntVar(0, sum(demand.values()), f'sheets_{i}')
     
-    # Whether plate is used
     plate_used = {}
     for i in range(max_possible_plates):
         plate_used[i] = model.NewBoolVar(f'used_{i}')
     
-    # Constraint 1: Each plate's total UPS <= capacity
+    # Capacity constraint
     for i in range(max_possible_plates):
         total_ups = sum(ups[(i, idx)] for idx in range(n_tags))
         model.Add(total_ups <= capacity)
         
-        # If plate not used, all UPS must be 0
-        total_ups_zero = total_ups == 0
-        model.Add(total_ups_zero).OnlyEnforceIf(plate_used[i].Not())
+        # Link plate_used with UPS
+        model.Add(total_ups == 0).OnlyEnforceIf(plate_used[i].Not())
         model.Add(total_ups > 0).OnlyEnforceIf(plate_used[i])
     
-    # Constraint 2: Meet total demand
+    # Demand constraints
     for idx, tag in enumerate(tags):
         total_produced = sum(ups[(i, idx)] * sheets[i] for i in range(max_possible_plates))
         model.Add(total_produced >= demand[tag])
     
-    # Constraint 3: If plate used, sheets >= 1
+    # Sheets constraint
     for i in range(max_possible_plates):
         model.Add(sheets[i] >= 1).OnlyEnforceIf(plate_used[i])
         model.Add(sheets[i] == 0).OnlyEnforceIf(plate_used[i].Not())
     
-    # Objective: Minimize total sheets + penalty for unused capacity
+    # Objective: minimize total sheets
     total_sheets = sum(sheets[i] for i in range(max_possible_plates))
     model.Minimize(total_sheets)
     
