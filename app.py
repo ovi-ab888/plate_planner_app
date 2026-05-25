@@ -3247,7 +3247,7 @@ st.markdown(f"""
     """, unsafe_allow_html=True)
 
     # Best Algorithm Report
-    st.markdown("## 📋 Best Algorithm Report")
+st.markdown("## 📋 Best Algorithm Report")
     best_plates = results[best_algo]
 
     if best_plates:
@@ -3255,7 +3255,7 @@ st.markdown(f"""
         full_df = build_full_summary(best_plates, demand, original_qty)
         st.dataframe(full_df, use_container_width=True, height=380)
 
-        st.markdown("### 🧾 Plate Configuration Details")
+    st.markdown("### 🧾 Plate Configuration Details")
         plate_rows = []
         total_sheets_sum = 0
         total_ups_sum = 0
@@ -3283,7 +3283,7 @@ st.markdown(f"""
         st.dataframe(plate_details_df, use_container_width=True)
 
         # Download Best Report
-        st.markdown("### 📥 Download Best Report")
+    st.markdown("### 📥 Download Best Report")
         col1, col2 = st.columns(2)
         with col1:
             bio_excel = BytesIO()
@@ -3305,8 +3305,8 @@ st.markdown(f"""
                                      mime="application/pdf", use_container_width=True)
 
     # Algorithm Comparison
-    st.markdown("---")
-    st.markdown("## 📊 Algorithm Comparison (Sorted by Waste %)")
+st.markdown("---")
+st.markdown("## 📊 Algorithm Comparison (Sorted by Waste %)")
     styled_df = comparison_df.style.apply(
         lambda row: ['background-color: #2e7d32; color: white'] * len(row) 
         if row["Algorithm"] == best_algo else [''] * len(row), axis=1
