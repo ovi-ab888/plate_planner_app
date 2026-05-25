@@ -1,5 +1,5 @@
-# app_final.py — 16-in-1 PLATE RATIO COMPARATOR (WITH ADVANCED ALGORITHMS)
-# V3 to V17 Complete | Compare All Algorithms | Pick Best
+# app_final.py — 26-in-1 PLATE RATIO COMPARATOR (WITH ADVANCED ALGORITHMS)
+# V1 to V26 Complete | Compare All Algorithms | Pick Best
 # Design by Ovi
 
 import os
@@ -17,7 +17,11 @@ os.environ["OPENBLAS_NUM_THREADS"] = "1"
 import streamlit as st
 import pandas as pd
 
-# Try to import PuLP for V8 and V17
+# ================================================================
+# LIBRARY IMPORTS & CHECKS
+# ================================================================
+
+# Try to import PuLP for Integer Solver
 try:
     from pulp import LpProblem, LpMinimize, LpVariable, lpSum, value, LpInteger
     PULP_AVAILABLE = True
@@ -34,7 +38,8 @@ try:
     REPORTLAB_AVAILABLE = True
 except ImportError:
     REPORTLAB_AVAILABLE = False
-    # আপনার ফাইলের শুরুতে ইম্পোর্ট সেকশনে যোগ করুন
+
+# Try to import OR-Tools for V19
 try:
     from ortools.sat.python import cp_model
     ORTOOLS_AVAILABLE = True
