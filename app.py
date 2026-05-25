@@ -3175,64 +3175,67 @@ algo_functions = {
     "V16 - Plate Merge Optimizer": lambda: v16_optimizer(demand, cap, maxp),
     "V17 - AI Evolution Engine": lambda: v17_optimizer(demand, cap, maxp),
     "V18 - Global Multi-Plate Optimizer": lambda: v18_optimizer(demand, cap, maxp),
-    
-    # ========== NEW ALGORITHMS V19 TO V26 ==========
-    "V19 - CP-SAT Optimizer": lambda: v19_optimizer(demand, cap, maxp) if ORTOOLS_AVAILABLE else v18_optimizer(demand, cap, maxp),
-    "V20 - PSO Optimizer": lambda: v20_optimizer(demand, cap, maxp),
-    "V21 - ACO Optimizer": lambda: v21_optimizer(demand, cap, maxp),
-    "V22 - Q-Learning Optimizer": lambda: v22_optimizer(demand, cap, maxp),
-    "V23 - Branch & Bound": lambda: v23_optimizer(demand, cap, maxp),
-    "V24 - Differential Evolution": lambda: v24_optimizer(demand, cap, maxp),
-    "V25 - Pareto Optimizer": lambda: v25_optimizer(demand, cap, maxp),
-    "V26 - NN Predictor": lambda: v26_optimizer(demand, cap, maxp),
 }
 
-    for algo_name, func in algo_functions.items():
-        try:
-            if maxp == 1 and algo_name in problematic_for_single_plate:
-                results[algo_name] = v3_optimizer(demand, cap, maxp)
-            else:
-                results[algo_name] = func()
-        except Exception as e:
+# শুধু ORTOOLS থাকলে V19 যোগ করুন (V20-V26 কমেন্ট করা ভালো)
+if ORTOOLS_AVAILABLE:
+    algo_functions["V19 - CP-SAT Optimizer"] = lambda: v19_optimizer(demand, cap, maxp)
 
+# Problematic algorithms for single plate
+problematic_for_single_plate = {
+    "V11 - Genetic Algorithm", "V16 - Plate Merge Optimizer", 
+    "V17 - AI Evolution Engine", "V19 - CP-SAT Optimizer"
+}
+
+# ========== MAIN LOOP - CORRECT INDENTATION ==========
+results = {}
+
+for algo_name, func in algo_functions.items():
+    try:
+        if maxp == 1 and algo_name in problematic_for_single_plate:
             results[algo_name] = v3_optimizer(demand, cap, maxp)
-
-        # Ensure all have results
-    for algo_name in list(results.keys()):
-        if not results.get(algo_name):
-            results[algo_name] = v3_optimizer(demand, cap, maxp)
-
-    # Comparison Data
-    comparison_data = []
-    for algo_name, plates in results.items():
-        if plates:
-            comparison_data.append({
-                "Algorithm": algo_name,
-                "Waste %": calculate_waste_percent(plates, demand),
-                "Total Plates": len(plates),
-                "Total Sheets": sum(p["sheets"] for p in plates),
-                "Status": "✅ Success"
-            })
         else:
-            comparison_data.append({
-                "Algorithm": algo_name,
-                "Waste %": 100,
-                "Total Plates": 0,
-                "Total Sheets": 0,
-                "Status": "❌ Failed"
-            })
+            results[algo_name] = func()
+    except Exception as e:
+        results[algo_name] = v3_optimizer(demand, cap, maxp)
 
-    comparison_df = pd.DataFrame(comparison_data).sort_values("Waste %")
-    best_algo = comparison_df.iloc[0]["Algorithm"]
-    best_waste = comparison_df.iloc[0]["Waste %"]
+# Ensure all have results
+for algo_name in list(results.keys()):
+    if not results.get(algo_name):
+        results[algo_name] = v3_optimizer(demand, cap, maxp)
 
-    # Store in session state
-    st.session_state['results'] = results
-    st.session_state['comparison_df'] = comparison_df
-    st.session_state['best_algo'] = best_algo
-    st.session_state['best_waste'] = best_waste
-    st.session_state['demand'] = demand
-    st.session_state['original_qty'] = original_qty
+# ========== COMPARISON DATA ==========
+comparison_data = []
+
+for algo_name, plates in results.items():
+    if plates:
+        comparison_data.append({
+            "Algorithm": algo_name,
+            "Waste %": calculate_waste_percent(plates, demand),
+            "Total Plates": len(plates),
+            "Total Sheets": sum(p["sheets"] for p in plates),
+            "Status": "✅ Success"
+        })
+    else:
+        comparison_data.append({
+            "Algorithm": algo_name,
+            "Waste %": 100,
+            "Total Plates": 0,
+            "Total Sheets": 0,
+            "Status": "❌ Failed"
+        })
+
+comparison_df = pd.DataFrame(comparison_data).sort_values("Waste %")
+best_algo = comparison_df.iloc[0]["Algorithm"]
+best_waste = comparison_df.iloc[0]["Waste %"]
+
+# Store in session state
+st.session_state['results'] = results
+st.session_state['comparison_df'] = comparison_df
+st.session_state['best_algo'] = best_algo
+st.session_state['best_waste'] = best_waste
+st.session_state['demand'] = demand
+st.session_state['original_qty'] = original_qty
 
     # ====================== UI OUTPUT ======================
     st.markdown(f"""
