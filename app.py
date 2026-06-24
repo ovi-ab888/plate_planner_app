@@ -660,9 +660,9 @@ def generate_pdf_report(plates: list, demand: dict, original_qty: dict,
         sl = 1
         for tag in demand.keys():
             # Get style/color/size from session state or use defaults
-            style = styles_dict.get(tag, "N/A")
-            color = colors_dict.get(tag, "N/A")
-            size = sizes_dict.get(tag, "N/A")
+            style = styles_dict.get(tag, "")
+            color = colors_dict.get(tag, "")
+            size = sizes_dict.get(tag, "")
             
             row = [str(sl), style, color, size, 
                    str(original_qty.get(tag, 0)), str(demand[tag])]
