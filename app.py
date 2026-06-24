@@ -2839,7 +2839,7 @@ if input_mode == "✏️ Manual Input":
             "Size": sizes,
             "Quantity": qty
         })
-        st.info("📋 Data Preview (showing all items)")
+        st.info("")
         st.dataframe(preview_df, use_container_width=True, height=200)
     
     # Data Preparation
