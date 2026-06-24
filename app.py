@@ -2589,9 +2589,9 @@ if input_mode == "✏️ Manual Input":
             )
         
         # Store values
-        style_display = style_val.strip() if style_val.strip() else "N/A"
-        color_display = color_val.strip() if color_val.strip() else "N/A"
-        size_display = size_val.strip() if size_val.strip() else "N/A"
+        style_display = style_val.strip() if style_val.strip() else ""
+        color_display = color_val.strip() if color_val.strip() else ""
+        size_display = size_val.strip() if size_val.strip() else ""
         
         styles.append(style_display)
         colors.append(color_display)
