@@ -2557,7 +2557,7 @@ if input_mode == "✏️ Manual Input":
                 value="N/A", 
                 key=f"style_{i}",
                 label_visibility="collapsed",
-                placeholder="N/A"
+                placeholder=""
             )
         
         with col3:
@@ -2566,7 +2566,7 @@ if input_mode == "✏️ Manual Input":
                 value="N/A", 
                 key=f"color_{i}",
                 label_visibility="collapsed",
-                placeholder="N/A"
+                placeholder=""
             )
         
         with col4:
@@ -2575,7 +2575,7 @@ if input_mode == "✏️ Manual Input":
                 value="N/A", 
                 key=f"size_{i}",
                 label_visibility="collapsed",
-                placeholder="N/A"
+                placeholder=""
             )
         
         with col5:
