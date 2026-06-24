@@ -193,13 +193,138 @@ st.success("✅ Successfully logged in!")
 
 
 # ================================================================
-# MODERN CSS FOR MAIN APP
+# MODERN CSS FOR MAIN APP (Light + Dark Mode Compatible)
 # ================================================================
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     * { font-family: 'Inter', sans-serif; }
-    .stApp { background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #24243e 100%); }
+    
+    /* Dark Mode Default */
+    .stApp {
+        background: linear-gradient(135deg, #0f0c29 0%, #1a1a3e 50%, #24243e 100%);
+    }
+    
+    /* Light Mode Support */
+    @media (prefers-color-scheme: light) {
+        .stApp {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        .main-header {
+            background: rgba(255,255,255,0.9) !important;
+            border-bottom: 1px solid rgba(0,0,0,0.1) !important;
+        }
+        .main-header p { color: rgba(0,0,0,0.7) !important; }
+        .card {
+            background: rgba(255,255,255,0.85) !important;
+            border: 1px solid rgba(0,0,0,0.1) !important;
+        }
+        .card:hover { border-color: rgba(102,126,234,0.5) !important; }
+        .metric-card {
+            background: rgba(255,255,255,0.9) !important;
+            border: 1px solid rgba(0,0,0,0.1) !important;
+        }
+        .metric-label { color: rgba(0,0,0,0.7) !important; }
+        .stNumberInput input, .stTextInput input {
+            background: rgba(255,255,255,0.9) !important;
+            border: 1px solid rgba(0,0,0,0.2) !important;
+            color: #1a1a3e !important;
+        }
+        .stNumberInput input:focus, .stTextInput input:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 2px rgba(102,126,234,0.2) !important;
+            background: white !important;
+        }
+        .tag-display {
+            background: rgba(102,126,234,0.1) !important;
+            border: 1px solid rgba(102,126,234,0.3) !important;
+            color: #4a3f8a !important;
+        }
+        .stDataFrame { background: rgba(255,255,255,0.9) !important; }
+        .warning { background: rgba(255,193,7,0.15) !important; color: #856404 !important; border-left: 4px solid #ffc107 !important; }
+        .info { background: rgba(23,162,184,0.15) !important; color: #0c5460 !important; border-left: 4px solid #17a2b8 !important; }
+        .best-algo {
+            background: linear-gradient(135deg, #00b09b 0%, #96c93d 100%) !important;
+            color: white !important;
+        }
+        .best-algo .metric-value { -webkit-text-fill-color: white !important; }
+        .stButton > button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+        }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05) !important; }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; }
+        .stMarkdown p, .stMarkdown div, .stMarkdown span { color: #1a1a3e !important; }
+        .main-header h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+        }
+        .card-title {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            border-bottom: 2px solid #667eea !important;
+        }
+        .metric-value {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+        }
+        /* Streamlit native elements */
+        .stSelectbox label, .stNumberInput label, .stTextInput label, .stRadio label {
+            color: #1a1a3e !important;
+        }
+        .stSelectbox div[data-baseweb="select"] {
+            background: rgba(255,255,255,0.9) !important;
+            border: 1px solid rgba(0,0,0,0.2) !important;
+            color: #1a1a3e !important;
+        }
+        .stRadio div[role="radiogroup"] {
+            color: #1a1a3e !important;
+        }
+        .stAlert {
+            background: rgba(255,255,255,0.9) !important;
+            color: #1a1a3e !important;
+        }
+        .stSuccess, .stInfo, .stWarning, .stError {
+            background: rgba(255,255,255,0.9) !important;
+        }
+        .stSuccess p, .stInfo p, .stWarning p, .stError p {
+            color: #1a1a3e !important;
+        }
+        .stDataFrame table {
+            color: #1a1a3e !important;
+        }
+        .stDataFrame thead tr th {
+            background: rgba(102,126,234,0.1) !important;
+            color: #1a1a3e !important;
+        }
+        .stDataFrame tbody tr td {
+            color: #1a1a3e !important;
+        }
+        .stExpander {
+            background: rgba(255,255,255,0.85) !important;
+            border: 1px solid rgba(0,0,0,0.1) !important;
+        }
+        .stExpander summary {
+            color: #1a1a3e !important;
+        }
+        .stDownloadButton button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+        }
+        /* Footer */
+        .footer-text {
+            color: rgba(0,0,0,0.6) !important;
+        }
+        .footer-border {
+            border-top: 2px solid rgba(102,126,234,0.3) !important;
+            background: rgba(255,255,255,0.02) !important;
+        }
+    }
+    
+    /* Dark Mode (default) */
     .main-header {
         background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
         backdrop-filter: blur(10px);
@@ -307,6 +432,74 @@ st.markdown("""
     ::-webkit-scrollbar { width: 8px; height: 8px; }
     ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
     ::-webkit-scrollbar-thumb { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; }
+    
+    /* Dark Mode Streamlit elements */
+    .stSelectbox label, .stNumberInput label, .stTextInput label, .stRadio label {
+        color: rgba(255,255,255,0.9) !important;
+    }
+    .stSelectbox div[data-baseweb="select"] {
+        background: rgba(255,255,255,0.08) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        color: white !important;
+    }
+    .stRadio div[role="radiogroup"] {
+        color: rgba(255,255,255,0.9) !important;
+    }
+    .stAlert {
+        background: rgba(255,255,255,0.05) !important;
+        color: rgba(255,255,255,0.9) !important;
+    }
+    .stDataFrame table {
+        color: rgba(255,255,255,0.9) !important;
+    }
+    .stDataFrame thead tr th {
+        background: rgba(102,126,234,0.2) !important;
+        color: rgba(255,255,255,0.9) !important;
+    }
+    .stDataFrame tbody tr td {
+        color: rgba(255,255,255,0.9) !important;
+    }
+    .stExpander {
+        background: rgba(255,255,255,0.05) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+    }
+    .stExpander summary {
+        color: rgba(255,255,255,0.9) !important;
+    }
+    
+    /* Success/Info/Warning/Error in Dark Mode */
+    .stSuccess, .stInfo, .stWarning, .stError {
+        background: rgba(255,255,255,0.05) !important;
+    }
+    .stSuccess p, .stInfo p, .stWarning p, .stError p {
+        color: rgba(255,255,255,0.9) !important;
+    }
+    
+    /* Footer */
+    .footer-text {
+        color: rgba(255,255,255,0.6) !important;
+    }
+    .footer-border {
+        border-top: 2px solid rgba(102,126,234,0.3) !important;
+        background: rgba(255,255,255,0.02) !important;
+    }
+    
+    /* Common */
+    .stDownloadButton button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        padding: 0.75rem 2rem !important;
+        font-weight: 600 !important;
+        border-radius: 12px !important;
+        width: 100% !important;
+        transition: all 0.3s ease !important;
+        font-size: 1rem !important;
+    }
+    .stDownloadButton button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 10px 20px rgba(102,126,234,0.4) !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -3029,11 +3222,11 @@ if generate_clicked:
 
 # Footer
 st.markdown("""
-<div style="text-align: center; padding: 2rem; margin-top: 3rem; border-top: 2px solid rgba(102,126,234,0.3); background: rgba(255,255,255,0.02); border-radius: 20px;">
-    <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin: 0;">
+<div class="footer-border" style="text-align: center; padding: 2rem; margin-top: 3rem; border-top: 2px solid rgba(102,126,234,0.3); background: rgba(255,255,255,0.02); border-radius: 20px;">
+    <p class="footer-text" style="margin: 0; font-size: 0.85rem;">
         © 2025 Plate Ratio System | Version 26 (Complete Edition)
     </p>
-    <p style="color: rgba(255,255,255,0.5); font-size: 0.8rem; margin: 8px 0;">
+    <p class="footer-text" style="margin: 8px 0; font-size: 0.8rem;">
         Enterprise Production Optimization Framework • 26 Algorithms • Production Ready
     </p>
     <p style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 0.85rem; font-weight: 600; margin: 10px 0 0 0;">
