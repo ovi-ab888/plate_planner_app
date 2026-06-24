@@ -2554,28 +2554,28 @@ if input_mode == "✏️ Manual Input":
         with col2:
             style_val = st.text_input(
                 "Style", 
-                value="N/A", 
+                value="", 
                 key=f"style_{i}",
                 label_visibility="collapsed",
-                placeholder=""
+                placeholder="Style"
             )
         
         with col3:
             color_val = st.text_input(
                 "Color", 
-                value="N/A", 
+                value="", 
                 key=f"color_{i}",
                 label_visibility="collapsed",
-                placeholder=""
+                placeholder="Color"
             )
         
         with col4:
             size_val = st.text_input(
                 "Size", 
-                value="N/A", 
+                value="", 
                 key=f"size_{i}",
                 label_visibility="collapsed",
-                placeholder=""
+                placeholder="Size"
             )
         
         with col5:
