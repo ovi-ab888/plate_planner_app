@@ -189,8 +189,6 @@ def check_password():
 if not check_password():
     st.stop()
 
-st.success("✅ Successfully logged in!")
-
 
 # ================================================================
 # MODERN CSS FOR MAIN APP (Light + Dark Mode Compatible)
