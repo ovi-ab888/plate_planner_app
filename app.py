@@ -2693,6 +2693,65 @@ def v26_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
 
 
 # ================================================================
+# ALGORITHM 6: Smart Clustering & Dynamic Phase Chunking Engine
+# ================================================================
+def algo_smart_clustering_optimizer(demand: dict, capacity: int, max_plates: int) -> list:
+    """V6 - High-Efficiency Multi-Phase Dynamic Chunking Engine for extreme variance"""
+    if not demand: return []
+    
+    remaining = copy.deepcopy(demand)
+    plates = []
+    
+    for p_idx in range(max_plates):
+        active = {k: v for k, v in remaining.items() if v > 0}
+        if not active: break
+        
+        sorted_active = sorted(active.items(), key=lambda x: x[1], reverse=True)
+        total_active_qty = sum(active.values())
+        
+        layout = {}
+        for tag, qty in sorted_active:
+            share = qty / total_active_qty
+            allocated_ups = int(round(share * capacity))
+            if qty > 0 and allocated_ups < 1:
+                allocated_ups = 0
+            layout[tag] = allocated_ups
+            
+        while sum(layout.values()) > capacity:
+            max_tag = max(layout, key=lambda k: (layout[k], remaining[k]))
+            if layout[max_tag] > 0: layout[max_tag] -= 1
+            else: break
+            
+        while sum(layout.values()) < capacity:
+            max_pressure_tag = max(active.keys(), key=lambda k: remaining[k] / (layout.get(k, 0) + 1))
+            layout[max_pressure_tag] = layout.get(max_pressure_tag, 0) + 1
+            
+        valid_sheets = []
+        for tag, ups in layout.items():
+            if ups > 0:
+                valid_sheets.append(ceil(remaining[tag] / ups))
+                
+        if not valid_sheets: break
+        valid_sheets.sort()
+        
+        target_idx = min(int(len(valid_sheets) * 0.25), len(valid_sheets) - 1)
+        sheets = max(1, valid_sheets[target_idx])
+        
+        for tag, ups in layout.items():
+            if ups > 0: remaining[tag] = max(0, remaining[tag] - (ups * sheets))
+            
+        plates.append({
+            "name": plate_name(p_idx + 1),
+            "layout": layout,
+            "sheets": sheets,
+            "plate_index": p_idx + 1
+        })
+        
+    return ensure_demand_met(plates, demand)
+
+
+
+# ================================================================
 # MAIN UI
 # ================================================================
 st.markdown("""
@@ -3054,6 +3113,7 @@ if generate_clicked:
             "V22 - Q-Learning Optimizer": lambda: v22_optimizer(demand, cap, maxp, episodes=20),
             "V24 - Differential Evolution": lambda: v24_optimizer(demand, cap, maxp, population_size=15, generations=30),
             "V25 - Pareto Optimizer": lambda: v25_optimizer(demand, cap, maxp, population_size=20, generations=30),
+            "V6 - Smart Clustering Optimizer": lambda: algo_smart_clustering_optimizer(demand, cap, maxp),
             "V26 - NN Predictor": lambda: v26_optimizer(demand, cap, maxp),
         }
         
