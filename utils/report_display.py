@@ -25,7 +25,7 @@ def render_report(results, comparison_df, best_algo, best_waste, best_plates, de
         st.dataframe(comparison_df, use_container_width=True)
 
     st.markdown("---")
-    st.markdown("##Best Algorithm Report")
+    st.markdown("Best Algorithm Report")
 
     item_meta = st.session_state.get('item_meta', {})
     meta_columns = st.session_state.get('item_meta_columns', [])
@@ -35,7 +35,7 @@ def render_report(results, comparison_df, best_algo, best_waste, best_plates, de
     if not summary_df.empty:
         st.dataframe(summary_df, use_container_width=True, height=350)
 
-        st.markdown("###Plate Details")
+        st.markdown("Plate Details")
         plate_rows = []
         total_sheets_sum = 0
         total_ups_sum = 0
@@ -66,7 +66,7 @@ def render_report(results, comparison_df, best_algo, best_waste, best_plates, de
 def render_downloads(best_plates, demand, original_qty, best_algo, best_waste, job_number):
     """Renders Excel and PDF download buttons."""
     st.markdown("---")
-    st.markdown("## 📥 Download Reports")
+    st.markdown("📥 Download Reports")
 
     item_meta = st.session_state.get('item_meta', {})
     meta_columns = st.session_state.get('item_meta_columns', [])
