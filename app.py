@@ -41,7 +41,7 @@ def load_css():
 # STREAMLIT PAGE CONFIGURATION
 # ================================================================
 st.set_page_config(
-    page_title="Plate Ratio System - Complete Edition",
+    page_title="Plate Ratio System",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed"
