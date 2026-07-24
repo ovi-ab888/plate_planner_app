@@ -4,8 +4,8 @@ UI Components - Header & Footer
 import streamlit as st
 
 
-def render_header(title="📊 Plate Ratio Intelligence System",
-                   subtitle="Complete Edition • 26 Algorithms • Production Ready"):
+def render_header(title="Plate Ratio System",
+                   subtitle="Complete Pre-Press Plate Ratio Solution"):
     """Renders the main gradient header used across the app"""
     st.markdown(f"""
     <div class="main-header">
@@ -21,7 +21,7 @@ def render_footer():
     st.markdown("""
     <div class="footer-border" style="text-align: center; padding: 2rem; margin-top: 3rem; border-top: 2px solid rgba(102,126,234,0.3); border-radius: 20px;">
         <p class="footer-text" style="margin: 0; font-size: 0.85rem;">
-            © 2025 Plate Ratio System | Version 26 (Complete Edition)
+            © 2026 Plate Ratio System | Version 26 (Complete Edition)
         </p>
         <p class="footer-text" style="margin: 8px 0; font-size: 0.8rem;">
             26 Algorithms • Production Ready • AI-Powered
