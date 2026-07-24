@@ -1,0 +1,196 @@
+/* ================================================================
+   LOGIN PAGE
+================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+*{
+    font-family:'Inter',sans-serif;
+}
+
+/* Background */
+
+.stApp{
+    background:linear-gradient(-45deg,#0f0c29,#1a1a3e,#24243e,#1a1a3e);
+    background-size:400% 400%;
+    animation:gradientShift 15s ease infinite;
+}
+
+@keyframes gradientShift{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+}
+
+/* Hide Streamlit */
+
+#MainMenu,
+header,
+footer{
+    visibility:hidden;
+}
+
+/* Main Container */
+
+.main>div{
+    background:transparent!important;
+    padding:0!important;
+}
+
+.block-container{
+    max-width:900px!important;
+    padding-top:0!important;
+    padding-bottom:0!important;
+}
+
+/* Header */
+
+.main-header{
+    background:linear-gradient(
+        135deg,
+        rgba(102,126,234,.15),
+        rgba(118,75,162,.15)
+    );
+
+    backdrop-filter:blur(18px);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    border-radius:30px;
+
+    padding:2rem;
+
+    margin:1rem;
+
+    text-align:center;
+}
+
+.main-header h1{
+
+    font-size:2.7rem;
+
+    font-weight:800;
+
+    margin:0;
+
+    background:linear-gradient(135deg,#667eea,#764ba2);
+
+    -webkit-background-clip:text;
+
+    -webkit-text-fill-color:transparent;
+}
+
+.main-header p{
+
+    color:rgba(255,255,255,.75);
+
+    margin-top:.6rem;
+}
+
+/* Login Card */
+
+.password-container{
+
+    max-width:460px;
+
+    margin:40px auto;
+
+    padding:2.5rem;
+
+    border-radius:28px;
+
+    text-align:center;
+
+    background:rgba(255,255,255,.05);
+
+    backdrop-filter:blur(20px);
+
+    border:1px solid rgba(255,255,255,.10);
+
+    box-shadow:0 25px 50px rgba(0,0,0,.35);
+
+}
+
+/* Lock */
+
+.lock-icon{
+
+    font-size:60px;
+
+    margin:15px 0;
+
+    animation:bounce 2s infinite;
+}
+
+@keyframes bounce{
+
+    0%,100%{
+        transform:translateY(0);
+    }
+
+    50%{
+        transform:translateY(-10px);
+    }
+
+}
+
+/* Input */
+
+.stTextInput{
+
+    margin-top:-8px;
+}
+
+.stTextInput input{
+
+    background:rgba(255,255,255,.08)!important;
+
+    border:1px solid rgba(255,255,255,.15)!important;
+
+    color:white!important;
+
+    border-radius:40px!important;
+
+    text-align:center!important;
+
+    font-size:18px!important;
+
+    padding:15px 20px!important;
+
+    letter-spacing:3px!important;
+
+    transition:.3s;
+}
+
+.stTextInput input:focus{
+
+    border:1px solid #667eea!important;
+
+    box-shadow:0 0 15px rgba(102,126,234,.35)!important;
+
+}
+
+/* Placeholder */
+
+.stTextInput input::placeholder{
+
+    color:rgba(255,255,255,.35)!important;
+}
+
+/* Error */
+
+.stAlert{
+
+    border-radius:12px!important;
+}
+
+/* Footer */
+
+.designer-name{
+
+    color:rgba(255,255,255,.55);
+
+    font-size:.85rem;
+
+    margin-top:.5rem;
+}
