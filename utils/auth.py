@@ -97,7 +97,7 @@ def check_password():
     st.markdown("""
     <div class="main-header">
         <h1>Plate Ratio System</h1>
-        <p>Intelligent Production Planning & Ratio Optimization</p>
+        <p>Complete Pre-Press Plate Ratio Solution</p>
         <p style="font-size: 0.85rem; opacity: 0.8;">AI-Powered • Fast • Accurate</p>
     </div>
     """, unsafe_allow_html=True)
