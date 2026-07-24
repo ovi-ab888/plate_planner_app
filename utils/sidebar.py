@@ -10,7 +10,7 @@ def render_sidebar():
     with st.sidebar:
         st.markdown("""
         <div style="text-align: center; padding: 0.5rem 0 1rem 0;">
-            <h3 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0;">📦 Input Method</h3>
+            <h3 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0;">Input Method</h3>
         </div>
         """, unsafe_allow_html=True)
 
